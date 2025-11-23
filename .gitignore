@@ -1,0 +1,12 @@
+#backend
+BACKEND/env/
+BACKEND/hckonnect/__pycache__/
+__pycache__/
+*.pyc
+design.txt
+rough.txt
+
+
+
+#frontend
+FRONTEND/node_modules/

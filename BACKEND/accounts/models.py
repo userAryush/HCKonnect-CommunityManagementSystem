@@ -78,3 +78,18 @@ class Community(BaseModel):
 
     def __str__(self):
         return self.name
+
+class Event(BaseModel):
+    community = models.ForeignKey(Community,on_delete=models.CASCADE,related_name='events')
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    location = models.CharField(max_length=255)
+    date = models.DateTimeField()
+    time = models.TimeField()
+    event_image = models.ImageField(upload_to='event_images/', null=True, blank=True)
+
+    # Only community admin can create events
+    created_by = models.ForeignKey(User,on_delete=models.SET_NULL,null=True,related_name='created_events')
+
+    def __str__(self):
+        return f"{self.title} - {self.community.name}"
