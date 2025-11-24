@@ -58,7 +58,7 @@ class User(AbstractUser, BaseModel):
     interests = models.JSONField(null=True, blank=True)
     bio = models.TextField(null=True, blank=True)
     
-    community = models.ForeignKey('Community',on_delete=models.SET_NULL,null=True,blank=True,related_name='members')
+    # community = models.ForeignKey('Community',on_delete=models.SET_NULL,null=True,blank=True,related_name='members')
     
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'role']
@@ -66,30 +66,3 @@ class User(AbstractUser, BaseModel):
     def __str__(self):
         return f"{self.username} ({self.role})"
     
-class Community(BaseModel):
-    name = models.CharField(max_length=255, unique=True)
-    description = models.TextField(null=True, blank=True)
-    logo = models.ImageField(upload_to='community_logos/', null=True, blank=True)
-
-    # The community admin user (created only by main Admin)
-    user = models.OneToOneField('User',on_delete=models.CASCADE,
-        related_name='community_admin_account',null=True,blank=True
-    )
-
-    def __str__(self):
-        return self.name
-
-class Event(BaseModel):
-    community = models.ForeignKey(Community,on_delete=models.CASCADE,related_name='events')
-    title = models.CharField(max_length=255)
-    description = models.TextField()
-    location = models.CharField(max_length=255)
-    date = models.DateTimeField()
-    time = models.TimeField()
-    event_image = models.ImageField(upload_to='event_images/', null=True, blank=True)
-
-    # Only community admin can create events
-    created_by = models.ForeignKey(User,on_delete=models.SET_NULL,null=True,related_name='created_events')
-
-    def __str__(self):
-        return f"{self.title} - {self.community.name}"
