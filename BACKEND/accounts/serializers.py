@@ -3,17 +3,19 @@ from .models import User
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 import re
+import random
+import string
+from django.core.mail import send_mail
+from django.conf import settings
+
+
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
+
 
     class Meta:
         model = User
-        fields = [
-            'username', 'email', 'password', 'role', 'course',
-            'interests', 'linkedin_link', 'github_link',
-            'bio', 'profile_image'
-        ]
+        fields = ['username', 'email', 'role', 'course','interests', 'linkedin_link', 'github_link','bio', 'profile_image']
 
     # validating if email belongs to herald college or not, validating existance
     def validate_email(self, value):
@@ -41,15 +43,32 @@ class RegisterSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, data):
-        if data['password'] == data['username']:
-            raise serializers.ValidationError("Password cannot be the same as username")
         return data
 
+
+
+    
+    # Create user with automatic password
     def create(self, validated_data):
-        password = validated_data.pop('password') #removing password from the dictionary cz cant store raw pass
-        user = User(**validated_data) #creating user instance , obj is still not created 
-        user.set_password(password) #hashing the password
-        user.save() #creating user obj
+        user = User(**validated_data)#creating user instance , obj is still not created 
+
+        # Generate automatic password
+        # Example: first 4 chars of email + username + random 4-digit number
+        email_prefix = validated_data['email'].split('@')[0][:4]
+        username = validated_data['username']
+        random_number = ''.join(random.choices(string.digits, k=4))
+        auto_password = f"{email_prefix}{username}{random_number}"
+
+        user.set_password(auto_password)#hashing the password
+        user.save()#creating user obj
+
+        # Send password via email
+        subject = "Your Herald College Account Password"
+        message = f"Hello {user.username},\n\nYour account has been created.\nYour password is: {auto_password}\nPlease change it after first login."
+        from_email = settings.DEFAULT_FROM_EMAIL
+        recipient_list = [user.email]
+        send_mail(subject, message, from_email, recipient_list, fail_silently=False)
+
         return user
 
 
@@ -72,18 +91,6 @@ class LoginSerializer(serializers.Serializer):
                 'token': {
                     'refresh': str(refresh),
                     'access': str(refresh.access_token)
-                },
-                'user': {
-                    'id': user.id,
-                    'username': user.username,
-                    'email': user.email,
-                    'role': user.role,
-                    'course': user.course,
-                    'interests': user.interests,
-                    'linkedin_link': user.linkedin_link,
-                    'github_link': user.github_link,
-                    'bio': user.bio,
-                    'profile_image': user.profile_image.url if user.profile_image else None
                 }
             }
         }
