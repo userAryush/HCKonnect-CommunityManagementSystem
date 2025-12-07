@@ -26,14 +26,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         if not value.lower().endswith('@heraldcollege.edu.np'):
             raise serializers.ValidationError("Email must be a Herald College email")
         
-            # Extract part before '@'
-        local_part = value.lower().split('@')[0]
-
-        # Allow only letters, numbers, dot, underscore
-        if not re.match(r'^[A-Za-z0-9._]+$', local_part):
-            raise serializers.ValidationError(
-                "Email cannot contain special characters except . and _"
-            )
         return value
 
 

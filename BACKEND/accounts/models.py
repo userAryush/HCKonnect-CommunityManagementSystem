@@ -79,3 +79,8 @@ class User(AbstractUser, BaseModel):
         return f"{self.username} ({self.role})"
 
 
+class CommunityUser(User):
+    class Meta:
+        proxy = True
+        verbose_name = 'Community'
+        verbose_name_plural = 'Communities'
