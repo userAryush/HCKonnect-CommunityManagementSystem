@@ -60,7 +60,7 @@ function Login() {
             setLoading(true)
 
             // calls backend api, sends post req with email and pass, if cred are correct, no error
-            await axios.post('http://localhost:8000/accounts/login/', {
+            await axios.post('http://127.0.0.1:8000/accounts/login/', {
                 email,
                 password,
             })
