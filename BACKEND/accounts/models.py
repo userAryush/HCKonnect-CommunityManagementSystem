@@ -1,6 +1,9 @@
 from django.db import models
 from Base.models import BaseModel
 from django.contrib.auth.models import AbstractUser
+from django.utils import timezone
+from datetime import timedelta
+from django.conf import settings
 
 class User(AbstractUser, BaseModel):
 
@@ -84,3 +87,14 @@ class CommunityUser(User):
         proxy = True
         verbose_name = 'Community'
         verbose_name_plural = 'Communities'
+        
+class PasswordResetOTP(BaseModel):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    otp = models.CharField(max_length=6)  # 6-digit OTP
+    is_verified = models.BooleanField(default=False)
+
+    def is_expired(self):
+        return timezone.now() > self.created_at + timedelta(minutes=3)  # OTP valid for 10 mins
+
+    def __str__(self):
+        return f"{self.user.email} - {self.otp}"

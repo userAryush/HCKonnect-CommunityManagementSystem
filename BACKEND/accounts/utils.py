@@ -1,4 +1,5 @@
 import re
+import random, string
 
 def generate_community_tag(community_name):
     """
@@ -22,3 +23,15 @@ def generate_community_tag(community_name):
     clean = re.sub(r'[^a-z0-9]', '', first_two)
 
     return f"{clean}_member"
+
+
+def generate_auto_password(email, username):
+    email_prefix = email.split('@')[0][:4]
+    random_number = ''.join(random.choices(string.digits, k=4))
+    return f"{email_prefix}{username}{random_number}"
+
+
+
+def generate_otp(length=6):
+    """Generate a numeric OTP"""
+    return ''.join([str(random.randint(0, 9)) for _ in range(length)])
