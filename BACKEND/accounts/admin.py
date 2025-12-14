@@ -1,10 +1,12 @@
 from django.contrib import admin
-from .models import User, CommunityUser
+from .models import User, CommunityUser, PasswordResetOTP
+
 from django import forms
 from .utils import generate_community_tag
 # Register your models here.
 
 admin.site.register(User)
+admin.site.register(PasswordResetOTP)
 
 # models.py
 

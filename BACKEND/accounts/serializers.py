@@ -6,7 +6,8 @@ from django.core.mail import send_mail
 from django.conf import settings
 from .utils import generate_auto_password, generate_otp
 from django.contrib.auth import get_user_model
-
+from django.utils import timezone
+from datetime import timedelta
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -89,7 +90,11 @@ User = get_user_model()
 
 class ForgotPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    type = serializers.CharField(default="send")  # send / resend
+    type = serializers.ChoiceField(
+        choices=["send", "resend"],
+        default="send"
+    )
+
 
     def validate(self, data):
         email = data["email"]
@@ -100,41 +105,72 @@ class ForgotPasswordSerializer(serializers.Serializer):
 
     def save(self):
         user = self.validated_data["user"]
-        req_type = self.validated_data["type"]
+        req_type = self.validated_data.get("type", "send")
 
-        # DELETE old OTP if resend
-        if req_type == "resend":
-            PasswordResetOTP.objects.filter(user=user, is_verified=False).delete()
+        # 🧹 1. DELETE expired OTPs FIRST
+        # PasswordResetOTP.objects.filter(
+        #     user=user,
+        #     is_verified=False,
+        #     created_at__lt=timezone.now() - timedelta(minutes=3)
+        # ).delete()
 
-            subject = "Your OTP Code Has Been Resent"
-            email_msg = "You requested a new OTP. "
-            response_msg = {"message": "OTP resent successfully"}
-        else:
-            subject = "Password Reset OTP"
-            email_msg = ""
-            response_msg = {"message": "OTP sent successfully"}
+        # 🔐 2. REQUEST LIMIT (max 3 OTPs per hour)
+        one_hour_ago = timezone.now() - timedelta(hours=1)
+        otp_count = PasswordResetOTP.objects.filter(
+            user=user,
+            created_at__gte=one_hour_ago,
+            # is_verified=False
+        ).count()
+
+        if otp_count >= 3:
+            raise serializers.ValidationError(
+                "Too many OTP requests. Please try again later."
+            )
+
+        # 🔒 3. BLOCK if active OTP exists
+        active_otp = PasswordResetOTP.objects.filter(
+            user=user,
+            is_verified=False
+        ).order_by("-created_at").first()
 
 
-        # Generate new OTP
+        if active_otp and not active_otp.is_expired():
+
+            remaining = max(
+                0,
+                120 - int((timezone.now() - active_otp.created_at).total_seconds())
+            )
+            raise serializers.ValidationError(
+                f"OTP already sent. Please wait {remaining} seconds."
+            )
+
+        # 🔢 4. Generate OTP
         otp = generate_otp()
-        PasswordResetOTP.objects.create(user=user, otp=otp)
 
-        # Send email
-        message = (
-            f"Hi {user.username},\n\n"
-            f"{email_msg}Your OTP is: {otp}\n"
-            f"It is valid for 3 minutes.\n\n"
-            f"If you did not request this, please ignore this email."
+        PasswordResetOTP.objects.create(
+            user=user,
+            otp=otp,
+            otp_type=req_type
+        )
+
+        # 📧 5. Email
+        subject = (
+            "Your OTP Has Been Resent"
+            if req_type == "resend"
+            else "OTP for HCKonnect Password Reset"
         )
 
         send_mail(
             subject=subject,
-            message=message,
+            message=f"Your OTP is {otp}. It is valid for 2 minutes.",
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[user.email]
         )
 
-        return response_msg
+        return {"message": "OTP sent successfully"}
+
+
+
 
 
 

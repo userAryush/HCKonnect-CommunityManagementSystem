@@ -87,14 +87,20 @@ class CommunityUser(User):
         proxy = True
         verbose_name = 'Community'
         verbose_name_plural = 'Communities'
-        
+                
 class PasswordResetOTP(BaseModel):
+    OTP_TYPE_CHOICES = [
+        ('send', 'Send'),
+        ('resend', 'Resend'),
+    ]
+
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    otp = models.CharField(max_length=6)  # 6-digit OTP
+    otp = models.CharField(max_length=6)
+    otp_type = models.CharField(max_length=10, choices=OTP_TYPE_CHOICES, default='send')
     is_verified = models.BooleanField(default=False)
 
     def is_expired(self):
-        return timezone.now() > self.created_at + timedelta(minutes=3)  # OTP valid for 10 mins
+        return timezone.now() > self.created_at + timedelta(minutes=2)
 
     def __str__(self):
-        return f"{self.user.email} - {self.otp}"
+        return f"{self.user.email} - {self.otp} ({self.otp_type})"
