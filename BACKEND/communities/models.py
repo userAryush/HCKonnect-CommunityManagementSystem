@@ -4,7 +4,7 @@ from Base.models import BaseModel
 
 
 class CommunityMembership(BaseModel):
-    ROLE_CHOICES = [("member", "Member"), ("moderator", "Moderator")]
+    ROLE_CHOICES = [("member", "Member"), ("moderator", "Moderator"), ("leader", "Leader")]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,limit_choices_to={"role": "student"}, related_name="memberships")
 

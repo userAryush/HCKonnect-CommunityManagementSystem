@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from .models import CommunityMembership
 from .serializers import CommunityMembershipCreateSerializer,CommunityMemberListSerializer,CommunityListSerializer
 from django.contrib.auth import get_user_model
+from .permissions import CanAddCommunityMembers
 
 User = get_user_model()
 
@@ -10,22 +11,22 @@ User = get_user_model()
 
 class AddCommunityMemberView(CreateAPIView):
     serializer_class = CommunityMembershipCreateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [CanAddCommunityMembers]
+
 
 
 class CommunityMemberListView(ListAPIView):
     serializer_class = CommunityMemberListSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # any logged-in user can see
 
     def get_queryset(self):
-        user = self.request.user
-
-        if user.role != "community":
-            return CommunityMembership.objects.none()
-
+        # Only list members of the requested community
+        community_id = self.kwargs.get("community_id")  # pass community id via URL
         return CommunityMembership.objects.filter(
-            community=user
+            community_id=community_id
         ).select_related("user")
+
+
 
 
 
@@ -38,3 +39,4 @@ class CommunityListView(ListAPIView):
             role="community",
             status="active"
         ).order_by("community_name")
+

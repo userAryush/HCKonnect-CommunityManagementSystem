@@ -15,22 +15,30 @@ class CommunityMembershipCreateSerializer(serializers.ModelSerializer):
         fields = ["user_id", "role"]
 
     def validate(self, attrs):
-        community = self.context["request"].user
-        user = attrs["user"]
+        request_user = self.context["request"].user
 
-        if community.role != "community":
+        if request_user.role != "community":
             raise serializers.ValidationError("Only community accounts can add members.")
-
-        if CommunityMembership.objects.filter(user=user, community=community).exists():
-            raise serializers.ValidationError("User is already a member of this community.")
 
         return attrs
 
     def create(self, validated_data):
+        request_user = self.context["request"].user
+
+        # If community account is adding
+        if request_user.role == "community":
+            community = request_user
+
+        # If leader is adding
+        else:
+            community = request_user.membership.community
+
         return CommunityMembership.objects.create(
-            community=self.context["request"].user,
+            community=community,
             **validated_data
         )
+
+
 
 
 class CommunityMemberListSerializer(serializers.ModelSerializer):
@@ -42,9 +50,20 @@ class CommunityMemberListSerializer(serializers.ModelSerializer):
         model = CommunityMembership
         fields = ["id", "username", "email", "profile_image", "role", "created_at"]
 
+
         
 class CommunityListSerializer(serializers.ModelSerializer):
+    member_count = serializers.IntegerField(source="members.count", read_only=True)
+
     class Meta:
         model = User
-        fields = ["id","community_name","community_description","community_logo","community_tag"]
+        fields = [
+            "id",
+            "community_name",
+            "community_description",
+            "community_logo",
+            "community_tag",
+            "member_count",
+        ]
+
 
