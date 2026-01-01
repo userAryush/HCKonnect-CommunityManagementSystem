@@ -15,11 +15,11 @@ def generate_community_tag(community_name):
 
     raw = community_name.strip().lower()
 
-    # Step 1: Get first 2 words
+    # Get first 2 words
     words = raw.split()
     first_two = " ".join(words[:2])
 
-    # Step 3: Remove special characters
+    # Remove special characters
     clean = re.sub(r'[^a-z0-9]', '', first_two)
 
     return f"{clean}_member"

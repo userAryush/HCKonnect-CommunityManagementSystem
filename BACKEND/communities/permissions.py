@@ -18,3 +18,23 @@ class CanAddCommunityMembers(BasePermission):
                 return True
 
         return False
+
+
+
+# For creation
+class CanPostAnnouncement(BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        if not user.is_authenticated:
+            return False
+        if user.role == "community":
+            return True
+        membership = getattr(user, "membership", None)
+        if membership and membership.role in ["leader", "moderator"]:
+            return True
+        return False
+
+# For viewing
+class CanViewAnnouncement(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated

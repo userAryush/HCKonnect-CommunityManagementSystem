@@ -8,12 +8,9 @@ from .permissions import CanAddCommunityMembers
 User = get_user_model()
 
 
-
 class AddCommunityMemberView(CreateAPIView):
     serializer_class = CommunityMembershipCreateSerializer
     permission_classes = [CanAddCommunityMembers]
-
-
 
 class CommunityMemberListView(ListAPIView):
     serializer_class = CommunityMemberListSerializer
@@ -25,10 +22,6 @@ class CommunityMemberListView(ListAPIView):
         return CommunityMembership.objects.filter(
             community_id=community_id
         ).select_related("user")
-
-
-
-
 
 class CommunityListView(ListAPIView):
     serializer_class = CommunityListSerializer

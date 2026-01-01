@@ -22,5 +22,9 @@ class CommunityMembership(BaseModel):
         constraints = [
             models.UniqueConstraint(fields=["user"], name="unique_student_membership")
         ]
+        
+        
+
+
 
 

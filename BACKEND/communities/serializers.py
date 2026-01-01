@@ -1,6 +1,9 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import CommunityMembership
+from datetime import timedelta
+from django.utils import timezone
+
 
 User = get_user_model()
 
@@ -65,5 +68,4 @@ class CommunityListSerializer(serializers.ModelSerializer):
             "community_tag",
             "member_count",
         ]
-
 

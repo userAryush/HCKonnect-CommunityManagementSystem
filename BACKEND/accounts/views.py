@@ -4,11 +4,27 @@ from rest_framework import status
 from .serializers import RegisterSerializer, LoginSerializer, ForgotPasswordSerializer, VerifyOTPSerializer, ResetPasswordSerializer
 from rest_framework.permissions import AllowAny
 
+
+
+"""
+    In the settings.py, the default permission is IsAuthenticated so we need to override the permission everytime we want different from it.
+"""
+
+
+"""
+    Using APIView as it is flexible with modifying request logics.
+    Here only post requests are allowed.
+    RegisterSerializer is called for validation and creating user.
+"""
 class RegisterView(APIView):
     permission_classes = [AllowAny]
     def post(self, request):
+        
+        # an obj holding raw input from client
         serializer = RegisterSerializer(data=request.data)
+        # is_valid validates data through RegisterSerializer validation logic
         if serializer.is_valid():
+            #.save() finally triggers create()
             user = serializer.save()
             return Response({'message': 'User created successfully', 'user_id': user.id}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
