@@ -25,8 +25,8 @@ class RegisterView(APIView):
         # is_valid validates data through RegisterSerializer validation logic
         if serializer.is_valid():
             #.save() finally triggers create()
-            user = serializer.save()
-            return Response({'message': 'User created successfully', 'user_id': user.id}, status=status.HTTP_201_CREATED)
+            serializer.save()
+            return Response({'message': 'Registration successful! Please check your email to get your login details.'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

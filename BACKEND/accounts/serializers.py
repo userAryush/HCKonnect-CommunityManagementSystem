@@ -127,7 +127,7 @@ class ForgotPasswordSerializer(Serializer):
         one_hour_ago = timezone.now() - timedelta(hours=1)
         otp_count = PasswordResetOTP.objects.filter(user=user,created_at__gte=one_hour_ago,).count()
 
-        if otp_count >= 4:
+        if otp_count >= 8:
             raise ValidationError(
                 "Too many OTP requests. Please try again later."
             )
@@ -156,11 +156,22 @@ class ForgotPasswordSerializer(Serializer):
             else "OTP for HCKonnect Password Reset"
         )
 
+        html_content = f"""
+        <html>
+        <body>
+            <p><b>Your OTP is <u>{otp}</u>.</b></p>
+            <p>It is valid for <b>2 minutes</b>.</p>
+        </body>
+        </html>
+        """
+
         send_mail(
             subject=subject,
-            message=f"Your OTP is {otp}. It is valid for 2 minutes.",
+            message=f"Your OTP is {otp}. It is valid for 2 minutes.",  # plain text fallback
+            html_message=html_content,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email]
+            recipient_list=[user.email],
+            fail_silently=False
         )
 
         return {"message": "OTP sent successfully"}

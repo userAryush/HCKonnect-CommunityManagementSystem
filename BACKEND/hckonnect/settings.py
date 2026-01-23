@@ -91,16 +91,32 @@ WSGI_APPLICATION = 'hckonnect.wsgi.application'
 #     }
 # }
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'hckonnect',
+#         'USER': 'postgres',
+#         'PASSWORD': 'password',
+#         'HOST': 'localhost',
+#         'PORT': '5432'
+#     }
+# }
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'hckonnect',
-        'USER': 'postgres',
-        'PASSWORD': 'password',
-        'HOST': 'localhost',
-        'PORT': '5432'
+        'NAME': 'neondb',  # database name from URL
+        'USER': 'neondb_owner',  # user from URL
+        'PASSWORD': 'npg_kNsQGa1WVH3w',  # password from URL
+        'HOST': 'ep-green-snow-a1k1bnw9-pooler.ap-southeast-1.aws.neon.tech',  # host from URL
+        'PORT': '5432',  # default PostgreSQL port
+        'OPTIONS': {
+            'sslmode': 'require',  # as specified in the URL
+            'channel_binding': 'require'
+        }
     }
 }
+
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (

@@ -87,6 +87,12 @@ class CommunityUser(User):
         proxy = True
         verbose_name = 'Community'
         verbose_name_plural = 'Communities'
+        
+class AdminManagement(User):
+    class Meta:
+        proxy = True
+        verbose_name = 'Admin Management'
+
                 
 class PasswordResetOTP(BaseModel):
     OTP_TYPE_CHOICES = [
