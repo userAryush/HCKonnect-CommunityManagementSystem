@@ -1,63 +1,70 @@
-import { useEffect, useRef, useState } from 'react'
-import FeedItem, { FeedItemSkeleton } from './FeedItem'
-import { fetchFeed } from '../../services/feedApi'
+import { useEffect, useState } from 'react'
+import { feedItems } from '../../data/feedItems'
 
-export default function FeedList({ filter = 'all', hiddenTypes = [], hiddenCommunities = [] }) {
-  const [items, setItems] = useState([])
-  const [page, setPage] = useState(1)
-  const [nextPage, setNextPage] = useState(2)
-  const [loading, setLoading] = useState(false)
-  const [hasMore, setHasMore] = useState(true)
-  const sentinelRef = useRef(null)
+import AnnouncementCard from '../cards/AnnouncementCard'
+import EventCard from '../cards/EventCard'
 
+import { FeedItemSkeleton } from './FeedItem'
 
+export default function FeedList({
+  filter = 'all',
+  hiddenTypes = [],
+  hiddenCommunities = [],
+}) {
+  const [displayItems, setDisplayItems] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    let cancelled = false
-    async function load() {
-      if (!hasMore || loading) return
-      setLoading(true)
-      const { results, nextPage: np } = await fetchFeed({ page, filter, hiddenTypes, hiddenCommunities })
-      if (!cancelled) {
-        setItems((prev) => {
-          const merged = [...prev, ...results]
-          merged.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-          return merged
+    const timer = setTimeout(() => {
+      const filtered = feedItems
+        .filter((item) => {
+          if (hiddenTypes.includes(item.type)) return false
+          if (hiddenCommunities.includes(item.community.name)) return false
+          if (filter !== 'all' && item.type !== filter) return false
+          return item.type === 'announcement' || item.type === 'event'
         })
-        setHasMore(Boolean(np))
-        setNextPage(np || null)
-        setLoading(false)
-      }
-    }
-    load()
-    return () => {
-      cancelled = true
-    }
-  }, [page, filter, hiddenTypes.join(','), hiddenCommunities.join(','), hasMore])
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
-  useEffect(() => {
-    if (!sentinelRef.current) return
-    const io = new IntersectionObserver((entries) => {
-      const [entry] = entries
-      if (entry.isIntersecting && hasMore && !loading) {
-        if (nextPage) setPage(nextPage)
-      }
-    })
-    io.observe(sentinelRef.current)
-    return () => io.disconnect()
-  }, [hasMore, loading, nextPage])
+      setDisplayItems(filtered)
+      setLoading(false)
+    }, 500)
 
-  const skeletonCount = loading && items.length === 0 ? 6 : loading ? 3 : 0
+    return () => clearTimeout(timer)
+  }, [filter, hiddenTypes, hiddenCommunities])
+
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-6">
+        <FeedItemSkeleton />
+        <FeedItemSkeleton />
+        <FeedItemSkeleton />
+      </div>
+    )
+  }
+
+  if (displayItems.length === 0) {
+    return (
+      <div className="rounded-3xl border border-[#e5e7eb] bg-white p-10 text-center">
+        <p className="text-[#4b4b4b]">No items found matching your filters.</p>
+      </div>
+    )
+  }
 
   return (
-    <div className="grid gap-4 sm:gap-6 md:grid-cols-1">
-      {items.map((item) => (
-        <FeedItem key={item.id} item={item} />
-      ))}
-      {Array.from({ length: skeletonCount }).map((_, i) => (
-        <FeedItemSkeleton key={`sk-${i}`} />
-      ))}
-      {hasMore ? <div ref={sentinelRef} className="h-6" /> : null}
+    <div className="flex flex-col gap-6">
+      {(() => {
+        const firstAnnouncement = displayItems.find(item => item.type === 'announcement')
+        const firstEvent = displayItems.find(item => item.type === 'event')
+        const limitedItems = [firstAnnouncement, firstEvent].filter(Boolean)
+        return limitedItems.map(item =>
+          item.type === 'announcement' ? (
+            <AnnouncementCard key={item.id} item={item} />
+          ) : (
+            <EventCard key={item.id} item={item} />
+          )
+        )
+      })()}
     </div>
   )
+
 }

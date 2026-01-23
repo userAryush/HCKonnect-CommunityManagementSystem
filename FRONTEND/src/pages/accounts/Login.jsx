@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import axios from 'axios'
-import logo from '../assets/logo.png'
+import logo from '../../assets/logo.png'
+import ForgotPasswordWizard from '../../components/ForgotPasswordWizard'
+import { useNavigate, useLocation } from 'react-router-dom'
+import Toast from '../../components/others/Toast'
+
 
 // pattern for email -> must start with np and must end with @heraldcollege.edu.np
 const collegeEmailRegex = /^np.+@heraldcollege\.edu\.np$/;
@@ -15,6 +19,11 @@ function Login() {
     const [apiErrors, setApiErrors] = useState({})  // errors returned by backend side
     const [successMessage, setSuccessMessage] = useState('')  // login successful message
     const [loading, setLoading] = useState(false)
+    const [showForgotPassword, setShowForgotPassword] = useState(false)
+    const navigate = useNavigate()
+    const location = useLocation()
+    const [toastMessage, setToastMessage] = useState(location.state?.successMessage || '')
+
 
     const validate = () => {
         const validationErrors = {};
@@ -60,15 +69,23 @@ function Login() {
             setLoading(true)
 
             // calls backend api, sends post req with email and pass, if cred are correct, no error
-            await axios.post('http://127.0.0.1:8000/accounts/login/', {
+            const response = await axios.post('http://127.0.0.1:8000/accounts/login/', {
                 email,
                 password,
             })
+            localStorage.setItem('access_token', response.data.access)
+
+
 
             //shows msg to user after successful logi
-            setSuccessMessage('Login successful! Redirecting…')
+
             setEmail('')
             setPassword('')
+            navigate('/feed', {
+                state: { success: 'Login successful!' }
+            })
+
+
 
             // if anything fails it goes to catch block
         } catch (error) {
@@ -86,7 +103,12 @@ function Login() {
 
     return (
         <div className="flex min-h-screen w-full bg-[#f4f5f2] font-['Inter',sans-serif] text-[#111]">
+            <Toast message={toastMessage} onClose={() => setToastMessage('')} duration={10000} />
+
             <div className="flex min-h-screen w-full flex-col overflow-hidden bg-white shadow-2xl lg:flex-row">
+                <div className="flex flex-1 items-center justify-center bg-[#0d1f14] px-8 py-16">
+                    <img src={logo} alt="HCKonnect logo" className="w-full max-w-[250px]" />
+                </div>
                 <div className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center lg:px-12">
                     <div className="w-full max-w-[420px] space-y-6">
                         <div>
@@ -109,6 +131,8 @@ function Login() {
                                         setApiErrors((prev) => ({ ...prev, email: '' }))
                                     }} />
                                 <FieldError message={errors.email || apiErrors.email} />
+
+
                             </div>
 
                             <div className="flex flex-col items-center">
@@ -122,15 +146,41 @@ function Login() {
                                         onChange={(event) => {
                                             setPassword(event.target.value)
                                             setErrors((prev) => ({ ...prev, password: '' }))
-                                            setApiErrors((prev) => ({ ...prev, password: '' }))
+                                            setApiErrors((prev) => ({
+                                                ...prev,
+                                                non_field_errors: '',
+                                                detail: '',
+                                            }))
+
                                         }} />
                                     <button type="button" onClick={() => setShowPassword((prev) => !prev)}
                                         className="absolute inset-y-0 right-4 flex items-center text-xs font-semibold text-[#6d6e70]">
                                         {showPassword ? 'Hide' : 'Show'}
                                     </button>
                                 </div>
-                                <FieldError message={errors.password || apiErrors.password} />
+                                <FieldError
+                                    message={
+                                        errors.password ||
+                                        apiErrors.password ||
+                                        apiErrors.non_field_errors ||
+                                        apiErrors.detail
+                                    }
+                                />
                             </div>
+
+                            <div className="flex justify-end">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowForgotPassword(true)}
+                                    className="text-xs font-semibold text-[#74bf44] hover:underline"
+                                >
+                                    Forgot Password?
+                                </button>
+                            </div>
+
+
+
+
 
                             {successMessage && <p className="text-sm text-green-600">{successMessage}</p>}
 
@@ -154,10 +204,14 @@ function Login() {
                     </div>
                 </div>
 
-                <div className="flex flex-1 items-center justify-center bg-[#0d1f14] px-8 py-16">
+                {/* <div className="flex flex-1 items-center justify-center bg-[#0d1f14] px-8 py-16">
                     <img src={logo} alt="HCKonnect logo" className="w-full max-w-[250px]" />
-                </div>
+                </div> */}
             </div>
+            {showForgotPassword && (
+                <ForgotPasswordWizard onClose={() => setShowForgotPassword(false)} />
+            )}
+
         </div>
     )
 }

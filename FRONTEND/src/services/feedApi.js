@@ -9,7 +9,7 @@ function makeId() {
 }
 
 function makeCommunity() {
-  const names = ['Tech Club', 'Business Society', 'CyberSec Hub', 'Design Guild', 'Entrepreneurship Cell']
+  const names = ['Devcorps', 'Herald Bizcore', 'EthicalHCK', 'UIVisuals', 'IOT Innovators']
   const name = randomItem(names)
   return {
     id: makeId(),

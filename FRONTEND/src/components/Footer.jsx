@@ -8,7 +8,7 @@ function Footer() {
           <div>
             <p className="text-lg font-semibold">HCKonnect</p>
             <p className="text-xs uppercase tracking-[0.5em] text-white/50">Herald Community Konnect</p>
-            <p className="mt-3 text-sm text-white/60">Centralizing campus connection since day one.</p>
+            <p className="mt-3 text-sm text-white/60">Centralizing college connection since day one.</p>
           </div>
           <div className="flex flex-wrap gap-4 text-sm font-semibold text-white/70">
             {navLinks.map((link) => (

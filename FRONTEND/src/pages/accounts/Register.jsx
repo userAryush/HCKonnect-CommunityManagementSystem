@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import axios from 'axios'
-import logo from '../assets/logo.png'
+import logo from '../../assets/logo.png'
+import Toast from '../../components/others/Toast' // your component
+import { useNavigate } from 'react-router-dom'
+
+
 
 const COURSE_OPTIONS = [
   { value: 'bcs', label: 'Bachelor of Computer Science' },
@@ -9,23 +13,22 @@ const COURSE_OPTIONS = [
   { value: 'cybersecurity', label: 'Bachelor in Cyber Security' },
 ]
 
-const INTEREST_OPTIONS = ['ai', 'software_development', 'devops', 'design', 'network_security', 'ethical_hacking', 'marketing', 'finance', 'entrepreneurship', 'project_management', 'business_analytics', 'leadership', 'research', 'public_speaking', 'community_engagement',]
+const INTEREST_OPTIONS = ['ai', 'software_development', 'devops', 'design', 'network_security', 'ethical_hacking', 'marketing_and_finance', 'project_management', 'business_analytics', 'leadership', 'research', 'community_engagement']
 
 const collegeEmailRegex = /^np.+@heraldcollege\.edu\.np$/;
 
 
+
 function Register() {
   const [formData, setFormData] = useState({
-    firstName: '', lastName: '', username: '', universityId: '', email: '', password: '', confirmPassword: '', course: '', interests: [],
+    firstName: '', lastName: '', username: '', email: '', course: '', interests: [],
   })
 
-
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [errors, setErrors] = useState({})
   const [apiErrors, setApiErrors] = useState({})
   const [successMessage, setSuccessMessage] = useState('')
   const [loading, setLoading] = useState(false)
+  const navigate = useNavigate()
 
   const handleChange = (event) => {
     const { name, value } = event.target
@@ -64,10 +67,7 @@ function Register() {
       validationErrors.username = "Username is required.";
     }
 
-    // University ID
-    // if (!formData.universityId.trim()) {
-    //   validationErrors.universityId = "University ID is required.";
-    // }
+
 
     // Email
     if (!formData.email.trim()) {
@@ -78,18 +78,7 @@ function Register() {
       }
     }
 
-    // Password
-    if (!formData.password) {
-      validationErrors.password = "Password is required.";
-    }
-    // Confirm Password
-    if (!formData.confirmPassword) {
-      validationErrors.confirmPassword = "Confirm your password.";
-    } else {
-      if (formData.confirmPassword !== formData.password) {
-        validationErrors.confirmPassword = "Passwords must match.";
-      }
-    }
+
 
     // Course
     if (!formData.course) {
@@ -114,23 +103,45 @@ function Register() {
     if (!validate()) return
 
     try {
-
       setLoading(true)
-      const payload = { username: formData.username, email: formData.email, password: formData.password, course: formData.course, interests: formData.interests }
 
-      if (formData.universityId.trim()) {
-        payload.university_id = formData.universityId
+      const payload = {
+        username: formData.username,
+        email: formData.email,
+        course: formData.course,
+        interests: formData.interests
       }
-      await axios.post('http://localhost:8000/accounts/register/', payload)
-      setSuccessMessage('Registration successful! Check your inbox to verify your account.')
-      setFormData({ firstName: '', lastName: '', username: '', universityId: '', email: '', password: '', confirmPassword: '', course: '', interests: [], })
+
+      const response = await axios.post('http://localhost:8000/accounts/register/', payload)
+
+      // Set toast message
+      setSuccessMessage(response.data.message || 'Registration successful! Check your email for login credentials.')
+
+
+      // Clear the form
+      setFormData({ firstName: '', lastName: '', username: '', email: '', course: '', interests: [] })
+
+      setTimeout(() => {
+        navigate('/login', { state: { successMessage: response.data.message } })
+      }, 500)
+
+
     } catch (error) {
+      // ✅ Use backend errors (field-specific or general)
       const backendErrors = error.response?.data || {}
-      setApiErrors(backendErrors)
+
+      // Example: backend returns { email: ["Email already exists"], message: "..." }
+      if (backendErrors.message) {
+        setSuccessMessage('') // Clear any leftover success
+        setApiErrors({ non_field_errors: backendErrors.message })
+      } else {
+        setApiErrors(backendErrors)
+      }
     } finally {
       setLoading(false)
     }
   }
+
 
   const inputBase =
     'w-full max-w-[420px] rounded-lg border border-[#6d6e70]/40 bg-white px-4 py-2.5 text-sm placeholder:text-[#6d6e70]/60 focus:border-[#6d6e70] focus:outline-none'
@@ -139,6 +150,11 @@ function Register() {
     <div className="flex min-h-screen w-full font-['Inter',sans-serif] text-[#111]">
       <div className="flex min-h-screen w-full bg-white">
         <div className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center lg:px-12">
+          <Toast
+            message={successMessage}
+            onClose={() => setSuccessMessage('')}
+            duration={10000} // 10 seconds
+          />
           <div className="w-full max-w-[420px] space-y-6">
             <div>
               <p className="text-sm uppercase tracking-[0.4em] text-[#6d6e70]">Register</p>
@@ -156,23 +172,10 @@ function Register() {
 
                 <InputField name="lastName" placeholder="Last Name" value={formData.lastName} onChange={handleChange} className={inputBase} wrapperClass="flex-1" error={errors.lastName || apiErrors.lastName} />
               </div>
-
-
-
-
               <div className="flex flex-col gap-4 sm:flex-row">
                 <InputField name="username" placeholder="Username" value={formData.username} onChange={handleChange} className={inputBase} wrapperClass="flex-1" error={errors.username || apiErrors.username} />
                 <InputField type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} className={inputBase} wrapperClass="flex-1" error={errors.email || apiErrors.email} />
               </div>
-
-
-
-              <InputField name="universityId" placeholder="University ID (optional)" value={formData.universityId} onChange={handleChange} className={inputBase} error={errors.universityId || apiErrors.university_id} />
-
-
-              <PasswordField name="password" placeholder="Your Password" value={formData.password} onChange={handleChange} show={showPassword} toggleShow={() => setShowPassword((prev) => !prev)} error={errors.password || apiErrors.password} inputBase={inputBase} />
-
-              <PasswordField name="confirmPassword" placeholder="Confirm Password" value={formData.confirmPassword} onChange={handleChange} show={showConfirmPassword} toggleShow={() => setShowConfirmPassword((prev) => !prev)} error={errors.confirmPassword} inputBase={inputBase} />
 
               <div className="flex flex-col items-center">
 
@@ -203,7 +206,10 @@ function Register() {
                         checked={formData.interests.includes(interest)}
                         onChange={() => toggleInterest(interest)}
                       />
-                      <span className="capitalize">{interest.replace(/_/g, ' ')}</span>
+                      <span className="capitalize truncate" title={interest.replace(/_/g, ' ')}>
+                        {interest.replace(/_/g, ' ')}
+                      </span>
+
                     </label>
 
                   ))}
@@ -250,21 +256,6 @@ function InputField({ type = 'text', name, placeholder, value, onChange, classNa
   )
 }
 
-function PasswordField({ name, placeholder, value, onChange, show, toggleShow, error, inputBase }) {
-  return (
-    <div className="flex flex-col items-center">
-      <div className="relative w-full max-w-[420px]">
-        <input type={show ? 'text' : 'password'} name={name} placeholder={placeholder} className={inputBase} value={value} onChange={onChange} />
-
-        <button type="button" onClick={toggleShow} className="absolute inset-y-0 right-4 flex items-center text-xs font-semibold text-[#6d6e70]">
-          {show ? 'Hide' : 'Show'}
-        </button>
-      </div>
-
-      <FieldError message={error} />
-    </div>
-  )
-}
 
 function FieldError({ message }) {
   if (!message) return null

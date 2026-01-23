@@ -1,4 +1,10 @@
+import { useNavigate } from 'react-router-dom'
+
 function HeroSection() {
+
+const navigate = useNavigate()
+const isAuthenticated = Boolean(localStorage.getItem('access_token'))
+
   return (
     <section id="home"
       className="relative overflow-hidden bg-gradient-to-b from-[#07120b] via-[#0d1f14] to-[#102a1a] text-white pt-32 pb-24"
@@ -20,10 +26,14 @@ function HeroSection() {
             resources—inside a modern, distraction-free home.
           </p>
           <div className="mt-8 flex flex-col gap-4 text-base font-semibold sm:flex-row sm:justify-center lg:justify-start">
-            <button className="rounded-full bg-[#75C043] px-8 py-3 text-[#0f1a12] shadow-2xl shadow-[#75C043]/40 transition hover:-translate-y-0.5 hover:scale-105">
-              Join Now
-            </button>
-            <button className="rounded-full border border-white/40 px-8 py-3 text-white transition hover:border-white">
+
+          <button onClick={() => navigate(isAuthenticated ? '/feed' : '/register')}
+            className="rounded-full bg-[#75C043] px-8 py-3 text-[#0f1a12] shadow-2xl shadow-[#75C043]/40 transition hover:-translate-y-0.5 hover:scale-105">
+            Join Now
+          </button>
+
+            <button onClick={() => navigate(isAuthenticated ? '/communities' : '/login')}
+            className="rounded-full border border-white/40 px-8 py-3 text-white transition hover:border-white">
               Explore Communities
             </button>
           </div>
