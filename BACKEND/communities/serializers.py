@@ -1,7 +1,7 @@
 from rest_framework.serializers import ModelSerializer, PrimaryKeyRelatedField, ValidationError, CharField, EmailField, ImageField, IntegerField, ChoiceField, SerializerMethodField, DateTimeField, UUIDField
 
 from django.contrib.auth import get_user_model
-from .models import CommunityMembership,CommunityVacancy,Announcement
+from .models import CommunityMembership,CommunityVacancy,Announcement,Event
 
 from datetime import timedelta
 from django.utils import timezone
@@ -60,8 +60,10 @@ class MembershipApplicationSerializer(ModelSerializer):
         user = self.context["request"].user
         community = data["community"]
 
-        if CommunityMembership.objects.filter(user=user, community=community).exists():
-            raise ValidationError("You have already applied or are a member.")
+        # Enforce Single Community Rule:
+        # Check if user has ANY membership (pending or approved) in ANY community
+        if CommunityMembership.objects.filter(user=user).exists():
+            raise ValidationError("You can only belong to one community at a time.")
 
         return data
 
@@ -185,7 +187,7 @@ class CommunityDashboardSerializer(ModelSerializer):
 class AnnouncementCreateSerializer(ModelSerializer):
     class Meta:
         model = Announcement
-        fields = ["title", "description", "image"]
+        fields = ["title", "description", "image", "visibility"]
 
     def create(self, validated_data):
         request = self.context["request"]
@@ -198,7 +200,8 @@ class AnnouncementCreateSerializer(ModelSerializer):
 
         # Student (member, moderator, leader) posting
         elif user.role == "student":
-            membership = getattr(user, "membership", None)
+            # Correctly fetch membership relations (Foreign Key related_name="memberships")
+            membership = user.memberships.first() 
             if not membership:
                 raise ValidationError("User is not part of any community")
             community = membership.community
@@ -230,7 +233,9 @@ class AnnouncementReadSerializer(ModelSerializer):
             "community_logo",
             "uploaded_by",
             "time_since_posted",
+            "time_since_posted",
             "created_at",
+            "visibility",
         ]
 
     def get_uploaded_by(self, obj):
@@ -257,7 +262,6 @@ class AnnouncementReadSerializer(ModelSerializer):
 
         weeks = diff.days // 7
         return f"{weeks} weeks ago"
-    
     
 class StudentListSerializer(ModelSerializer):
     class Meta:

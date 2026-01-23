@@ -245,3 +245,13 @@ class ResetPasswordSerializer(Serializer):
         # Clean up OTPs
         PasswordResetOTP.objects.filter(user=user).delete()
         return user
+
+class UserProfileSerializer(ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            "id", "username", "email", "role", 
+            "profile_image", "course", "interests",
+            "bio", "linkedin_link", "github_link", "university_id"
+        ]
+        read_only_fields = ["id", "email", "role"]

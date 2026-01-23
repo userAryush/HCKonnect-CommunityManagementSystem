@@ -1,5 +1,10 @@
 from django.urls import path
-from .views import CommunityListView,CreateCommunityVacancyView,ApplyMembershipView,PendingMembershipsView,ApproveMembershipView,AddCommunityMemberView,CommunityMemberListView,CommunityDashboardView,RemoveCommunityMemberView,StudentListView
+from .views import (
+    CommunityListView, CreateCommunityVacancyView, ApplyMembershipView, PendingMembershipsView,
+    ApproveMembershipView, AddCommunityMemberView, CommunityMemberListView, CommunityDashboardView,
+    RemoveCommunityMemberView, StudentListView,
+    AnnouncementCreateView, AnnouncementListView, EventCreateView, EventListView
+)
 
 
 
@@ -43,5 +48,11 @@ urlpatterns = [
     
     # urls.py
     path("students/", StudentListView.as_view(), name="students-list"),
+
+    # -----------------------------
+    # Announcements & Events
+    # -----------------------------
+    path("announcements/", AnnouncementListView.as_view(), name="announcement-list"),
+    path("announcements/create/", AnnouncementCreateView.as_view(), name="announcement-create")
 
 ]

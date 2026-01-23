@@ -1,11 +1,17 @@
 from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import CommunityMembership,CommunityVacancy
-from .serializers import CommunityMembershipCreateSerializer,CommunityMemberListSerializer,CommunityListSerializer,MembershipApplicationSerializer, MembershipApprovalSerializer,CommunityVacancySerializer,CommunityDashboardSerializer,StudentListSerializer
+from .models import CommunityMembership,CommunityVacancy,Announcement,Event
+from .serializers import (
+    CommunityMembershipCreateSerializer, CommunityMemberListSerializer, CommunityListSerializer,
+    MembershipApplicationSerializer, MembershipApprovalSerializer, CommunityVacancySerializer,
+    CommunityDashboardSerializer, StudentListSerializer,
+    AnnouncementCreateSerializer, AnnouncementReadSerializer,
+    EventCreateSerializer, EventSerializer
+)
 
 from rest_framework.exceptions import NotFound
 from django.contrib.auth import get_user_model
-from .permissions import CanAddCommunityMembers
+from .permissions import CanAddCommunityMembers, CanPostAnnouncement
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db.models import Q
@@ -179,3 +185,35 @@ class StudentListView(ListAPIView):
         return User.objects.filter(role="student").filter(
             Q(username__icontains=search) | Q(email__icontains=search)
         ).order_by("username")[:20]  # limit 20 results
+
+class AnnouncementCreateView(CreateAPIView):
+    serializer_class = AnnouncementCreateSerializer
+    permission_classes = [CanPostAnnouncement]
+
+class AnnouncementListView(ListAPIView):
+    serializer_class = AnnouncementReadSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        user = self.request.user
+        qs = Announcement.objects.all()
+
+        # Build Q objects for visibility
+        public_q = Q(visibility="public")
+        
+        community_q = Q(pk__in=[])
+        all_members_q = Q(pk__in=[])
+
+        if user.is_authenticated:
+            # 1. All Members visibility
+            if user.role == "community" or CommunityMembership.objects.filter(user=user).exists():
+                all_members_q = Q(visibility="all_members")
+            
+            # 2. My Community visibility
+            if user.role == "community":
+                 community_q = Q(visibility="community", community=user)
+            elif user.role == "student":
+                 my_community_ids = CommunityMembership.objects.filter(user=user).values_list('community_id', flat=True)
+                 community_q = Q(visibility="community", community_id__in=my_community_ids)
+        
+        return qs.filter(public_q | all_members_q | community_q).distinct()

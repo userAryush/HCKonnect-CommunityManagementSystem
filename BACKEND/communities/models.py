@@ -38,6 +38,12 @@ class Announcement(BaseModel):
     title = models.CharField(max_length=255)
     description = models.TextField()
     image = models.ImageField(upload_to="announcements/", null=True, blank=True)
+    VISIBILITY_CHOICES = [
+        ("public", "Public"),
+        ("all_members", "All Community Members"),
+        ("community", "My Community Only"),
+    ]
+    visibility = models.CharField(max_length=20, choices=VISIBILITY_CHOICES, default="public")
 
     # Community posting (community user)
     community = models.ForeignKey(
