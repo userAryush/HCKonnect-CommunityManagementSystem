@@ -217,3 +217,4 @@ class AnnouncementListView(ListAPIView):
                  community_q = Q(visibility="community", community_id__in=my_community_ids)
         
         return qs.filter(public_q | all_members_q | community_q).distinct()
+

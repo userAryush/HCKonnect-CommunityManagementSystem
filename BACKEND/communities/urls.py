@@ -38,7 +38,7 @@ urlpatterns = [
     # -----------------------------
     path("members/add/",AddCommunityMemberView.as_view(),name="member-add"),
     
-        # -----------------------------
+    # -----------------------------
     # Remove member
     # -----------------------------
     path("members/<int:membership_id>/", RemoveCommunityMemberView.as_view(), name="member-remove"),
@@ -53,6 +53,6 @@ urlpatterns = [
     # Announcements & Events
     # -----------------------------
     path("announcements/", AnnouncementListView.as_view(), name="announcement-list"),
-    path("announcements/create/", AnnouncementCreateView.as_view(), name="announcement-create")
+    path("announcements/create/", AnnouncementCreateView.as_view(), name="announcement-create"),
 
 ]

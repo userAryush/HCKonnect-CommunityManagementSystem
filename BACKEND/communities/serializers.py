@@ -263,6 +263,44 @@ class AnnouncementReadSerializer(ModelSerializer):
         weeks = diff.days // 7
         return f"{weeks} weeks ago"
     
+    
+class EventSerializer(ModelSerializer):
+    community_name = CharField(source="community.community_name", read_only=True)
+    community_logo = ImageField(source="community.community_logo", read_only=True)
+    
+    class Meta:
+        model = Event
+        fields = [
+            "id", "title", "description", "date", "time", 
+            "location", "format", "image", 
+            "community", "community_name", "community_logo", 
+            "created_by"
+        ]
+        read_only_fields = ["id", "community", "created_by"]
+
+class EventCreateSerializer(ModelSerializer):
+    class Meta:
+        model = Event
+        fields = ["title", "description", "date", "time", "location", "format", "image"]
+
+    def create(self, validated_data):
+        request = self.context["request"]
+        user = request.user
+        
+        if user.role == "community":
+            community = user
+            created_by = None
+        else: # Authorized member
+            # Double check permission again or rely on view
+            community = user.membership.community
+            created_by = user
+            
+        return Event.objects.create(
+            community=community,
+            created_by=created_by,
+            **validated_data
+        )
+
 class StudentListSerializer(ModelSerializer):
     class Meta:
         model = User
