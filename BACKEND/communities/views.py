@@ -1,12 +1,11 @@
 from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import CommunityMembership,CommunityVacancy,Announcement,Event
+from .models import CommunityMembership,CommunityVacancy,Announcement
 from .serializers import (
     CommunityMembershipCreateSerializer, CommunityMemberListSerializer, CommunityListSerializer,
     MembershipApplicationSerializer, MembershipApprovalSerializer, CommunityVacancySerializer,
     CommunityDashboardSerializer, StudentListSerializer,
-    AnnouncementCreateSerializer, AnnouncementReadSerializer,
-    EventCreateSerializer, EventSerializer
+    AnnouncementCreateSerializer, AnnouncementReadSerializer
 )
 
 from rest_framework.exceptions import NotFound

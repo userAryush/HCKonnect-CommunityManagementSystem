@@ -3,7 +3,7 @@ from .views import (
     CommunityListView, CreateCommunityVacancyView, ApplyMembershipView, PendingMembershipsView,
     ApproveMembershipView, AddCommunityMemberView, CommunityMemberListView, CommunityDashboardView,
     RemoveCommunityMemberView, StudentListView,
-    AnnouncementCreateView, AnnouncementListView, EventCreateView, EventListView
+    AnnouncementCreateView, AnnouncementListView
 )
 
 

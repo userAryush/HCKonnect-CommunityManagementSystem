@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'Base',
     'corsheaders',
     'communities',
+    'events'
 ]
 
 MIDDLEWARE = [
