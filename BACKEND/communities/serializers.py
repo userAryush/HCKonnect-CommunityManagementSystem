@@ -1,17 +1,13 @@
-from rest_framework.serializers import ModelSerializer, PrimaryKeyRelatedField, ValidationError, CharField, EmailField, ImageField, IntegerField, ChoiceField, SerializerMethodField, DateTimeField, UUIDField
-
+from rest_framework.serializers import ModelSerializer, PrimaryKeyRelatedField, ValidationError, CharField, EmailField, ImageField, IntegerField, SerializerMethodField, DateTimeField, UUIDField
 from django.contrib.auth import get_user_model
-from .models import CommunityMembership,CommunityVacancy,Announcement
-
+from .models import CommunityMembership,CommunityVacancy,Announcement,VacancyApplication
 from datetime import timedelta
 from django.utils import timezone
-
-
-
-
 User = get_user_model()
+
 class CommunityVacancySerializer(ModelSerializer):
     community_id = IntegerField(source="community.id", read_only=True)
+
     class Meta:
         model = CommunityVacancy
         fields = ["id", "title", "description", "is_open", "community_id"]
@@ -20,18 +16,16 @@ class CommunityVacancySerializer(ModelSerializer):
     def validate(self, data):
         user = self.context["request"].user
 
-        # Community account → allowed
+        if not user.is_authenticated:
+            raise ValidationError("Authentication required.")
+
         if user.role == "community":
             return data
 
-        # Leader → allowed
-        community = self.instance.community if self.instance else self.initial_data.get("community")
-
-        if CommunityMembership.objects.filter(user=user,community=community,role="leader").exists():
+        if user.role == "student" and user.memberships.filter(role="representative").exists():
             return data
 
-
-        raise ValidationError("Only community accounts or leaders can manage vacancies.")
+        raise ValidationError("You do not have permission to manage vacancies.")
 
     def create(self, validated_data):
         user = self.context["request"].user
@@ -39,64 +33,48 @@ class CommunityVacancySerializer(ModelSerializer):
         if user.role == "community":
             community = user
         else:
-            community = user.membership.community
+            # SAFE because of one-community-per-representative rule
+            community = user.memberships.get(role="representative").community
 
         return CommunityVacancy.objects.create(
             community=community,
             **validated_data
         )
-class MembershipApplicationSerializer(ModelSerializer):
-    status = CharField(read_only=True)
-    role = CharField(read_only=True)
-    community_name = CharField(source="community.community_name", read_only=True)
-    community_logo = ImageField(source="community.community_logo", read_only=True)
 
+class VacancyApplicationSerializer(ModelSerializer):
+    username = CharField(source="user.username", read_only=True)
+    community_name = CharField(source="vacancy.community.community_name", read_only=True)
 
     class Meta:
-        model = CommunityMembership
-        fields = ["community", "status", "role"]
+        model = VacancyApplication
+        fields = ["id", "user", "username", "vacancy", "community_name", "resume", "message", "applied_at"]
+        read_only_fields = ["id", "username", "community_name", "applied_at"]
 
     def validate(self, data):
         user = self.context["request"].user
-        community = data["community"]
+        vacancy = data.get("vacancy")
 
-        # Enforce Single Community Rule:
-        # Check if user has ANY membership (pending or approved) in ANY community
-        if CommunityMembership.objects.filter(user=user).exists():
-            raise ValidationError("You can only belong to one community at a time.")
+        # Only students can apply
+        if user.role != "student":
+            raise ValidationError("Only students can apply to vacancies.")
+
+        # Vacancy must be open
+        if not vacancy.is_open:
+            raise ValidationError("This vacancy is no longer accepting applications.")
+
+        # Optional: check deadline
+        if vacancy.deadline and timezone.now() > vacancy.deadline:
+            raise ValidationError("The application deadline has passed.")
 
         return data
 
     def create(self, validated_data):
-        return CommunityMembership.objects.create(
-            user=self.context["request"].user,
-            community=validated_data["community"],
-            status="pending",
-            role="member"
-        )
-
-
-class MembershipApprovalSerializer(ModelSerializer):
-    role = ChoiceField(choices=[("member","Member"),("moderator","Moderator")])
-    user_id = IntegerField(source="user.id", read_only=True)
-
-    class Meta:
-        model = CommunityMembership
-        fields = ["id", "user_id", "role", "status"]
-
-    def update(self, instance, validated_data):
-        request_user = self.context["request"].user
-        if request_user.role != "community" and not CommunityMembership.objects.filter(user=request_user, community=instance.community, role="leader").exists():
-            raise ValidationError("Only community accounts or leaders can approve memberships.")
-
-        instance.role = validated_data["role"]
-        instance.status = "approved"
-        instance.save()
-        return instance
+        user = self.context["request"].user
+        return VacancyApplication.objects.create(user=user, **validated_data)
 
 
 class CommunityMembershipCreateSerializer(ModelSerializer):
-    user_id = PrimaryKeyRelatedField(queryset=User.objects.filter(role="student"), source="user")
+    user_id = PrimaryKeyRelatedField(queryset=User.objects.filter(role="student"),source="user")
     created_at = DateTimeField(read_only=True)
 
     class Meta:
@@ -106,33 +84,31 @@ class CommunityMembershipCreateSerializer(ModelSerializer):
     def validate(self, data):
         request_user = self.context["request"].user
         user_to_add = data["user"]
+        role = data.get("role", "member")
 
-        # Prevent duplicate membership
-        if CommunityMembership.objects.filter(user=user_to_add, community=request_user.membership.community if request_user.role != "community" else request_user).exists():
-            raise ValidationError("This user is already a member of the community.")
+        # 🔒 Only community accounts can add members
+        if request_user.role != "community":
+            raise ValidationError("Only community accounts can add members.")
 
-        # Permission check
-        if request_user.role == "community":
-            return data
-        if CommunityMembership.objects.filter(user=request_user, role="leader").exists():
-            return data
-        raise ValidationError("Only community accounts or leaders can add members.")
-    
+        # 🚫 Prevent duplicate membership in the same community
+        if CommunityMembership.objects.filter(user=user_to_add, community=request_user).exists():
+            raise ValidationError("This student is already a member of this community.")
+
+        # 🌐 Prevent membership in multiple communities
+        if CommunityMembership.objects.filter(user=user_to_add).exists():
+            raise ValidationError("This student already belongs to another community.")
+
+        # 🧱 Option A rule: one representative per user
+        if role == "representative":
+            if CommunityMembership.objects.filter(user=user_to_add,role="representative").exists():
+                raise ValidationError("A user can only be a representative of one community.")
+
+        return data
+
     def create(self, validated_data):
         request_user = self.context["request"].user
 
-        # Determine community
-        if request_user.role == "community":
-            community = request_user
-        else:
-            community = request_user.membership.community
-
-        return CommunityMembership.objects.create(
-            community=community,
-            **validated_data
-        )
-
-
+        return CommunityMembership.objects.create(community=request_user,**validated_data)
 
 
 class CommunityMemberListSerializer(ModelSerializer):
@@ -150,39 +126,28 @@ class CommunityMemberListSerializer(ModelSerializer):
     def get_join_date(self, obj):
         return obj.created_at.strftime("%Y-%m-%d") if obj.created_at else None
 
-
-
-        
+# list of communities
 class CommunityListSerializer(ModelSerializer):
     member_count = IntegerField(source="members.count", read_only=True)
 
     class Meta:
         model = User
-        fields = [
-            "id",
-            "community_name",
-            "community_description",
-            "community_logo",
-            "community_tag",
-            "member_count",
-        ]
+        fields = ["id","community_name","community_description","community_logo","community_tag","member_count"]
+        
+# community account dashboard
 class CommunityDashboardSerializer(ModelSerializer):
     member_count = IntegerField(source="members.count", read_only=True)
     is_community_owner = SerializerMethodField()
 
     class Meta:
         model = User
-        fields = [
-            "id",
-            "community_name",
-            "community_description",
-            "community_logo",
-            "member_count",
-            "is_community_owner",
-        ]
+        fields = ["id","community_name","community_description","community_logo","member_count","is_community_owner"]
 
     def get_is_community_owner(self, obj):
         return obj.role == "community"
+
+
+# announcements serializers
 
 class AnnouncementCreateSerializer(ModelSerializer):
     class Meta:
@@ -210,11 +175,7 @@ class AnnouncementCreateSerializer(ModelSerializer):
         else:
             raise ValidationError("You are not allowed to post announcements")
 
-        return Announcement.objects.create(
-            community=community,
-            created_by_user=created_by_user,
-            **validated_data
-        )
+        return Announcement.objects.create(community=community,created_by_user=created_by_user,**validated_data)
 
 class AnnouncementReadSerializer(ModelSerializer):
     community_name = CharField(source="community.community_name", read_only=True)
@@ -224,19 +185,7 @@ class AnnouncementReadSerializer(ModelSerializer):
 
     class Meta:
         model = Announcement
-        fields = [
-            "id",
-            "title",
-            "description",
-            "image",
-            "community_name",
-            "community_logo",
-            "uploaded_by",
-            "time_since_posted",
-            "time_since_posted",
-            "created_at",
-            "visibility",
-        ]
+        fields = ["id","title","description","image","community_name","community_logo","uploaded_by","time_since_posted","time_since_posted","created_at","visibility"]
 
     def get_uploaded_by(self, obj):
         if obj.created_by_user:

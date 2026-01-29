@@ -2,8 +2,12 @@ from django.contrib import admin
 from .models import User, CommunityUser, PasswordResetOTP, AdminManagement
 
 from django.forms import ModelForm, ValidationError, CharField, PasswordInput
-from .utils import generate_community_tag
-# Register your models here.
+from .utils import generate_community_tag,generate_auto_password
+from django.core.mail import send_mail
+from django.conf import settings
+from django import forms
+from django.contrib.auth.forms import ReadOnlyPasswordHashField
+from django.core.exceptions import ValidationError
 
 admin.site.register(User)
 admin.site.register(PasswordResetOTP)
@@ -15,59 +19,95 @@ admin.site.register(PasswordResetOTP)
     ModdelForm knows which fields exist, validates input and saves obj.
 """
 class CommunityCreationForm(ModelForm):
-    # in this meta we define this form is based on User model, but only use these fields.
     class Meta:
         model = User
         fields = ['community_name', 'community_description', 'community_logo', 'email', 'username','bio']
-    
-    #email validation check
-    def validate_email(self):
+
+    def clean_email(self):
         email = self.cleaned_data.get('email').lower()
+        qs = User.objects.filter(email=email)
+
+        if self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+
+        if qs.exists():
+            raise ValidationError("Email already exists")
 
         if not email.endswith('@heraldcollege.edu.np'):
             raise ValidationError("Email must be a Herald College email.")
 
-
         return email
 
-    def save(self, commit=True):
-        user = super().save(commit=False) # creating user object
-        user.role = 'community'  # automatically set role
-        # Create the tag only for community accounts
-        user.community_tag = generate_community_tag(user.community_name)
 
-        if commit: # default is True
+    def save(self, commit=True):
+        # Check if this is a new record BEFORE we do anything else
+        is_new = self.instance._state.adding 
+        
+        user = super().save(commit=False)
+        user.role = 'community'
+
+        if is_new: 
+            user.community_tag = generate_community_tag(user.community_name)
+            auto_password = generate_auto_password(user.email, user.username)
+            user.set_password(auto_password)
+            
+            # We attach it to the form instance so the Admin can see it later
+            self._auto_password = auto_password
+            print(f"Generated Password: {self._auto_password}") # Debugging
+
+        if commit:
             user.save()
+
         return user
 
 
+
+
+
+
+
 class CommunityAdmin(admin.ModelAdmin):
-    """
-        Special dashboard for just communities.
-        Its a custom admin panel configuration which only shows user with role community. using proxy model with same model User.
-    """
-    form = CommunityCreationForm # tells to use custom form for creation and edits
-    
+    form = CommunityCreationForm
+
     list_display = ('community_name', 'email', 'username')
     search_fields = ('community_name',)
 
     def get_queryset(self, request):
-        """
-            determines what data the admin sees.
-            gets all the user obj through proxy model and filters
+        return super().get_queryset(request).filter(role='community')
 
+    def get_form(self, request, obj=None, **kwargs):
         """
-        qs = super().get_queryset(request)#queryset of all user obj, so its a queryset obj now
-        return qs.filter(role='community') # restricts to only community users.
-    
+        Force CommunityCreationForm for ADD and CHANGE
+        """
+        defaults = kwargs
+        defaults['form'] = CommunityCreationForm
+        return super().get_form(request, obj, **defaults)
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+
+        auto_password = getattr(form, '_auto_password', None)
+        print("AUTO:", auto_password)
+
+        if not change and auto_password:
+            send_mail(
+                subject="Your HCKonnect Community Account Password",
+                message=(
+                    f"Hello {obj.community_name},\n\n"
+                    f"Your community account has been created.\n"
+                    f"Your password is: {auto_password}\n"
+                    "Please change it after first login."
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[obj.email],
+                fail_silently=False,
+            )
+
+            
 # telling django admin to use CommunityAdmin to manage the CommunityUser
 admin.site.register(CommunityUser, CommunityAdmin)
 
-from django import forms
-from django.contrib import admin
-from django.contrib.auth.forms import ReadOnlyPasswordHashField
-from django.core.exceptions import ValidationError
-from .models import User, AdminManagement  # adjust import
+
 
 # Creation form
 class AdminCreationForm(forms.ModelForm):

@@ -1,162 +1,105 @@
 from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import CommunityMembership,CommunityVacancy,Announcement
-from .serializers import (
-    CommunityMembershipCreateSerializer, CommunityMemberListSerializer, CommunityListSerializer,
-    MembershipApplicationSerializer, MembershipApprovalSerializer, CommunityVacancySerializer,
-    CommunityDashboardSerializer, StudentListSerializer,
-    AnnouncementCreateSerializer, AnnouncementReadSerializer
-)
-
-from rest_framework.exceptions import NotFound
+from .models import CommunityMembership,CommunityVacancy,Announcement,VacancyApplication
+from .serializers import CommunityMembershipCreateSerializer, CommunityMemberListSerializer, CommunityListSerializer,CommunityVacancySerializer,CommunityDashboardSerializer, StudentListSerializer,AnnouncementCreateSerializer, AnnouncementReadSerializer, VacancyApplicationSerializer
+from rest_framework.exceptions import NotFound, PermissionDenied
 from django.contrib.auth import get_user_model
-from .permissions import CanAddCommunityMembers, CanPostAnnouncement
+from .permissions import CanCreateCommunityContent
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db.models import Q
-
-
+from .permissions import IsCommunityAccount
 User = get_user_model()
+
+
+# --------------------------
+# Community Vacancy Views
+# --------------------------
+
 class CreateCommunityVacancyView(CreateAPIView):
+    queryset = CommunityVacancy.objects.all()
     serializer_class = CommunityVacancySerializer
-    permission_classes = [AllowAny]
-class ApplyMembershipView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, CanCreateCommunityContent]
 
-    def post(self, request):
-        community = request.data.get("community")
+class ListCommunityVacanciesView(ListAPIView):
+    queryset = CommunityVacancy.objects.all()
+    serializer_class = CommunityVacancySerializer
+    permission_classes = [IsAuthenticated]
 
-        if not CommunityVacancy.objects.filter(
-            community_id=community,
-            is_open=True
-        ).exists():
-            return Response(
-                {"error": "This community is not accepting members"},
-                status=400
-            )
-
-        serializer = MembershipApplicationSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        return Response({"message": "Application submitted"}, status=201)
-
-
-class PendingMembershipsView(APIView):
-    permission_classes = [AllowAny]
-
-    def get(self, request):
-        user = request.user
+    def get_queryset(self):
+        user = self.request.user
         if user.role == "community":
-            community = user
-        else:  # leader
-            membership = CommunityMembership.objects.filter(user=user,role="leader").first()
-
-            if not membership:
-                return Response({"error": "Not authorized"}, status=403)
-
-            community = membership.community
-
-
-        pending_memberships = CommunityMembership.objects.filter(community=community, status="pending")
-        serializer = MembershipApplicationSerializer(pending_memberships, many=True)
-        return Response(serializer.data)
-
-
-class ApproveMembershipView(APIView):
-    permission_classes = [AllowAny]
-
-    def post(self, request, membership_id):
-        try:
-            membership = CommunityMembership.objects.get(id=membership_id)
-        except CommunityMembership.DoesNotExist:
-            return Response(
-                {"error": "Membership not found"},
-                status=404
-            )
-
-        user = request.user
-
-        # Case 1: Community account approving
-        if user.role == "community":
-            if membership.community != user:
-                return Response(
-                    {"error": "You cannot approve members for this community"},
-                    status=403
-                )
-
-        # Case 2: Leader approving
+            return CommunityVacancy.objects.filter(community=user)
+        elif user.role == "student":
+            return CommunityVacancy.objects.filter(is_open=True)
         else:
-            is_leader = CommunityMembership.objects.filter(
-                user=user,
-                community=membership.community,
-                role="leader"
-            ).exists()
+            return CommunityVacancy.objects.none()
 
-            if not is_leader:
-                return Response(
-                    {"error": "Only community accounts or leaders can approve members"},
-                    status=403
-                )
+# --------------------------
+# Vacancy Application Views
+# --------------------------
 
-        serializer = MembershipApprovalSerializer(
-            membership,
-            data=request.data,
-            partial=True
-        )
+class ApplyVacancyView(CreateAPIView):
+    serializer_class = VacancyApplicationSerializer
+    permission_classes = [IsAuthenticated]
 
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+    def perform_create(self, serializer):
+        user = self.request.user
+        if user.role != "student":
+            raise PermissionDenied("Only students can apply to vacancies.")
+        serializer.save(user=user)
 
-        return Response({"message": "Membership updated"}, status=200)
+class ListVacancyApplicationsView(ListAPIView):
+    serializer_class = VacancyApplicationSerializer
+    permission_classes = [IsAuthenticated, CanCreateCommunityContent]
+
+    def get_queryset(self):
+        user = self.request.user
+        # Only community users / representatives can view applications
+        if user.role == "community":
+            return VacancyApplication.objects.filter(vacancy__community=user)
+        elif user.memberships.filter(role="representative").exists():
+            community = user.memberships.get(role="representative").community
+            return VacancyApplication.objects.filter(vacancy__community=community)
+        else:
+            return VacancyApplication.objects.none()
 
 
+# Member Management
+class ListCommunityMembersView(ListAPIView):
+    serializer_class = CommunityMemberListSerializer
+    permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == "community":
+            return CommunityMembership.objects.filter(community=user)
+        else:
+            return CommunityMembership.objects.none()
 
 class AddCommunityMemberView(CreateAPIView):
     serializer_class = CommunityMembershipCreateSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated,IsCommunityAccount]
     
 class RemoveCommunityMemberView(APIView):
-    permission_classes = [AllowAny]
-
+    permission_classes = [IsAuthenticated,IsCommunityAccount]
+    
     def delete(self, request, membership_id):
         try:
             membership = CommunityMembership.objects.get(id=membership_id)
         except CommunityMembership.DoesNotExist:
             return Response({"error": "Membership not found"}, status=404)
 
-        user = request.user
-
-        # Permission: only community account or leader in that community
-        if user.role != "community" and not CommunityMembership.objects.filter(
-            user=user, community=membership.community, role="leader"
-        ).exists():
-            return Response({"error": "Not allowed to remove members."}, status=403)
-
         membership.delete()
         return Response({"message": "Member removed."}, status=204)
 
-class CommunityMemberListView(ListAPIView):
-    serializer_class = CommunityMemberListSerializer
-    permission_classes = [AllowAny]  # any logged-in user can see
-
-    def get_queryset(self):
-        # Only list members of the requested community
-        community_id = self.kwargs.get("community_id")  # pass community id via URL
-        return CommunityMembership.objects.filter(
-            community_id=community_id
-        ).select_related("user")
 
 class CommunityListView(ListAPIView):
     serializer_class = CommunityListSerializer
     permission_classes =[AllowAny]
 
     def get_queryset(self):
-        return User.objects.filter(
-            role="community",
-            status="active"
-        ).order_by("community_name")
+        return User.objects.filter(role="community",status="active").order_by("community_name")
 
 class CommunityDashboardView(RetrieveAPIView):
     """
@@ -187,7 +130,7 @@ class StudentListView(ListAPIView):
 
 class AnnouncementCreateView(CreateAPIView):
     serializer_class = AnnouncementCreateSerializer
-    permission_classes = [CanPostAnnouncement]
+    permission_classes = [CanCreateCommunityContent]
 
 class AnnouncementListView(ListAPIView):
     serializer_class = AnnouncementReadSerializer

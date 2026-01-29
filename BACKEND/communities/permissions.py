@@ -1,40 +1,32 @@
 from rest_framework.permissions import BasePermission
 
-class CanAddCommunityMembers(BasePermission):
+class IsCommunityAccount(BasePermission):
+    message = "Only community accounts can perform this action."
+
     def has_permission(self, request, view):
-        user = request.user
-
-        if not user.is_authenticated:
-            return False
-
-        # Case 1: community account
-        if user.role == "community":
-            return True
-
-        # Case 2: student leader
-        if user.role == "student":
-            membership = getattr(user, "membership", None)
-            if membership and membership.role == "leader":
-                return True
-
-        return False
-
+        return request.user.is_authenticated and request.user.role == "community"
 
 
 # For creation
-class CanPostAnnouncement(BasePermission):
+class CanCreateCommunityContent(BasePermission):
+    message = "You do not have permission to create content for this community."
+
     def has_permission(self, request, view):
         user = request.user
-        if not user.is_authenticated:
+
+        if not user or not user.is_authenticated:
             return False
+
         if user.role == "community":
             return True
+
         membership = getattr(user, "membership", None)
-        if membership and membership.role in ["leader", "moderator"]:
+        if membership and membership.role == "representative":
             return True
+
         return False
 
-# For viewing
+
 class CanViewAnnouncement(BasePermission):
     def has_permission(self, request, view):
         return request.user.is_authenticated
