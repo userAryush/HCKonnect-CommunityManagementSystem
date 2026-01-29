@@ -6,12 +6,16 @@ from Base.models import BaseModel
 class CommunityMembership(BaseModel):
     MEMBER_ROLE = [("member", "Member"), ("representative", "Community Representative")]
     
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, limit_choices_to={"role": "student"}, related_name="memberships")
+    # Changed to OneToOneField to enforce single-community membership
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, limit_choices_to={"role": "student"}, 
+    related_name="membership" # Singular name makes more sense now
+    )
+    # Community remains a ForeignKey because one community has many members
     community = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, limit_choices_to={"role": "community"}, related_name="members")
     role = models.CharField(max_length=20, choices=MEMBER_ROLE, default="member")
     
     class Meta:
-        unique_together = ("user", "community")
+        verbose_name = "Community Membership"
 
     def __str__(self):
         return f"{self.user.username} ({self.role})"
@@ -51,8 +55,7 @@ class Announcement(BaseModel):
     image = models.ImageField(upload_to="announcements/", null=True, blank=True)
     VISIBILITY_CHOICES = [
         ("public", "Public"),
-        ("all_community", "All Community Only"),
-        ("private", "Private"),
+        ("private", "Private")
     ]
     visibility = models.CharField(max_length=20, choices=VISIBILITY_CHOICES, default="public")
 

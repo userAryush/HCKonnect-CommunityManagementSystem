@@ -54,17 +54,25 @@ class VacancyApplicationSerializer(ModelSerializer):
         user = self.context["request"].user
         vacancy = data.get("vacancy")
 
-        # Only students can apply
+        # 1. Only students can apply
         if user.role != "student":
             raise ValidationError("Only students can apply to vacancies.")
 
-        # Vacancy must be open
+        # 2. EXCLUSIVITY CHECK: Must not be in any community
+        # This checks if a membership record exists for this student
+        if CommunityMembership.objects.filter(user=user).exists():
+            raise ValidationError("You are already a member of a community and cannot apply to new vacancies.")
+
+        # 3. Vacancy must be open and not past deadline
         if not vacancy.is_open:
             raise ValidationError("This vacancy is no longer accepting applications.")
-
-        # Optional: check deadline
+            
         if vacancy.deadline and timezone.now() > vacancy.deadline:
             raise ValidationError("The application deadline has passed.")
+
+        # 4. Prevent double application to the same vacancy
+        if VacancyApplication.objects.filter(user=user, vacancy=vacancy).exists():
+            raise ValidationError("You have already applied for this vacancy.")
 
         return data
 
@@ -74,46 +82,61 @@ class VacancyApplicationSerializer(ModelSerializer):
 
 
 class CommunityMembershipCreateSerializer(ModelSerializer):
+    # restricting to users with 'student' role.
+    # 'source="user"' ensures that the primary key provided is mapped to the 'user' field in our model.
+    
     user_id = PrimaryKeyRelatedField(queryset=User.objects.filter(role="student"),source="user")
-    created_at = DateTimeField(read_only=True)
+    created_at = DateTimeField(read_only=True) # handled by model but we keep it read_only so api user cant change it
 
     class Meta:
         model = CommunityMembership
         fields = ["user_id", "role", "created_at"]
 
     def validate(self, data):
+        """
+        Custom validation logic to enforce the 'One Community per Student' rule and strict role-based access.
+        """
         request_user = self.context["request"].user
         user_to_add = data["user"]
         role = data.get("role", "member")
 
-        # 🔒 Only community accounts can add members
+        #                       ROLE HIERARCHY CHECK
+        # this is already hndled in permissions but also checking it here
+        # It ensures that only a user with the 'community' role can execute this serializer.
         if request_user.role != "community":
             raise ValidationError("Only community accounts can add members.")
 
-        # 🚫 Prevent duplicate membership in the same community
+        #                       DUPLICATE CHECK (Internal)
+        # Prevents the same community from adding the same student twice.
         if CommunityMembership.objects.filter(user=user_to_add, community=request_user).exists():
-            raise ValidationError("This student is already a member of this community.")
+            raise ValidationError("This student is already a member of your community.")
 
-        # 🌐 Prevent membership in multiple communities
+        #                        EXCLUSIVITY CHECK (System-wide)
+        #  A student cannot belong to Community A and Community B.
+        # If any membership record exists for this user, block the creation.
         if CommunityMembership.objects.filter(user=user_to_add).exists():
             raise ValidationError("This student already belongs to another community.")
-
-        # 🧱 Option A rule: one representative per user
-        if role == "representative":
-            if CommunityMembership.objects.filter(user=user_to_add,role="representative").exists():
-                raise ValidationError("A user can only be a representative of one community.")
 
         return data
 
     def create(self, validated_data):
+        """
+        The community account doesn't need to 'tell' the API which community to add the student to.
+        We automatically use the 'request_user' (the community itself) as the owner.
+        """
         request_user = self.context["request"].user
-
+        # This prevents a Community Account from requesting to add a user to a DIFFERENT community.
         return CommunityMembership.objects.create(community=request_user,**validated_data)
 
 
 class CommunityMemberListSerializer(ModelSerializer):
+    # 'source=pk' gives us the UUID of the membership record.
     id = UUIDField(source='pk', read_only=True)
+    # We provide the database integer ID as well, just in case the frontend needs it for simple indexing.
     membership_id = IntegerField(source="id", read_only=True)
+    #                              RELATIONAL MAPPING
+    # These fields 'reach into' the related User model to grab profile info.
+    # This saves the frontend from having to make two API calls (one for membership, one for user info).
     username = CharField(source="user.username", read_only=True)
     email = EmailField(source="user.email", read_only=True)
     profile_image = ImageField(source="user.profile_image", read_only=True)
@@ -124,6 +147,9 @@ class CommunityMemberListSerializer(ModelSerializer):
         fields = ["membership_id", "id", "username", "email", "profile_image", "role", "created_at", "join_date"]
 
     def get_join_date(self, obj):
+        """
+        Converts the complex 'created_at' timestamp into a simple YYYY-MM-DD format.
+        """
         return obj.created_at.strftime("%Y-%m-%d") if obj.created_at else None
 
 # list of communities
@@ -155,27 +181,23 @@ class AnnouncementCreateSerializer(ModelSerializer):
         fields = ["title", "description", "image", "visibility"]
 
     def create(self, validated_data):
-        request = self.context["request"]
-        user = request.user
+        user = self.context["request"].user
 
-        # Community account posting
         if user.role == "community":
             community = user
             created_by_user = None
-
-        # Student (member, moderator, leader) posting
         elif user.role == "student":
-            # Correctly fetch membership relations (Foreign Key related_name="memberships")
-            membership = user.memberships.first() 
-            if not membership:
-                raise ValidationError("User is not part of any community")
+            membership = getattr(user, 'membership', None)
+            # Ensure they are a member AND have the representative role
+            if not membership or membership.role != "representative":
+                raise ValidationError("Only community representatives can post announcements.")
+            
             community = membership.community
             created_by_user = user
-
         else:
-            raise ValidationError("You are not allowed to post announcements")
+            raise ValidationError("Unauthorized role.")
 
-        return Announcement.objects.create(community=community,created_by_user=created_by_user,**validated_data)
+        return Announcement.objects.create(community=community, created_by_user=created_by_user, **validated_data)
 
 class AnnouncementReadSerializer(ModelSerializer):
     community_name = CharField(source="community.community_name", read_only=True)

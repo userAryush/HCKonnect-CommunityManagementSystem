@@ -9,6 +9,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db.models import Q
 from .permissions import IsCommunityAccount
+from django.shortcuts import get_object_or_404
+
 User = get_user_model()
 
 
@@ -22,18 +24,25 @@ class CreateCommunityVacancyView(CreateAPIView):
     permission_classes = [IsAuthenticated, CanCreateCommunityContent]
 
 class ListCommunityVacanciesView(ListAPIView):
-    queryset = CommunityVacancy.objects.all()
     serializer_class = CommunityVacancySerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
-        if user.role == "community":
-            return CommunityVacancy.objects.filter(community=user)
-        elif user.role == "student":
+        # Allow filtering by a specific community via query param
+        community_id = self.request.query_params.get('community_id')
+        
+        if community_id:
+            return CommunityVacancy.objects.filter(community_id=community_id, is_open=True)
+            
+        # Default: Students see ALL open vacancies
+        if self.request.user.role == "student":
             return CommunityVacancy.objects.filter(is_open=True)
-        else:
-            return CommunityVacancy.objects.none()
+            
+        # Community accounts see their own (even closed ones)
+        if self.request.user.role == "community":
+            return CommunityVacancy.objects.filter(community=self.request.user)
+            
+        return CommunityVacancy.objects.none()
 
 # --------------------------
 # Vacancy Application Views
@@ -55,41 +64,65 @@ class ListVacancyApplicationsView(ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        # Only community users / representatives can view applications
+        vacancy_id = self.request.query_params.get('vacancy_id')
+        
+        # Determine which community's data to look at
         if user.role == "community":
-            return VacancyApplication.objects.filter(vacancy__community=user)
+            target_community = user
         elif user.memberships.filter(role="representative").exists():
-            community = user.memberships.get(role="representative").community
-            return VacancyApplication.objects.filter(vacancy__community=community)
+            target_community = user.memberships.get(role="representative").community
         else:
             return VacancyApplication.objects.none()
+
+        queryset = VacancyApplication.objects.filter(vacancy__community=target_community)
+
+        # If they asked for a specific vacancy, filter it down
+        if vacancy_id:
+            queryset = queryset.filter(vacancy_id=vacancy_id)
+            
+        return queryset
 
 
 # Member Management
 class ListCommunityMembersView(ListAPIView):
+    """
+    This view is dynamic: it serves both the Community Managers (to see their own) 
+    and the Students/Admins (to see specific communities).
+    """
     serializer_class = CommunityMemberListSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
-        if user.role == "community":
-            return CommunityMembership.objects.filter(community=user)
-        else:
-            return CommunityMembership.objects.none()
+        # Used for URLs like: /members/?community_id=5
+        # Or captured from the path if using: /<int:community_id>/members/
+        community_id = self.request.query_params.get('community_id') or self.kwargs.get('community_id')
+        
+        if community_id:
+            # PUBLIC VIEW: Anyone logged in can see members of a specific community 
+            # if they provide that community's ID.
+            # .select_related('user') here to join the Student profile data in ONE query.
+            return CommunityMembership.objects.filter(community_id=community_id).select_related('user')
+        
+        # If no specific ID is requested, we check if the logged-in user is a Community account.
+        if self.request.user.role == "community":
+            # If so, show them ONLY their own members.
+            return CommunityMembership.objects.filter(community=self.request.user).select_related('user')
+        
+        return CommunityMembership.objects.none()
+
 
 class AddCommunityMemberView(CreateAPIView):
     serializer_class = CommunityMembershipCreateSerializer
     permission_classes = [IsAuthenticated,IsCommunityAccount]
     
 class RemoveCommunityMemberView(APIView):
-    permission_classes = [IsAuthenticated,IsCommunityAccount]
+    permission_classes = [IsAuthenticated, IsCommunityAccount]
     
     def delete(self, request, membership_id):
-        try:
-            membership = CommunityMembership.objects.get(id=membership_id)
-        except CommunityMembership.DoesNotExist:
-            return Response({"error": "Membership not found"}, status=404)
-
+        # We don't just search by 'id=membership_id'. 
+        # We also filter by 'community=request.user'.
+        # This prevents Community A from deleting a member from Community B by guessing their ID.
+        membership = get_object_or_404(CommunityMembership, id=membership_id, community=request.user)
         membership.delete()
         return Response({"message": "Member removed."}, status=204)
 
@@ -138,25 +171,24 @@ class AnnouncementListView(ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        qs = Announcement.objects.all()
-
-        # Build Q objects for visibility
-        public_q = Q(visibility="public")
         
-        community_q = Q(pk__in=[])
-        all_members_q = Q(pk__in=[])
+        # 1. Start with the base: Public announcements for everyone
+        queryset = Announcement.objects.filter(visibility="public")
 
+        # 2. Add private announcements based on role
         if user.is_authenticated:
-            # 1. All Members visibility
-            if user.role == "community" or CommunityMembership.objects.filter(user=user).exists():
-                all_members_q = Q(visibility="all_members")
-            
-            # 2. My Community visibility
             if user.role == "community":
-                 community_q = Q(visibility="community", community=user)
+                # Add private posts belonging to THIS community
+                private_qs = Announcement.objects.filter(visibility="private", community=user)
+                queryset = queryset | private_qs
+            
             elif user.role == "student":
-                 my_community_ids = CommunityMembership.objects.filter(user=user).values_list('community_id', flat=True)
-                 community_q = Q(visibility="community", community_id__in=my_community_ids)
-        
-        return qs.filter(public_q | all_members_q | community_q).distinct()
+                # Add private posts from the student's specific community
+                membership = getattr(user, 'membership', None)
+                if membership:
+                    private_qs = Announcement.objects.filter(visibility="private", community=membership.community)
+                    queryset = queryset | private_qs
+
+        # 3. Use .distinct() to prevent duplicates if any overlap occurs
+        return queryset.distinct()
 

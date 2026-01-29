@@ -7,46 +7,13 @@ class EventSerializer(ModelSerializer):
 
     class Meta:
         model = Event
-        fields = [
-            "id",
-            "title",
-            "description",
-            "date",
-            "start_time",
-            "end_time",
-            "location",
-            "format",
-            "image",
-            "speakers",
-            "what_to_expect",
-            "community",
-            "community_name",
-            "community_logo",
-            "created_by",
-            "created_at",
-        ]
-        read_only_fields = [
-            "id",
-            "community",
-            "created_by",
-            "created_at",
-        ]
+        fields = ["id","title","description","date","start_time","end_time","location","format","image","speakers","what_to_expect","community","community_name","community_logo","created_by","created_at"]
+        read_only_fields = ["id","community","created_by","created_at"]
 
 class EventCreateSerializer(ModelSerializer):
     class Meta:
         model = Event
-        fields = [
-            "title",
-            "description",
-            "date",
-            "start_time",
-            "end_time",
-            "location",
-            "format",
-            "image",
-            "speakers",
-            "what_to_expect",
-        ]
+        fields = ["title","description","date","start_time","end_time","location","format","image","speakers","what_to_expect"]
 
     def create(self, validated_data):
         request = self.context["request"]
@@ -56,12 +23,8 @@ class EventCreateSerializer(ModelSerializer):
             community = user
             created_by = None
         else:
-            # member / moderator / leader
+
             community = user.membership.community
             created_by = user
 
-        return Event.objects.create(
-            community=community,
-            created_by=created_by,
-            **validated_data
-        )
+        return Event.objects.create(community=community,created_by=created_by,**validated_data)
