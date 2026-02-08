@@ -5,22 +5,26 @@ import logo from '../assets/logo.png'
 const studentLinks = [
   { label: 'Home', href: '/feed' },
   { label: 'Communities', href: '/communities' },
-  { label: 'Events', href: '#events' },
+  { label: 'Announcements', href: `/announcements` },
+  { label: 'Events', href: `/events` },
   { label: 'Discussions', href: '#discussions' },
   { label: 'Notifications', href: '#notifications' },
 ]
 
 const adminLinks = (communityId) => [
   { label: 'Dashboard', href: `/community/${communityId}/dashboard` },
-  { label: 'Members', href: `/community/${communityId}/manage/members` },
-  { label: 'Announcements', href: `/community/${communityId}/dashboard` }, // Placeholder
-  { label: 'Events', href: `/community/${communityId}/dashboard` }, // Placeholder
+  { label: 'Announcements', href: `/announcements?community_id=${communityId}` },
+  { label: 'Events', href: `/events?community_id=${communityId}` },
   { label: 'Discussions', href: `/community/${communityId}/manage/moderation` },
-  { label: 'Resources', href: `/community/${communityId}/manage/resources/upload` }, // Placeholder
-  { label: 'Analytics', href: `/community/${communityId}/dashboard` }, // Placeholder
+  { label: 'Feed', href: '/feed' },
+  { label: 'Notifications', href: '#notifications' },
+
 ]
 
+import { useAuth } from '../context/AuthContext'
+
 function Navbar({ menuOpen = false, toggleMenu = () => { }, closeMenu = () => { }, navSolid = false, rightActions = null }) {
+  const { user } = useAuth()
   const location = useLocation()
   const { id } = useParams() // Get community ID from URL if available
   const isLanding = location.pathname === '/'
@@ -32,7 +36,14 @@ function Navbar({ menuOpen = false, toggleMenu = () => { }, closeMenu = () => { 
   const solid = 'bg-[#0d1f14]/95 text-white shadow-xl'
 
   // Determine links based on route
-  const navLinks = isAdminRoute && id ? adminLinks(id) : studentLinks
+  let navLinks = studentLinks
+  // Prioritize user role if logged in
+  if (user?.role === 'community') {
+    navLinks = adminLinks(user.id)
+  } else if (isAdminRoute && id) {
+    // Fallback for non-logged in or other roles viewing admin routes (though they shouldn't be able to)
+    navLinks = adminLinks(id)
+  }
 
   return (
     <header className={`${baseStyles} ${navSolid ? solid : transparent}`}>

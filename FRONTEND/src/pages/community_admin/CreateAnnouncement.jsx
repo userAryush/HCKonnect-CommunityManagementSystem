@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
+import announcementService from '../../services/announcementService'
+import Toast from '../../components/others/Toast'
+import { Loader2 } from 'lucide-react'
 
 export default function CreateAnnouncement() {
   const { id } = useParams()
@@ -8,18 +11,45 @@ export default function CreateAnnouncement() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [error, setError] = useState('')
-  const [visibility, setVisibility] = useState('community')
+  const [visibility, setVisibility] = useState('private')
+  const [image, setImage] = useState(null)
+
+  const [loading, setLoading] = useState(false)
+  const [toast, setToast] = useState('')
 
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     if (!title || !description) {
-      setError('Please fill in all required fields.')
+      setToast('Please fill in all required fields.')
       return
     }
-    // Logic to save announcement
-    console.log('Publishing:', { title, description })
-    navigate(`/community/${id}/dashboard`)
+
+    setLoading(true)
+    try {
+      const formData = new FormData()
+      formData.append('title', title)
+      formData.append('description', description)
+      formData.append('visibility', visibility)
+      if (image) {
+        formData.append('image', image)
+      }
+
+      // Backend handles logic to associate with community/user
+      await announcementService.createAnnouncement(formData)
+
+      navigate(`/community/${id}/dashboard`, { state: { success: 'Announcement posted successfully!' } })
+    } catch (error) {
+      console.error("Failed to create announcement", error)
+      setToast('Failed to create announcement. ' + (error.response?.data?.detail || ''))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleImageChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setImage(e.target.files[0])
+    }
   }
 
   return (
@@ -30,6 +60,7 @@ export default function CreateAnnouncement() {
         closeMenu={() => setMenuOpen(false)}
         navSolid={true}
       />
+      <Toast message={toast} onClose={() => setToast('')} />
 
       <main className="pt-24 pb-16">
         <div className="mx-auto w-full max-w-3xl px-4">
@@ -39,7 +70,6 @@ export default function CreateAnnouncement() {
           </header>
 
           <div className="rounded-3xl border border-[#e5e7eb] bg-white p-8 shadow-sm">
-            {error && <div className="mb-4 rounded-xl bg-red-100 p-4 text-red-700">{error}</div>}
 
             <div className="space-y-6">
               <div>
@@ -66,35 +96,39 @@ export default function CreateAnnouncement() {
 
               <div>
                 <label className="mb-2 block text-sm font-bold">Image (Optional)</label>
-                <div className="flex h-32 w-full cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-[#e5e7eb] bg-[#f4f5f2] hover:bg-[#e5e7eb]">
-                  <span className="text-sm font-medium text-[#4b4b4b]">Click to upload image</span>
+                <div className="relative flex h-32 w-full cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-[#e5e7eb] bg-[#f4f5f2] hover:bg-[#e5e7eb]">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                  {image ? (
+                    <span className="text-sm font-semibold text-[#75C043]">{image.name}</span>
+                  ) : (
+                    <span className="text-sm font-medium text-[#4b4b4b]">Click to upload image</span>
+                  )}
                 </div>
               </div>
 
               <div>
                 <label className="mb-2 block text-sm font-bold">Visibility</label>
                 <div className="flex flex-col gap-3 sm:flex-row">
-                  <label className={`flex flex-1 cursor-pointer items-center gap-3 rounded-xl border p-4 transition ${visibility === 'community' ? 'border-[#75C043] bg-[#75C043]/10' : 'border-[#e5e7eb] bg-white hover:border-[#75C043]'}`}>
-                    <input type="radio" name="visibility" value="community" checked={visibility === 'community'} onChange={(e) => setVisibility(e.target.value)} className="h-5 w-5 accent-[#75C043]" />
+                  <label className={`flex flex-1 cursor-pointer items-center gap-3 rounded-xl border p-4 transition ${visibility === 'private' ? 'border-[#75C043] bg-[#75C043]/10' : 'border-[#e5e7eb] bg-white hover:border-[#75C043]'}`}>
+                    <input type="radio" name="visibility" value="private" checked={visibility === 'private'} onChange={(e) => setVisibility(e.target.value)} className="h-5 w-5 accent-[#75C043]" />
                     <div>
-                      <span className="block font-bold text-[#0d1f14]">This Community Only</span>
-                      <span className="text-xs text-[#4b4b4b]">Visible only to members</span>
+                      <span className="block font-bold text-[#0d1f14]">Private (Community Only)</span>
+                      <span className="text-xs text-[#4b4b4b]">Visible only to own members</span>
                     </div>
                   </label>
 
-                  <label className={`flex flex-1 cursor-pointer items-center gap-3 rounded-xl border p-4 transition ${visibility === 'all' ? 'border-[#75C043] bg-[#75C043]/10' : 'border-[#e5e7eb] bg-white hover:border-[#75C043]'}`}>
-                    <input type="radio" name="visibility" value="all" checked={visibility === 'all'} onChange={(e) => setVisibility(e.target.value)} className="h-5 w-5 accent-[#75C043]" />
-                    <div>
-                      <span className="block font-bold text-[#0d1f14]">All Communities</span>
-                      <span className="text-xs text-[#4b4b4b]">Push to everyone's feed</span>
-                    </div>
-                  </label>
+
 
                   <label className={`flex flex-1 cursor-pointer items-center gap-3 rounded-xl border p-4 transition ${visibility === 'public' ? 'border-[#75C043] bg-[#75C043]/10' : 'border-[#e5e7eb] bg-white hover:border-[#75C043]'}`}>
                     <input type="radio" name="visibility" value="public" checked={visibility === 'public'} onChange={(e) => setVisibility(e.target.value)} className="h-5 w-5 accent-[#75C043]" />
                     <div>
                       <span className="block font-bold text-[#0d1f14]">Public</span>
-                      <span className="text-xs text-[#4b4b4b]">Visible to guests</span>
+                      <span className="text-xs text-[#4b4b4b]">Visible to everyone</span>
                     </div>
                   </label>
                 </div>
@@ -103,18 +137,17 @@ export default function CreateAnnouncement() {
               <div className="flex items-center gap-4 pt-4">
                 <button
                   onClick={handlePublish}
-                  className="rounded-xl bg-[#75C043] px-8 py-3 text-sm font-bold text-[#0d1f14] transition hover:bg-[#68ae3b]"
+                  disabled={loading}
+                  className={`flex items-center gap-2 rounded-xl bg-[#75C043] px-8 py-3 text-sm font-bold text-[#0d1f14] transition hover:bg-[#68ae3b] ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
                 >
-                  Publish Announcement
+                  {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {loading ? 'Publishing...' : 'Publish Announcement'}
                 </button>
                 <button
                   onClick={() => navigate(`/community/${id}/dashboard`)}
                   className="rounded-xl border border-[#e5e7eb] bg-white px-8 py-3 text-sm font-bold text-[#0d1f14] transition hover:bg-[#f4f5f2]"
                 >
                   Cancel
-                </button>
-                <button className="ml-auto text-sm font-semibold text-[#4b4b4b] hover:text-[#0d1f14]">
-                  Save as Draft
                 </button>
               </div>
             </div>

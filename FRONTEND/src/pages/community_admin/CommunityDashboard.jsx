@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'  // <-- add this
+import axios from 'axios'
 import { Link, useParams } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
-
-
+import eventService from '../../services/eventService'
+import announcementService from '../../services/announcementService'
+import apiClient from '../../services/apiClient'
+import { FeedItemSkeleton } from '../../components/feed/FeedItem'
 
 export default function CommunityDashboard() {
 
@@ -13,45 +15,21 @@ export default function CommunityDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-
-
-
-
-  const stats = community ? [
-    { label: 'Total Members', value: community.member_count.toLocaleString(), change: '+12% this week', trend: 'up' },
-    { label: 'Announcements', value: '12', change: '+2 this week', trend: 'up' },
-    { label: 'Active Discussions', value: '8', change: '-1 this week', trend: 'down' },
-    { label: 'Upcoming Events', value: '3', change: 'Same as last week', trend: 'neutral' },
-  ] : []
-
+  const [dashboardEvents, setDashboardEvents] = useState([])
+  const [dashboardAnnouncements, setDashboardAnnouncements] = useState([])
+  const [stats, setStats] = useState(null)
 
   const quickActions = [
-    { label: 'Create Announcement', path: `/community/${id}/manage/announcements/create`, icon: '📢' },
-    { label: 'Create Event', path: `/community/${id}/manage/events/create`, icon: '📅' },
+    { label: 'View Events', path: `/community/${id}/manage/events`, icon: '🗓️' },
+    { label: 'View Announcements', path: `/community/${id}/manage/announcements`, icon: '📢' },
+    { label: 'Create Announcement', path: `/community/${id}/manage/announcements/create`, icon: '✍️' },
+    { label: 'Create Event', path: `/community/${id}/manage/events/create`, icon: '➕' },
     { label: 'Start Discussion', path: `/community/${id}/manage/discussions/create`, icon: '💬' },
     { label: 'Upload Resource', path: `/community/${id}/manage/resources/upload`, icon: '📂' },
     { label: 'Manage Members', path: `/community/${id}/manage/members`, icon: '👥' },
     { label: 'Moderate Discussions', path: `/community/${id}/manage/moderation`, icon: '🛡️' },
   ]
 
-  const recentActivity = [
-    { id: 1, type: 'registration', content: 'New member registration: Alice Johnson', time: '10 min ago' },
-    { id: 2, type: 'post', content: 'New post by Mike Ross: "Project help needed"', time: '45 min ago' },
-    { id: 3, type: 'discussion', content: 'New discussion started: "React vs Vue?"', time: '2 hours ago' },
-    { id: 4, type: 'event', content: 'Event "Intro to React" updated', time: '5 hours ago' },
-  ]
-
-  // Mock Data for Charts
-  const memberGrowthData = [450, 480, 520, 590, 650, 720]
-  const eventParticipationData = [
-    { name: 'Hackathon', value: 85 },
-    { name: 'Workshop', value: 60 },
-    { name: 'Meetup', value: 45 },
-    { name: 'Seminar', value: 90 },
-    { name: 'Social', value: 30 },
-  ]
-
-  const maxMemberCount = Math.max(...memberGrowthData)
   useEffect(() => {
     let mounted = true
     setLoading(true)
@@ -59,9 +37,29 @@ export default function CommunityDashboard() {
 
     const fetchCommunity = async () => {
       try {
-        const response = await axios.get(`http://127.0.0.1:8000/communities/dashboard/${id}/`)
+        const [communityRes, eventsData, announcementsData, eventStats, announcementStats] = await Promise.all([
+          apiClient.get(`/communities/dashboard/${id}/`),
+          eventService.getEvents(id), // Fetch events for this community (page 1)
+          announcementService.getAnnouncements(1, id), // Fetch announcements for this community (page 1)
+          eventService.getEventStats(id),
+          announcementService.getAnnouncementStats(id)
+        ]);
+
         if (!mounted) return
-        setCommunity(response.data)
+
+        setCommunity(communityRes.data)
+
+        // Handle paginated results
+        setDashboardEvents(eventsData.results || [])
+        setDashboardAnnouncements(announcementsData.results || [])
+
+        setStats({
+          members: communityRes.data.member_count,
+          announcements: announcementStats.total_announcements,
+          events: eventStats.total_events,
+          upcomingEvents: eventStats.upcoming_events
+        })
+
       } catch (err) {
         if (!mounted) return
         setError('Failed to load community data.')
@@ -76,10 +74,52 @@ export default function CommunityDashboard() {
     return () => { mounted = false }
   }, [id])
 
-  if (loading) return <div className="p-10 text-center">Loading community dashboard...</div>
+  // Combine for Recent Activity
+  const combinedActivity = [
+    ...dashboardAnnouncements.map(a => ({
+      id: `ann-${a.id}`,
+      type: 'announcement',
+      content: `Announcement: ${a.title}`,
+      time: new Date(a.created_at).toLocaleDateString()
+    })),
+    ...dashboardEvents.map(e => ({
+      id: `evt-${e.id}`,
+      type: 'event',
+      content: `Event: ${e.title}`,
+      time: e.created_at ? new Date(e.created_at).toLocaleDateString() : 'Revently'
+    }))
+  ].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 5)
+
+
+  if (loading) return (
+    <div className="min-h-screen bg-[#f4f5f2] pt-24 pb-16">
+      <div className="mx-auto w-full max-w-6xl px-4">
+        <div className="mb-8 flex items-center gap-4">
+          <div className="h-36 w-36 rounded-full bg-gray-200 animate-pulse"></div>
+          <div className="space-y-3">
+            <div className="h-10 w-64 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-6 w-40 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4 mb-10">
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-white rounded-3xl animate-pulse"></div>)}
+        </div>
+        <div className="space-y-6">
+          <FeedItemSkeleton />
+          <FeedItemSkeleton />
+        </div>
+      </div>
+    </div>
+  )
   if (error) return <div className="p-10 text-center text-red-600">{error}</div>
   if (!community) return null
 
+  const statCards = [
+    { label: 'Total Members', value: (stats?.members || 0).toLocaleString(), change: 'Latest', trend: 'neutral' },
+    { label: 'Announcements', value: (stats?.announcements || 0).toString(), change: 'Posted', trend: 'up' },
+    { label: 'Events', value: (stats?.events || 0).toString(), change: 'Planned', trend: 'up' },
+    { label: 'Upcoming Events', value: (stats?.upcomingEvents || 0).toString(), change: 'Future', trend: 'neutral' },
+  ]
 
   return (
     <div className="min-h-screen bg-[#f4f5f2] text-[#0d1f14]">
@@ -94,7 +134,7 @@ export default function CommunityDashboard() {
         <div className="mx-auto w-full max-w-6xl px-4">
           <header className="mb-8 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              {community.community_logo ? (
+              {community?.community_logo ? (
                 <div className="flex h-34 w-34 items-center justify-center rounded-full bg-white border-4 border-[#75C043] shadow-lg">
                   <img
                     src={community.community_logo}
@@ -104,35 +144,28 @@ export default function CommunityDashboard() {
                 </div>
               ) : (
                 <div className="flex h-36 w-36 items-center justify-center rounded-full bg-[#f4f5f2] text-4xl font-bold">
-                  {community.community_name.slice(0, 2).toUpperCase()}
+                  {(community?.community_name || 'CO').slice(0, 2).toUpperCase()}
                 </div>
               )}
 
-
-
-
-
-
               <div>
-                <h1 className="text-4xl font-extrabold">{community.community_name} Dashboard</h1>
+                <h1 className="text-4xl font-extrabold">{community?.community_name} Dashboard</h1>
                 <p className="mt-2 text-lg text-[#4b4b4b]">Manage your community</p>
               </div>
 
             </div>
-            <Link to="/community" className="text-sm font-semibold text-[#75C043] hover:underline">
+            <Link to={`/community/${id}`} className="text-sm font-semibold text-[#75C043] hover:underline">
               View Public Page
             </Link>
           </header>
 
           {/* Stats Grid */}
           <div className="mb-10 grid grid-cols-2 gap-4 md:grid-cols-4">
-            {stats.map((stat) => (
+            {statCards.map((stat) => (
               <div key={stat.label} className="rounded-3xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
                 <p className="text-3xl font-bold text-[#0d1f14]">{stat.value}</p>
                 <p className="text-sm font-medium text-[#4b4b4b]">{stat.label}</p>
-                <p className={`mt-2 text-xs font-semibold ${stat.trend === 'up' ? 'text-green-600' :
-                  stat.trend === 'down' ? 'text-red-500' : 'text-gray-500'
-                  }`}>
+                <p className="mt-2 text-xs font-semibold text-green-600">
                   {stat.change}
                 </p>
               </div>
@@ -143,39 +176,14 @@ export default function CommunityDashboard() {
           <div className="mb-10 grid grid-cols-1 gap-8 lg:grid-cols-2">
             {/* Member Growth Chart */}
             <div className="rounded-3xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
-              <h3 className="mb-6 text-lg font-bold">Member Growth (Last 6 Months)</h3>
-              <div className="flex h-48 items-end justify-between gap-2">
-                {memberGrowthData.map((value, idx) => (
-                  <div key={idx} className="flex w-full flex-col items-center gap-2">
-                    <div
-                      className="w-full rounded-t-lg bg-[#75C043] transition-all hover:opacity-80"
-                      style={{ height: `${(value / maxMemberCount) * 100}%` }}
-                    ></div>
-                    <span className="text-xs text-[#4b4b4b]">M{idx + 1}</span>
-                  </div>
-                ))}
-              </div>
+              <h3 className="mb-6 text-lg font-bold">Member Growth</h3>
+              <div className="flex h-48 items-center justify-center text-gray-400">Chart Placeholder</div>
             </div>
 
             {/* Event Participation Chart */}
             <div className="rounded-3xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
               <h3 className="mb-6 text-lg font-bold">Event Participation</h3>
-              <div className="space-y-4">
-                {eventParticipationData.map((item, idx) => (
-                  <div key={idx}>
-                    <div className="mb-1 flex justify-between text-xs font-semibold">
-                      <span>{item.name}</span>
-                      <span>{item.value}%</span>
-                    </div>
-                    <div className="h-2 w-full rounded-full bg-[#f4f5f2]">
-                      <div
-                        className="h-full rounded-full bg-[#0d1f14]"
-                        style={{ width: `${item.value}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <div className="flex h-48 items-center justify-center text-gray-400">Chart Placeholder</div>
             </div>
           </div>
 
@@ -202,16 +210,15 @@ export default function CommunityDashboard() {
               <h2 className="mb-6 text-xl font-bold">Recent Activity</h2>
               <div className="rounded-3xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
                 <div className="space-y-6">
-                  {recentActivity.map((activity) => (
+                  {combinedActivity.length > 0 ? combinedActivity.map((activity) => (
                     <div key={activity.id} className="relative pl-6 before:absolute before:left-0 before:top-2 before:h-2 before:w-2 before:rounded-full before:bg-[#75C043]">
                       <p className="text-sm font-medium text-[#0d1f14]">{activity.content}</p>
                       <p className="text-xs text-[#4b4b4b] mt-1">{activity.time}</p>
                     </div>
-                  ))}
+                  )) : (
+                    <p className="text-sm text-gray-500">No recent activity.</p>
+                  )}
                 </div>
-                <button className="mt-6 w-full rounded-xl border border-[#e5e7eb] py-3 text-sm font-bold transition hover:bg-[#f4f5f2]">
-                  View All Activity
-                </button>
               </div>
             </aside>
           </div>

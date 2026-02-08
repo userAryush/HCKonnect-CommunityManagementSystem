@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react'
 import Navbar from "../../components/Navbar";
 import EventCard from '../../components/cards/EventCard'
-import { feedItems } from '../../data/feedItems'
 import { useParams } from 'react-router-dom'
-import axios from 'axios'
+import apiClient from '../../services/apiClient'
 
 export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState('Overview')
@@ -22,10 +21,12 @@ export default function CommunityPage() {
   useEffect(() => {
     const fetchCommunity = async () => {
       try {
-        const res = await axios.get(`http://localhost:8000/communities/dashboard/${id}/`)
+        // Use apiClient to ensure auth tokens are attached
+        const res = await apiClient.get(`/communities/dashboard/${id}/`)
         setCommunityData(res.data)
       } catch (err) {
-        setError('Failed to load community')
+        console.error("Failed to load community", err)
+        setError('Failed to load community. You may not have access or need to login.')
 
       }
     }
@@ -42,8 +43,9 @@ export default function CommunityPage() {
   }
 
 
-  // Filter feed items for this community
-  const communityEvents = feedItems.filter(item => item.community.id === communityData.id && item.type === 'event')
+  // Use real data from backend, falling back to empty arrays
+  const communityEvents = communityData.events || []
+  const communityAnnouncements = communityData.announcements || []
 
   return (
     <div className="min-h-screen bg-[#f4f5f2] text-[#0d1f14]">

@@ -1,88 +1,89 @@
-const TYPES = ['announcement', 'event', 'discussion', 'resource', 'post']
-
-function randomItem(arr) {
-  return arr[Math.floor(Math.random() * arr.length)]
-}
-
-function makeId() {
-  return Math.random().toString(36).slice(2)
-}
-
-function makeCommunity() {
-  const names = ['Devcorps', 'Herald Bizcore', 'EthicalHCK', 'UIVisuals', 'IOT Innovators']
-  const name = randomItem(names)
-  return {
-    id: makeId(),
-    name,
-    logoText: name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase(),
-  }
-}
-
-function makeAuthor() {
-  const first = ['Maya', 'Ravi', 'Elena', 'Aarav', 'Sita', 'Kiran']
-  const last = ['I.', 'S.', 'V.', 'P.', 'T.', 'K.']
-  return `${randomItem(first)} ${randomItem(last)}`
-}
-
-function makeTitle(type) {
-  const map = {
-    announcement: 'Club Update',
-    event: 'Weekly Meetup',
-    discussion: 'Topic: AI in Campus',
-    resource: 'New Resources Added',
-    post: 'Highlights from last event',
-  }
-  return map[type]
-}
-
-function makeDescription(type) {
-  const base =
-    'Stay tuned for more details. Engage with your peers and make the most of campus life with HCKonnect.'
-  if (type === 'event') return 'Join us this Friday at 5 PM. Snacks provided. RSVP required.'
-  if (type === 'resource') return 'Slides and recordings have been uploaded. Check the resources section.'
-  if (type === 'discussion') return 'Share your thoughts and experiences. Constructive insights welcome.'
-  if (type === 'announcement') return 'Important notice for all members regarding upcoming schedules.'
-  return base
-}
-
-function makeItem(idx) {
-  const type = randomItem(TYPES)
-  const community = makeCommunity()
-  const now = Date.now()
-  const createdAt = new Date(now - idx * 60 * 60 * 1000 - Math.random() * 30 * 60 * 1000).toISOString()
-  return {
-    id: makeId(),
-    type, // announcement | event | discussion | resource | post
-    title: makeTitle(type),
-    description: makeDescription(type),
-    community,
-    author: makeAuthor(),
-    likes: Math.floor(Math.random() * 120),
-    comments: Math.floor(Math.random() * 20),
-    created_at: createdAt,
-  }
-}
-
-const PAGE_SIZE = 10
+import api from './api';
 
 export async function fetchFeed({ page = 1, filter = 'all', hiddenTypes = [], hiddenCommunities = [] } = {}) {
-  await new Promise((res) => setTimeout(res, 800))
 
-  const start = (page - 1) * PAGE_SIZE
-  const items = Array.from({ length: PAGE_SIZE }, (_, i) => makeItem(start + i))
+  const results = [];
 
-  let results = items.filter((it) => !hiddenTypes.includes(it.type))
-  if (hiddenCommunities.length) {
-    const set = new Set(hiddenCommunities)
-    results = results.filter((it) => !set.has(it.community.name))
+  // Fetch Announcements
+  if (filter === 'all' || filter === 'announcement') {
+    if (!hiddenTypes.includes('announcement')) {
+      try {
+        const res = await api.get('/communities/announcements/');
+        // Backend currently lacks pagination in views, so we fetch all and slice locally or assume limited set
+        // Ideally backend should support ?page=
+        const announcements = res.data.map(item => ({
+          id: `ann-${item.id}`,
+          type: 'announcement',
+          title: item.title,
+          description: item.description,
+          community: {
+            name: item.community_name,
+            logoText: item.community_name.slice(0, 2).toUpperCase(), // Backup if no logo
+            logo: item.community_logo
+          },
+          author: item.uploaded_by,
+          likes: 0, // Not implemented yet
+          comments: 0, // Not implemented yet
+          created_at: item.created_at,
+          image: item.image,
+          time_since_posted: item.time_since_posted
+        }));
+        results.push(...announcements);
+      } catch (e) {
+        console.error("Failed to fetch announcements", e);
+      }
+    }
   }
-  if (filter !== 'all') results = results.filter((it) => it.type === filter)
 
-  results.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+  // Fetch Events
+  if (filter === 'all' || filter === 'event') {
+    if (!hiddenTypes.includes('event')) {
+      try {
+        const res = await api.get('/communities/events/');
+        const events = res.data.map(item => ({
+          id: `evt-${item.id}`,
+          type: 'event',
+          title: item.title,
+          description: item.description,
+          community: {
+            name: item.community_name,
+            logoText: item.community_name.slice(0, 2).toUpperCase(),
+            logo: item.community_logo
+          },
+          author: item.created_by, // Might need name processing in serializer
+          likes: 0,
+          comments: 0,
+          created_at: item.date + 'T' + item.time, // Rough timestamp for sorting
+          image: item.image,
+          date: item.date,
+          time: item.time,
+          location: item.location,
+          format: item.format
+        }));
+        results.push(...events);
+      } catch (e) {
+        console.error("Failed to fetch events", e);
+      }
+    }
+  }
 
-  const nextPage = page < 5 ? page + 1 : null
-  return { results, nextPage }
+  // Client-side filtering for hiddenCommunities (if applicable)
+  let filteredResults = results;
+  if (hiddenCommunities.length) {
+    const set = new Set(hiddenCommunities);
+    filteredResults = results.filter(it => !set.has(it.community.name));
+  }
+
+  // Sort by date desc
+  filteredResults.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+  // Client-side pagination (mock behavior on existing list)
+  // Since real backend returns ALL by default (ListAPIView), we slice here?
+  // Or we just return all if pagination not strictly supported by backend yet.
+  // For now, let's just return all as 'results'
+
+  return { results: filteredResults, nextPage: null };
 }
 
-export const CONTENT_TYPES = ['all', ...TYPES]
+export const CONTENT_TYPES = ['all', 'announcement', 'event'];
 

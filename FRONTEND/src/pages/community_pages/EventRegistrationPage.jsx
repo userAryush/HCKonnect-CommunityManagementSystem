@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
-import { feedItems } from '../../data/feedItems'
 
 export default function EventRegistrationPage() {
   const { eventId } = useParams()
   const navigate = useNavigate()
   const [event, setEvent] = useState(null)
+  const [loading, setLoading] = useState(true)
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -16,16 +16,38 @@ export default function EventRegistrationPage() {
   })
 
   useEffect(() => {
-    const foundEvent = feedItems.find(item => item.id.toString() === eventId && item.type === 'event')
-    // Fallback if not found in feedItems, check upcomingEvents or just mock it
-    if (foundEvent) {
-      setEvent(foundEvent)
-    } else {
-        // Mock event if not found in static data
+    // Pre-fill user data if logged in
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      setFormData(prev => ({
+        ...prev,
+        fullName: user.name || '',
+        email: user.email || '',
+        studentId: user.student_id || ''
+      }));
+    }
+
+    const fetchEvent = async () => {
+      try {
+        const data = await import('../../services/eventService').then(m => m.default.getEvent(eventId));
         setEvent({
-            title: 'Sample Event',
-            eventMeta: { date: 'Oct 24, 2023', time: '10:00 AM' }
-        })
+          ...data,
+          eventMeta: {
+            date: data.date,
+            time: data.start_time,
+            location: data.location
+          }
+        });
+      } catch (error) {
+        console.error("Failed to fetch event", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (eventId) {
+      fetchEvent();
     }
   }, [eventId])
 
@@ -36,13 +58,14 @@ export default function EventRegistrationPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    // Mock submission logic
+    // Mock submission logic - strictly speaking we'd need a backend endpoint
     console.log('Registered for event:', eventId, formData)
-    // Redirect back to event details with a success flag or query param
-    navigate(`/events/${eventId}?registered=true`)
+    alert("Registration Successful!");
+    navigate(`/events/${eventId}`, { state: { success: 'Registered successfully!' } })
   }
 
-  if (!event) return <div className="p-10 text-center">Loading event...</div>
+  if (loading) return <div className="p-10 text-center">Loading event details...</div>
+  if (!event) return <div className="p-10 text-center">Event not found.</div>
 
   return (
     <div className="min-h-screen bg-[#f4f5f2] text-[#0d1f14]">
@@ -53,7 +76,8 @@ export default function EventRegistrationPage() {
           <div className="mb-8 border-b border-[#f4f5f2] pb-6">
             <h1 className="mb-2 text-2xl font-bold">Register for {event.title}</h1>
             <p className="text-sm text-[#4b4b4b]">
-              {event.eventMeta?.date} at {event.eventMeta?.time}
+              {event.eventMeta?.date} at {event.eventMeta?.time} <br />
+              <span className="font-semibold">{event.eventMeta?.location}</span>
             </p>
           </div>
 

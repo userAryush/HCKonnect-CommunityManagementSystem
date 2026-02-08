@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import apiClient from '../../services/apiClient' // Use your interseptor!
 
 export default function StudentSelect({ value, onChange }) {
   const [query, setQuery] = useState('')
@@ -8,59 +8,86 @@ export default function StudentSelect({ value, onChange }) {
   const [showDropdown, setShowDropdown] = useState(false)
 
   useEffect(() => {
-    if (!query) {
+    // If query is empty, hide dropdown and clear results
+    if (!query.trim()) {
       setResults([])
+      setShowDropdown(false)
       return
     }
 
     const fetchStudents = async () => {
       try {
         setLoading(true)
-        const res = await axios.get(`http://localhost:8000/communities/students/?search=${query}`)
+        // 1. Use apiClient to automatically attach the Bearer Token
+        // 2. Use the relative path defined in your Django urls
+        const res = await apiClient.get(`/communities/students/?search=${query}`)
         setResults(res.data)
+        setShowDropdown(true)
       } catch (err) {
-        console.error(err)
+        console.error("Search failed:", err)
+        setResults([])
       } finally {
         setLoading(false)
       }
     }
 
-    const debounce = setTimeout(fetchStudents, 300) // wait 300ms
+    const debounce = setTimeout(fetchStudents, 400)
     return () => clearTimeout(debounce)
   }, [query])
 
   const handleSelect = (student) => {
-    onChange(student.id)
-    setQuery(student.username || student.email)
-    setShowDropdown(false)
+    onChange(student.id);
+
+    // Create a nice display name for the input box
+    const fullName = student.first_name && student.last_name
+      ? `${student.first_name} ${student.last_name}`
+      : student.username;
+
+    setQuery(fullName);
+    setShowDropdown(false);
   }
 
   return (
-    <div className="relative">
-      <input
-        type="text"
-        placeholder="Search student..."
-        value={query}
-        onChange={(e) => {
-          setQuery(e.target.value)
-          setShowDropdown(true)
-        }}
-        className="w-full rounded-xl border border-[#e5e7eb] px-4 py-2 text-sm focus:border-[#75C043] outline-none"
-      />
-      {showDropdown && results.length > 0 && (
-        <ul className="absolute z-50 w-full max-h-60 overflow-y-auto rounded-xl border border-gray-300 bg-white shadow-lg">
-          {results.map((s) => (
-            <li
-              key={s.id}
-              onClick={() => handleSelect(s)}
-              className="cursor-pointer px-4 py-2 hover:bg-[#f0f0f0]"
-            >
-              {s.username || s.email}
+    <div className="relative w-full">
+      <div className="relative">
+        <input
+          type="text"
+          placeholder="Type name or email..."
+          value={query}
+          onFocus={() => query && setShowDropdown(true)}
+          onChange={(e) => {
+            setQuery(e.target.value)
+            if (e.target.value === '') onChange('') // Reset selection if cleared
+          }}
+          className="w-full rounded-2xl border-2 border-[#e5e7eb] px-4 py-3 text-base focus:border-[#75C043] outline-none transition-all pr-10"
+        />
+        {loading && (
+          <div className="absolute right-3 top-3.5">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#75C043] border-t-transparent"></div>
+          </div>
+        )}
+      </div>
+
+      {showDropdown && (
+        <ul className="absolute z-[60] mt-2 w-full max-h-64 overflow-y-auto rounded-2xl border border-gray-200 bg-white shadow-2xl py-2">
+          {results.length > 0 ? (
+            results.map((s) => (
+              <li
+                key={s.id}
+                onClick={() => handleSelect(s)}
+                className="flex flex-col cursor-pointer px-5 py-3 hover:bg-[#f4f5f2] transition-colors"
+              >
+                <span className="font-bold text-[#0d1f14]">{s.first_name} {s.last_name} | {s.username}</span>
+                <span className="text-xs text-gray-500">{s.email}</span>
+              </li>
+            ))
+          ) : !loading && query.length > 1 ? (
+            <li className="px-5 py-4 text-sm text-gray-500 text-center">
+              No students found matching "{query}"
             </li>
-          ))}
+          ) : null}
         </ul>
       )}
-      {loading && <div className="absolute top-full left-0 mt-1 text-sm text-gray-500">Loading…</div>}
     </div>
   )
 }

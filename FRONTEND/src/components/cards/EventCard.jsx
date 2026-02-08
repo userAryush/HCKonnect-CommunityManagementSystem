@@ -1,18 +1,27 @@
 import CommunityAvatar from '../shared/CommunityAvatar'
 import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 export default function EventCard({ item }) {
-  const { eventMeta, stats } = item
+  const navigate = useNavigate()
+  const { eventMeta, stats, id } = item
   const progress = stats?.registrations
     ? Math.round((stats.registrations.current / stats.registrations.capacity) * 100)
     : 0
+  const dateObj = new Date(eventMeta?.date || Date.now());
+  const month = dateObj.toLocaleString('default', { month: 'short' });
+  const day = dateObj.getDate();
+  const dateString = dateObj.toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' });
 
   return (
-    <article className="overflow-hidden rounded-3xl border border-[#e5e7eb] bg-white shadow-sm transition hover:shadow-md">
+    <div
+      onClick={() => navigate(`/events/${id}`)}
+      className="group relative flex h-[400px] cursor-pointer flex-col overflow-hidden rounded-3xl bg-white text-[#0d1f14] shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
+    >
       <div className="flex bg-[#0d1f14] p-5 text-white">
         <div className="flex-1">
           <div className="flex items-center gap-2 text-xs uppercase tracking-wider opacity-80">
-            <span>{eventMeta?.date}</span>
+            <span>{dateString}</span>
             <span>•</span>
             <span>{eventMeta?.time}</span>
           </div>
@@ -20,8 +29,8 @@ export default function EventCard({ item }) {
           <p className="mt-1 text-sm opacity-80">📍 {eventMeta?.location}</p>
         </div>
         <div className="flex flex-col items-center justify-center rounded-xl bg-white/10 px-3 py-1 backdrop-blur-sm">
-          <span className="text-2xl font-bold">{eventMeta?.date.split(' ')[1].replace(',', '')}</span>
-          <span className="text-xs uppercase">{eventMeta?.date.split(' ')[0]}</span>
+          <span className="text-2xl font-bold">{day}</span>
+          <span className="text-xs uppercase">{month}</span>
         </div>
       </div>
 
@@ -61,6 +70,6 @@ export default function EventCard({ item }) {
           </div>
         </div>
       </div>
-    </article>
+    </div>
   )
 }

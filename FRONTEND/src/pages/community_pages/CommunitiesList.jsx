@@ -1,10 +1,7 @@
 import { useEffect, useState } from 'react'
-import axios from 'axios'
+import apiClient from '../../services/apiClient'
 import Navbar from "../../components/Navbar";
-
 import { Link } from 'react-router-dom'
-
-const API_BASE_URL = 'http://localhost:8000'
 
 export default function CommunitiesList() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -18,15 +15,19 @@ export default function CommunitiesList() {
     let mounted = true
     setLoading(true)
     setError('')
-    axios
-      .get(`${API_BASE_URL}/communities/communities-list/`)
+
+    // Using apiClient instead of raw axios to ensure token is attached
+    apiClient
+      .get('/communities/communities-list/')
       .then((res) => {
         if (!mounted) return
         setCommunities(res.data || [])
       })
-      .catch(() => {
+      .catch((err) => {
         if (!mounted) return
-        setError('Failed to load communities.')
+        // Extract backend error message if available
+        const msg = err.response?.data?.detail || err.response?.data?.msg || 'Failed to load communities.'
+        setError(msg)
       })
       .finally(() => {
         if (!mounted) return
@@ -42,16 +43,18 @@ export default function CommunitiesList() {
     setError('')
     setSuccess('')
     try {
-      await axios.post(`${API_BASE_URL}/communities/memberships/apply/`, { community: communityId })
+      await apiClient.post('/communities/memberships/apply/', { community: communityId })
       setSuccess('Application sent successfully.')
-    } catch {
-      setError('Could not send application.')
+    } catch (err) {
+      // Extract backend error message
+      const msg = err.response?.data?.detail || err.response?.data?.msg || 'Could not send application.'
+      setError(msg)
     } finally {
       setApplyingId(null)
       setTimeout(() => {
         setSuccess('')
         setError('')
-      }, 2000)
+      }, 3000)
     }
   }
 

@@ -107,6 +107,8 @@ function Register() {
 
       const payload = {
         username: formData.username,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
         email: formData.email,
         course: formData.course,
         interests: formData.interests

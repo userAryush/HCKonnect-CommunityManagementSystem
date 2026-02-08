@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import axios from 'axios'
 import logo from '../../assets/logo.png'
 import ForgotPasswordWizard from '../../components/ForgotPasswordWizard'
 import { useNavigate, useLocation } from 'react-router-dom'
 import Toast from '../../components/others/Toast'
+import { useAuth } from '../../context/AuthContext'
 
 
 // pattern for email -> must start with np and must end with @heraldcollege.edu.np
@@ -23,6 +23,7 @@ function Login() {
     const navigate = useNavigate()
     const location = useLocation()
     const [toastMessage, setToastMessage] = useState(location.state?.successMessage || '')
+    const { login } = useAuth()
 
 
     const validate = () => {
@@ -32,7 +33,7 @@ function Login() {
         if (!email.trim()) {
             validationErrors.email = 'Email is required.';
         }
-        // else check if its heraldcollege email
+        // else check if its herald college email
         else {
             if (!collegeEmailRegex.test(email)) {
                 validationErrors.email = 'Use your @heraldcollege.edu.np email.';
@@ -64,34 +65,40 @@ function Login() {
         if (!validate()) return
 
         try {
-
             // shows loading state, disables button and showa signing in..
             setLoading(true)
 
-            // calls backend api, sends post req with email and pass, if cred are correct, no error
-            const response = await axios.post('http://127.0.0.1:8000/accounts/login/', {
-                email,
-                password,
-            })
-            localStorage.setItem('access_token', response.data.access)
-
-
+            // calls backend api, via authContext
+            const userData = await login(email, password)
+            console.log("Login successful, user data:", userData);
 
             //shows msg to user after successful logi
-
             setEmail('')
             setPassword('')
-            navigate('/feed', {
-                state: { success: 'Login successful!' }
-            })
 
+            // Role Based Redirects
+            const role = userData?.role;
+            console.log("Redirecting for role:", role);
 
+            if (role === 'admin') {
+                window.location.href = 'http://127.0.0.1:8000/admin/';
+            } else if (role === 'community') {
+                // The backend uses 'id' for UUID.
+                if (userData.id) {
+                    navigate(`/community/${userData.id}/dashboard`, { state: { success: 'Login successful!' } });
+                } else {
+                    console.error("Community user missing ID, redirecting to feed");
+                    navigate('/feed', { state: { success: 'Login successful!' } });
+                }
+            } else {
+                // Default to student/other -> feed
+                navigate('/feed', { state: { success: 'Login successful!' } });
+            }
 
-            // if anything fails it goes to catch block
         } catch (error) {
+            console.error("Login Error:", error);
             const backendErrors = error.response?.data || {}
             setApiErrors(backendErrors)
-
         } finally {
             // loading false cumpulsory even if its a error or success
             setLoading(false)

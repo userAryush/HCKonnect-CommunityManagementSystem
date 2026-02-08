@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import Toast from '../../components/others/Toast'
 
@@ -18,6 +18,12 @@ export default function Feed() {
   const location = useLocation()
   const [toast, setToast] = useState(location.state?.success || '')
 
+  useEffect(() => {
+    if (location.state?.success) {
+      window.history.replaceState({}, document.title)
+    }
+  }, [location.state])
+
 
 
 
@@ -32,7 +38,7 @@ export default function Feed() {
 
 
       <main className="pt-24 pb-16">
-      <Toast message={toast} onClose={() => setToast('')} />
+        <Toast message={toast} onClose={() => setToast('')} />
         <div className="mx-auto w-full max-w-7xl px-4">
           <header className="mb-8">
             <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[#75C043]">Common Feed</p>

@@ -1,27 +1,30 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 export default function ProfileDropdown() {
   const [isOpen, setIsOpen] = useState(false)
   const navigate = useNavigate()
+  const { user, logout } = useAuth()
 
   const handleLogout = () => {
-    // Implement logout logic here
+    logout()
     navigate('/')
   }
+
+  const displayName = user?.username || user?.email || 'User'
+  const initial = displayName.charAt(0).toUpperCase()
 
   return (
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-1 py-1.5 transition hover:bg-white/20 rounded-full"
+        className="flex items-center gap-2 pl-1 pr-3 py-1.5 transition hover:bg-white/10 rounded-full border border-white/20"
       >
-        <img
-          src="https://ui-avatars.com/api/?name=User&background=random"
-          alt="Profile"
-          className="h-8 w-8 rounded-full"
-        />
-        <span className="hidden text-sm font-medium text-white lg:block">User</span>
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#75C043] text-[#0d1f14] font-bold text-sm">
+          {initial}
+        </div>
+        <span className="hidden text-sm font-medium text-white lg:block max-w-[100px] truncate">{displayName}</span>
 
       </button>
 

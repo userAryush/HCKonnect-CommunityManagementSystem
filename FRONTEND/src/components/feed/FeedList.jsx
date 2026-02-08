@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
-import { feedItems } from '../../data/feedItems'
-
 import AnnouncementCard from '../cards/AnnouncementCard'
 import EventCard from '../cards/EventCard'
-
 import { FeedItemSkeleton } from './FeedItem'
+import eventService from '../../services/eventService'
+import announcementService from '../../services/announcementService'
 
 export default function FeedList({
   filter = 'all',
@@ -15,21 +14,73 @@ export default function FeedList({
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const filtered = feedItems
-        .filter((item) => {
+    const fetchData = async () => {
+      setLoading(true)
+      try {
+        const [eventsData, announcementsData] = await Promise.all([
+          eventService.getEvents().catch(err => { console.error("Events fetch error", err); return { results: [] }; }),
+          announcementService.getAnnouncements().catch(err => { console.error("Announcements fetch error", err); return { results: [] }; })
+        ]);
+
+        const events = eventsData.results || [];
+        const announcements = announcementsData.results || [];
+
+        const mappedEvents = Array.isArray(events) ? events.map(e => ({
+          ...e,
+          type: 'event',
+          id: e.id,
+          createdAt: e.created_at || new Date().toISOString(), // Fallback
+          // Adapter for EventCard
+          eventMeta: {
+            date: e.date,
+            time: e.start_time, // Using start_time as primary time
+            location: e.location
+          },
+          stats: {
+            registrations: { current: 0, capacity: 100 } // Mock stats if not provided
+          },
+          community: {
+            name: e.community_name || 'Community',
+            logoText: (e.community_name || 'CO').substring(0, 2).toUpperCase()
+          }
+        })) : [];
+
+        const mappedAnnouncements = Array.isArray(announcements) ? announcements.map(a => ({
+          ...a,
+          type: 'announcement',
+          id: a.id,
+          createdAt: a.created_at,
+          // Adapter for AnnouncementCard
+          community: {
+            name: a.community_name || 'Community',
+            logoText: (a.community_name || 'CO').substring(0, 2).toUpperCase()
+          },
+          author: {
+            name: a.uploaded_by || 'Admin'
+          }
+        })) : [];
+
+        const allItems = [...mappedEvents, ...mappedAnnouncements]
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        // Apply local filtering (if needed beyond backend filtering)
+        const finalFiltered = allItems.filter((item) => {
           if (hiddenTypes.includes(item.type)) return false
           if (hiddenCommunities.includes(item.community.name)) return false
           if (filter !== 'all' && item.type !== filter) return false
-          return item.type === 'announcement' || item.type === 'event'
+          return true
         })
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
-      setDisplayItems(filtered)
-      setLoading(false)
-    }, 500)
+        setDisplayItems(finalFiltered)
 
-    return () => clearTimeout(timer)
+      } catch (error) {
+        console.error("Failed to fetch feed", error);
+      } finally {
+        setLoading(false)
+      }
+    };
+
+    fetchData();
   }, [filter, hiddenTypes, hiddenCommunities])
 
   if (loading) {
@@ -52,19 +103,13 @@ export default function FeedList({
 
   return (
     <div className="flex flex-col gap-6">
-      {(() => {
-        const firstAnnouncement = displayItems.find(item => item.type === 'announcement')
-        const firstEvent = displayItems.find(item => item.type === 'event')
-        const limitedItems = [firstAnnouncement, firstEvent].filter(Boolean)
-        return limitedItems.map(item =>
-          item.type === 'announcement' ? (
-            <AnnouncementCard key={item.id} item={item} />
-          ) : (
-            <EventCard key={item.id} item={item} />
-          )
+      {displayItems.map(item =>
+        item.type === 'announcement' ? (
+          <AnnouncementCard key={`ann-${item.id}`} item={item} />
+        ) : (
+          <EventCard key={`evt-${item.id}`} item={item} />
         )
-      })()}
+      )}
     </div>
   )
-
 }
