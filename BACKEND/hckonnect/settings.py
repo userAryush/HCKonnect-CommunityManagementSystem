@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'communities',
     'events',
     'contents',
+    'discussion'
 ]
 
 MIDDLEWARE = [
