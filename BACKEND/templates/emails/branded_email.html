@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HCKonnect Notification</title>
+</head>
+
+<body
+    style="margin: 0; padding: 0; background-color: #f4f5f2; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+
+    <!-- Main Wrapper Table -->
+    <table border="0" cellpadding="0" cellspacing="0" width="100%"
+        style="margin: 0; padding: 20px; background-color: #f4f5f2;">
+        <tr>
+            <td align="center">
+                <!-- Content Container -->
+                <table border="0" cellpadding="0" cellspacing="0" width="600"
+                    style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td align="center" style="padding: 30px 40px; background-color: #75C043 !important; color: #ffffff !important;">
+                            <img src="https://res.cloudinary.com/dpsr2lmvn/image/upload/v1770347156/favicon_cre4pm.png"
+                                alt="HCKonnect Logo" width="60"
+                                style="display: block; margin-bottom: 10px; border-radius: 50%;">
+                           
+                            <h1 style="margin: 0; color: #ffffff !important; font-size: 24px; font-weight: 600;">
+                                HCKonnect</h1>
+                        </td>
+                    </tr>
+
+                    <!-- Body Content -->
+                    <tr>
+                        <td style="padding: 40px 40px; color: #333333; font-size: 16px; line-height: 1.6;">
+                            <p style="margin: 0 0 20px 0; font-weight: bold; font-size: 18px;">Hello {{name|default:"there" }},</p>
+
+                            <p style="margin: 0 0 20px 0;">
+                                {{ message|safe }}
+                            </p>
+
+                            {% if button_url %}
+                            <!-- CTA Button -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 30px 0;">
+                                <tr>
+                                    <td align="center">
+                                <a href="{{ button_url }}"
+                                style="display: inline-block; padding: 14px 30px; background-color: #75C043 !important; color: #ffffffff !important; text-decoration: none; font-weight: bold; border-radius: 50px; font-size: 16px;">
+                                {{ button_text|default:"View Details" }}
+                                </a>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
+                            <p style="margin: 20px 0 0 0; font-size: 14px; color: #666666;">
+                                Best regards,<br>
+                                The HCKonnect Team
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background-color: #f9f9f9; padding: 20px 40px; text-align: center; border-top: 1px solid #eeeeee;">
+                            <p style="margin: 0; color: #999999; font-size: 12px;"> &copy; {% now "Y" %} HCKonnect. All
+                                rights reserved.</p>
+                            <p style="margin: 10px 0 0 0; color: #999999; font-size: 12px;">
+                                You received this email because you are a member of the HCKonnect community.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+
+</body>
+
+</html>

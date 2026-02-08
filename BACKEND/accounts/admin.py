@@ -8,6 +8,7 @@ from django.conf import settings
 from django import forms
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 from django.core.exceptions import ValidationError
+from utils.email_utils import send_branded_email
 
 admin.site.register(User)
 admin.site.register(PasswordResetOTP)
@@ -75,33 +76,32 @@ class CommunityAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         return super().get_queryset(request).filter(role='community')
 
-    def get_form(self, request, obj=None, **kwargs):
+    def get_form(self, request, user=None, **kwargs):
         """
         Force CommunityCreationForm for ADD and CHANGE
         """
         defaults = kwargs
         defaults['form'] = CommunityCreationForm
-        return super().get_form(request, obj, **defaults)
+        return super().get_form(request, user, **defaults)
 
-    def save_model(self, request, obj, form, change):
-        super().save_model(request, obj, form, change)
+    def save_model(self, request, user, form, change):
+        super().save_model(request, user, form, change)
 
         auto_password = getattr(form, '_auto_password', None)
-        print("AUTO:", auto_password)
+
 
         if not change and auto_password:
-            send_mail(
-                subject="Your HCKonnect Community Account Password",
-                message=(
-                    f"Hello {obj.community_name},\n\n"
-                    f"Your community account has been created.\n"
-                    f"Your password is: {auto_password}\n"
-                    "Please change it after first login."
-                ),
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[obj.email],
-                fail_silently=False,
-            )
+                           
+            subject = "Your HCKonnect Community Account Password"
+            branding_context = {
+                "name": user.community_name,
+                "message": f"Welcome to HCKonnect! <br><br>Your community account has been successfully created. Here are your login credentials:<br><br><b>Password:</b> {auto_password}<br><br>Please log in and change your password immediately.",
+                "button_text": "Login to HCKonnect",
+                "button_url": "http://localhost:5173/login"
+            
+        }
+        send_branded_email(subject, user.email, branding_context)
+          
 
             
 # telling django admin to use CommunityAdmin to manage the CommunityUser

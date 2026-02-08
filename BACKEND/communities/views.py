@@ -21,11 +21,11 @@ User = get_user_model()
 class CreateCommunityVacancyView(CreateAPIView):
     queryset = CommunityVacancy.objects.all()
     serializer_class = CommunityVacancySerializer
-    permission_classes = [IsAuthenticated, CanCreateCommunityContent]
+    permission_classes = [CanCreateCommunityContent]
 
 class ListCommunityVacanciesView(ListAPIView):
     serializer_class = CommunityVacancySerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         # Allow filtering by a specific community via query param
@@ -50,7 +50,7 @@ class ListCommunityVacanciesView(ListAPIView):
 
 class ApplyVacancyView(CreateAPIView):
     serializer_class = VacancyApplicationSerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -60,7 +60,7 @@ class ApplyVacancyView(CreateAPIView):
 
 class ListVacancyApplicationsView(ListAPIView):
     serializer_class = VacancyApplicationSerializer
-    permission_classes = [IsAuthenticated, CanCreateCommunityContent]
+    permission_classes = [CanCreateCommunityContent]
 
     def get_queryset(self):
         user = self.request.user
@@ -90,7 +90,7 @@ class ListCommunityMembersView(ListAPIView):
     and the Students/Admins (to see specific communities).
     """
     serializer_class = CommunityMemberListSerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         # Used for URLs like: /members/?community_id=5
@@ -113,10 +113,32 @@ class ListCommunityMembersView(ListAPIView):
 
 class AddCommunityMemberView(CreateAPIView):
     serializer_class = CommunityMembershipCreateSerializer
-    permission_classes = [IsAuthenticated,IsCommunityAccount]
+    permission_classes = [IsCommunityAccount]
+    
+class UpdateCommunityMemberRoleView(APIView):
+    permission_classes = [IsCommunityAccount]
+
+    def patch(self, request, membership_id):
+        # We find the membership by ID AND ensure it belongs to the logged-in community
+        membership = get_object_or_404(
+            CommunityMembership, 
+            pk=membership_id, 
+            community=request.user
+        )
+        
+        new_role = request.data.get('role')
+        valid_roles = ['member', 'representative'] # Add other roles if you have them
+
+        if new_role not in valid_roles:
+            return Response({"error": "Invalid role specified."}, status=400)
+
+        membership.role = new_role
+        membership.save()
+        
+        return Response({"message": "Role updated successfully."}, status=200)
     
 class RemoveCommunityMemberView(APIView):
-    permission_classes = [IsAuthenticated, IsCommunityAccount]
+    permission_classes = [ IsCommunityAccount]
     
     def delete(self, request, membership_id):
         # We don't just search by 'id=membership_id'. 
@@ -126,10 +148,19 @@ class RemoveCommunityMemberView(APIView):
         membership.delete()
         return Response({"message": "Member removed."}, status=204)
 
+class StudentListView(ListAPIView):
+    serializer_class = StudentListSerializer
+    # permission_classes = [AllowAny]  
+
+    def get_queryset(self):
+        search = self.request.GET.get("search", "")
+        return User.objects.filter(role="student").filter(
+            Q(username__icontains=search) | Q(email__icontains=search)
+        ).order_by("username")[:20]  # limit 20 results
 
 class CommunityListView(ListAPIView):
     serializer_class = CommunityListSerializer
-    permission_classes =[AllowAny]
+    # permission_classes =[AllowAny]
 
     def get_queryset(self):
         return User.objects.filter(role="community",status="active").order_by("community_name")
@@ -140,7 +171,7 @@ class CommunityDashboardView(RetrieveAPIView):
     Only accessible to users with role='community'.
     """
     serializer_class = CommunityDashboardSerializer
-    permission_classes = [AllowAny]
+    # permission_classes = [AllowAny]
 
     def get_object(self):
         # Fetch community account by ID from URL
@@ -151,14 +182,5 @@ class CommunityDashboardView(RetrieveAPIView):
             raise NotFound("Community not found.")
         return user
 
-class StudentListView(ListAPIView):
-    serializer_class = StudentListSerializer
-    permission_classes = [AllowAny]  
-
-    def get_queryset(self):
-        search = self.request.GET.get("search", "")
-        return User.objects.filter(role="student").filter(
-            Q(username__icontains=search) | Q(email__icontains=search)
-        ).order_by("username")[:20]  # limit 20 results
 
 

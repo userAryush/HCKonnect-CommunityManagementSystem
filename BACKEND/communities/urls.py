@@ -1,5 +1,6 @@
 from django.urls import path
-from .views import CommunityListView, CreateCommunityVacancyView, ApplyVacancyView,AddCommunityMemberView, CommunityDashboardView,RemoveCommunityMemberView, StudentListView, ListCommunityMembersView, ListCommunityVacanciesView, ListVacancyApplicationsView
+from .views import CommunityListView, CreateCommunityVacancyView, ApplyVacancyView,AddCommunityMemberView, CommunityDashboardView,RemoveCommunityMemberView, StudentListView, ListCommunityMembersView, ListCommunityVacanciesView, ListVacancyApplicationsView, UpdateCommunityMemberRoleView
+
 
 
 
@@ -39,15 +40,18 @@ urlpatterns = [
 
     # Add a Member
     path('members/add/', AddCommunityMemberView.as_view(), name='member-add'),
+    
+    # Add this to your urlpatterns list
+    path('memberships/<uuid:membership_id>/change-role/', UpdateCommunityMemberRoleView.as_view(), name='member-role-update'),
 
     # Remove/Kick a Member
     # URL: /members/remove/15/
-    path('members/remove/<int:membership_id>/', RemoveCommunityMemberView.as_view(), name='member-remove'),
+    path('members/remove/<uuid:membership_id>/', RemoveCommunityMemberView.as_view(), name='member-remove'),
 
     # Allows students/admins to see who belongs to a specific community.
     # Logic: The view grabs 'community_id' from the URL path.
     # URL: /5/members/ (where 5 is the Community User ID)
-    path('<int:community_id>/members/', ListCommunityMembersView.as_view(), name='community-members'),
+    path('<uuid:community_id>/members/', ListCommunityMembersView.as_view(), name='community-members'),
     
     path("students/", StudentListView.as_view(), name="students-list")
 

@@ -138,13 +138,15 @@ class CommunityMemberListSerializer(ModelSerializer):
     # These fields 'reach into' the related User model to grab profile info.
     # This saves the frontend from having to make two API calls (one for membership, one for user info).
     username = CharField(source="user.username", read_only=True)
+    first_name = CharField(source="user.first_name", read_only=True)
+    last_name = CharField(source="user.last_name", read_only=True)
     email = EmailField(source="user.email", read_only=True)
     profile_image = ImageField(source="user.profile_image", read_only=True)
     join_date = SerializerMethodField()
 
     class Meta:
         model = CommunityMembership
-        fields = ["membership_id", "id", "username", "email", "profile_image", "role", "created_at", "join_date"]
+        fields = ["membership_id", "id", "username","first_name", "last_name",  "email", "profile_image", "role", "created_at", "join_date"]
 
     def get_join_date(self, obj):
         """
@@ -152,6 +154,10 @@ class CommunityMemberListSerializer(ModelSerializer):
         """
         return obj.created_at.strftime("%Y-%m-%d") if obj.created_at else None
 
+class StudentListSerializer(ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "username", "email", "first_name", "last_name"]
 # list of communities
 class CommunityListSerializer(ModelSerializer):
     member_count = IntegerField(source="members.count", read_only=True)
@@ -172,11 +178,3 @@ class CommunityDashboardSerializer(ModelSerializer):
     def get_is_community_owner(self, obj):
         return obj.role == "community"
 
-
-
-    
-
-class StudentListSerializer(ModelSerializer):
-    class Meta:
-        model = User
-        fields = ["id", "username", "email"]

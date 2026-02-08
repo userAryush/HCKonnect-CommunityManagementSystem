@@ -2,8 +2,7 @@
 from rest_framework.serializers import ModelSerializer, ValidationError, CharField, ImageField, SerializerMethodField
 from django.contrib.auth import get_user_model
 from .models import Announcement
-from datetime import timedelta
-from django.utils import timezone
+from django.utils.timesince import timesince
 User = get_user_model()
 
 # announcements serializers
@@ -14,13 +13,16 @@ class AnnouncementCreateSerializer(ModelSerializer):
         fields = ["title", "description", "image", "visibility"]
 
     def create(self, validated_data):
-        user = self.context["request"].user
+        user = self.context["request"].user # current user
 
+        # Posted by community
         if user.role == "community":
             community = user
-            created_by_user = None
+            created_by_user = None # because its community itself
+        
+        # Posted by representative
         elif user.role == "student":
-            membership = getattr(user, 'membership', None)
+            membership = getattr(user, 'membership', None) # checking if this user has membership
             # Ensure they are a member AND have the representative role
             if not membership or membership.role != "representative":
                 raise ValidationError("Only community representatives can post announcements.")
@@ -35,35 +37,25 @@ class AnnouncementCreateSerializer(ModelSerializer):
 class AnnouncementReadSerializer(ModelSerializer):
     community_name = CharField(source="community.community_name", read_only=True)
     community_logo = ImageField(source="community.community_logo", read_only=True)
-    uploaded_by = SerializerMethodField()
+    uploaded_by = SerializerMethodField() # serializermethodfield tells that value comes from custom method in this serializer
     time_since_posted = SerializerMethodField()
 
     class Meta:
         model = Announcement
-        fields = ["id","title","description","image","community_name","community_logo","uploaded_by","time_since_posted","time_since_posted","created_at","visibility"]
+        fields = ["id","community","title","description","image","community_name","community_logo","uploaded_by","time_since_posted","created_at","visibility"]
 
     def get_uploaded_by(self, obj):
         if obj.created_by_user:
-            role = getattr(obj.created_by_user.membership, "role", "Member")
-            return f"{obj.created_by_user.username} ({role})"
+            role = getattr(obj.created_by_user.membership, "role", "Member") # tries to get the role, if missing member default
+            return f"{obj.created_by_user.username} ({role})" # Aryush (representative)
         return "Community Admin"
 
 
     def get_time_since_posted(self, obj):
-        now = timezone.now()
-        diff = now - obj.created_at
+        return f"{timesince(obj.created_at)} ago"
 
-        if diff < timedelta(hours=1):
-            minutes = int(diff.total_seconds() / 60)
-            return f"{minutes} minutes ago"
-
-        if diff < timedelta(days=1):
-            hours = int(diff.total_seconds() / 3600)
-            return f"{hours} hours ago"
-
-        if diff < timedelta(days=7):
-            return f"{diff.days} days ago"
-
-        weeks = diff.days // 7
-        return f"{weeks} weeks ago"
-    
+# Separate update to avoid changing created_At and community data.    
+class AnnouncementUpdateSerializer(ModelSerializer):
+    class Meta:
+        model = Announcement
+        fields = ["title", "description", "image", "visibility"]

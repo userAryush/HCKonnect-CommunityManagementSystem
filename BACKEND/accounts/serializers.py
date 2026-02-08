@@ -1,14 +1,12 @@
 from .models import User, PasswordResetOTP
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.core.mail import send_mail
-from django.conf import settings
 from .utils import generate_auto_password, generate_otp
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from datetime import timedelta
 from rest_framework.serializers import ModelSerializer, ValidationError, Serializer, EmailField, CharField, ChoiceField
-
+from utils.email_utils import send_branded_email
 
 
 class RegisterSerializer(ModelSerializer):
@@ -21,7 +19,7 @@ class RegisterSerializer(ModelSerializer):
     class Meta:
         model = User
         # only these fields can be received from the frontend
-        fields = ['username', 'email', 'course','interests', 'linkedin_link', 'github_link','bio', 'profile_image']
+        fields = ['first_name', 'last_name', 'username', 'email', 'course','interests', 'linkedin_link', 'github_link','bio', 'profile_image']
 
     # validating if email belongs to herald college or not, validating existance
     def validate_email(self, value):
@@ -62,15 +60,19 @@ class RegisterSerializer(ModelSerializer):
 
         user.set_password(auto_password)#hashing the password
         user.save()#creating user obj, user is actually created
+        
+        
+        subject = "Welcome to HCKonnect - Your Account Details"
+        branding_context = {
+            "name": user.first_name,
+            "message": f"Welcome to HCKonnect! <br><br>Your account has been successfully created. Here are your login credentials:<br><br><b>Password:</b> {auto_password}<br><br>Please log in and change your password immediately.",
+            "button_text": "Login to HCKonnect",
+            "button_url": "http://localhost:5173/login"
+            
+        }
+        send_branded_email(subject, user.email, branding_context)
 
-        # Send password via email
-        subject = "Your Herald College Account Password"
-        message = f"Hello {user.username},\n\nYour account has been created.\nYour password is: {auto_password}\nPlease change it after first login."
-        from_email = settings.DEFAULT_FROM_EMAIL
-        recipient_list = [user.email]
-        send_mail(subject, message, from_email, recipient_list, fail_silently=False)
-
-        return user # returns user obj
+        return user 
 
 
 class LoginSerializer(Serializer):
@@ -156,23 +158,15 @@ class ForgotPasswordSerializer(Serializer):
             else "OTP for HCKonnect Password Reset"
         )
 
-        html_content = f"""
-        <html>
-        <body>
-            <p><b>Your OTP is <u>{otp}</u>.</b></p>
-            <p>It is valid for <b>2 minutes</b>.</p>
-        </body>
-        </html>
-        """
-
-        send_mail(
-            subject=subject,
-            message=f"Your OTP is {otp}. It is valid for 2 minutes.",  # plain text fallback
-            html_message=html_content,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
-            fail_silently=False
-        )
+        from utils.email_utils import send_branded_email
+        
+        branding_context = {
+            "name": user.first_name,
+            "message": f"You have requested to reset your password. Use the OTP below to proceed.<br><br><span style='font-size: 24px; font-weight: bold; letter-spacing: 2px; color: #0d1f14;'>{otp}</span><br><br>This OTP is valid for <b>2 minutes</b>.",
+            "button_text": "Verify OTP"
+        }
+        
+        send_branded_email(subject, user.email, branding_context)
 
         return {"message": "OTP sent successfully"}
 
