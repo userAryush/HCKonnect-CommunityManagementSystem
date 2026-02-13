@@ -26,7 +26,7 @@ urlpatterns = [
     path('communities/', include('communities.urls')),
     path('contents/', include('contents.urls')),
     path('events/', include('events.urls')),
-    path('discussion/', include('discussion.urls')),
+    path('discussions/', include('discussion.urls')),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

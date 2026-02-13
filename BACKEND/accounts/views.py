@@ -1,10 +1,10 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import RegisterSerializer, LoginSerializer, ForgotPasswordSerializer, VerifyOTPSerializer, ResetPasswordSerializer, UserProfileSerializer
+from .serializers import RegisterSerializer, LoginSerializer, ForgotPasswordSerializer, VerifyOTPSerializer, ResetPasswordSerializer, UserProfileSerializer, UserProfileDetailSerializer
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.generics import RetrieveUpdateAPIView
-
+from rest_framework.generics import RetrieveUpdateAPIView, RetrieveAPIView
+from .models import User
 
 
 """
@@ -83,3 +83,8 @@ class UserProfileView(RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+class UserProfileDetailView(RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserProfileDetailSerializer
+    permission_classes = [IsAuthenticated]

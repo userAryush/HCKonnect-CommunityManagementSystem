@@ -7,12 +7,6 @@ from django.core.exceptions import ValidationError
 User = settings.AUTH_USER_MODEL
 
 # for hashtags
-class Tag(models.Model): 
-    name = models.CharField(max_length=50, unique=True) 
-    
-    def __str__(self): 
-        return self.name
-
 class DiscussionPanel(BaseModel):
     VISIBILITY_CHOICES = [
         ("public", "Public"),
@@ -28,10 +22,12 @@ class DiscussionPanel(BaseModel):
         on_delete=models.CASCADE,null=True,blank=True,related_name="community_discussions", limit_choices_to={'role':'community'})
 
     visibility = models.CharField(max_length=20, choices=VISIBILITY_CHOICES, default="public")
-    tags = models.ManyToManyField(Tag, blank=True, related_name="discussions")
 
 
     is_pinned = models.BooleanField(default=False)
+    class Meta:
+        ordering = ["-created_at"]
+
 
 
     def __str__(self):
@@ -52,19 +48,14 @@ class DiscussionReply(BaseModel):
 
 
 class Reaction(BaseModel):
-    REACTION_CHOICES = [
-        ("like", "Like"),
-        ("dislike", "Dislike"),
-    ]
-
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    reaction_type = models.CharField(max_length=10, choices=REACTION_CHOICES)
-
     topic = models.ForeignKey(DiscussionPanel, null=True, blank=True, on_delete=models.CASCADE, related_name="reactions")
     reply = models.ForeignKey(DiscussionReply, null=True, blank=True, on_delete=models.CASCADE, related_name="reactions")
+    reaction_type = models.CharField(max_length=10, default="like")
 
     class Meta:
         unique_together = ("user", "topic", "reply")
+
         
     
 

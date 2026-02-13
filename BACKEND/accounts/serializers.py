@@ -7,6 +7,7 @@ from django.utils import timezone
 from datetime import timedelta
 from rest_framework.serializers import ModelSerializer, ValidationError, Serializer, EmailField, CharField, ChoiceField
 from utils.email_utils import send_branded_email
+from rest_framework import serializers
 
 
 class RegisterSerializer(ModelSerializer):
@@ -241,11 +242,120 @@ class ResetPasswordSerializer(Serializer):
         return user
 
 class UserProfileSerializer(ModelSerializer):
+    membership = serializers.SerializerMethodField()
+    
     class Meta:
         model = User
         fields = [
-            "id", "username", "email", "role", 
+            "id", "username", "first_name", "last_name", "email", "role", 
             "profile_image", "course", "interests",
-            "bio", "linkedin_link", "github_link", "university_id"
+            "bio", "linkedin_link", "github_link", "university_id", "membership"
         ]
         read_only_fields = ["id", "email", "role"]
+
+    def get_membership(self, obj):
+        if hasattr(obj, 'membership'):
+            membership = obj.membership
+            return {
+                "community_name": membership.community.community_name,
+                "community_logo": membership.community.community_logo.url if membership.community.community_logo else None,
+                "role": membership.role
+            }
+        return None
+
+class UserProfileDetailSerializer(ModelSerializer):
+    membership = serializers.SerializerMethodField()
+    posted_content = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = [
+            "id", "username", "first_name", "last_name", "role",
+            "profile_image", "course", "interests", "bio",
+            "linkedin_link", "github_link", "membership", "posted_content"
+        ]
+
+    def get_membership(self, obj):
+        if hasattr(obj, 'membership'):
+            membership = obj.membership
+            return {
+                "community_name": membership.community.community_name,
+                "community_logo": membership.community.community_logo.url if membership.community.community_logo else None,
+                "role": membership.role
+            }
+        return None
+
+    def get_posted_content(self, obj):
+        from contents.models import Announcement
+        from events.models import Event
+        from discussion.models import DiscussionPanel
+        
+        # We need to return data that matches what cards expect
+        content = []
+        
+        # Discussions
+        discussions = DiscussionPanel.objects.filter(created_by=obj).order_by('-created_at')
+        for d in discussions:
+            content.append({
+                "id": str(d.id),
+                "type": "discussion",
+                "topic": d.topic,
+                "content": d.content,
+                "created_at": d.created_at,
+                "created_by": str(d.created_by.id),
+                "created_by_name": d.created_by.username,
+                "visibility": d.visibility,
+                "reply_count": d.replies.count(),
+                "reaction_count": d.reactions.count(),
+                "community": {
+                    "id": str(d.community.id) if d.community else None,
+                    "name": d.community.community_name if d.community else "General"
+                } if d.community else None
+            })
+
+        # Announcements
+        announcements = Announcement.objects.filter(created_by_user=obj).order_by('-created_at')
+        for a in announcements:
+            content.append({
+                "id": str(a.id),
+                "type": "announcement",
+                "title": a.title,
+                "description": a.description,
+                "createdAt": a.created_at,
+                "visibility": a.visibility,
+                "community": {
+                    "id": str(a.community.id),
+                    "name": a.community.community_name
+                },
+                "author": {
+                    "id": str(a.created_by_user.id),
+                    "name": a.created_by_user.username
+                }
+            })
+
+        # Events
+        events = Event.objects.filter(created_by=obj).order_by('-date')
+        for e in events:
+            content.append({
+                "id": str(e.id),
+                "type": "event",
+                "title": e.title,
+                "description": e.description,
+                "eventMeta": {
+                    "date": e.date,
+                    "time": e.start_time,
+                    "location": e.location
+                },
+                "community": {
+                    "id": str(e.community.id),
+                    "name": e.community.community_name
+                },
+                "stats": {
+                    "registrations": {
+                        "current": 0, # Should ideally fetch actual counts
+                        "capacity": 100
+                    }
+                }
+            })
+            
+        return content
