@@ -7,7 +7,7 @@ const studentLinks = [
   { label: 'Communities', href: '/communities' },
   { label: 'Announcements', href: `/announcements` },
   { label: 'Events', href: `/events` },
-  { label: 'Discussions', href: '#discussions' },
+  { label: 'Discussions', href: '/discussions' },
   { label: 'Notifications', href: '#notifications' },
 ]
 
@@ -15,7 +15,7 @@ const adminLinks = (communityId) => [
   { label: 'Dashboard', href: `/community/${communityId}/dashboard` },
   { label: 'Announcements', href: `/announcements?community_id=${communityId}` },
   { label: 'Events', href: `/events?community_id=${communityId}` },
-  { label: 'Discussions', href: `/community/${communityId}/manage/moderation` },
+  { label: 'Discussions', href: `/discussions?community_id=${communityId}` },
   { label: 'Feed', href: '/feed' },
   { label: 'Notifications', href: '#notifications' },
 
@@ -47,7 +47,7 @@ function Navbar({ menuOpen = false, toggleMenu = () => { }, closeMenu = () => { 
 
   return (
     <header className={`${baseStyles} ${navSolid ? solid : transparent}`}>
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 lg:px-6">
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
         <Link
           to={isLanding ? '/' : '/feed'}
           onClick={closeMenu}

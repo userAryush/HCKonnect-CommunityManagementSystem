@@ -1,16 +1,7 @@
 import CommunityAvatar from '../shared/CommunityAvatar'
 import { Trash2 } from 'lucide-react'
+import { formatTimeAgo } from '../../utils/timeFormatter'
 import announcementService from '../../services/announcementService'
-
-function timeAgo(iso) {
-  const diff = Date.now() - new Date(iso).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 60) return `${mins}m ago`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  const days = Math.floor(hrs / 24)
-  return `${days}d ago`
-}
 
 export default function AnnouncementCard({ item, onDelete }) {
   // Determine if user can delete
@@ -54,10 +45,13 @@ export default function AnnouncementCard({ item, onDelete }) {
             <div>
               <p className="text-sm font-semibold text-[#0d1f14]">{item.community.name}</p>
               <p className="text-xs text-[#4b4b4b]">
-                {item.author.name} • {timeAgo(item.createdAt)}
+                {item.author.name} • {formatTimeAgo(item.createdAt)}
               </p>
             </div>
             <div className="flex items-center gap-2">
+              <span className="rounded-full bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
+                Announcement
+              </span>
               <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide border ${item.visibility === 'public'
                 ? 'bg-green-100 text-green-700 border-green-200'
                 : 'bg-gray-100 text-gray-600 border-gray-200'

@@ -1,6 +1,7 @@
 import CommunityAvatar from '../shared/CommunityAvatar'
 import { Link } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom'
+import { formatTimeAgo } from '../../utils/timeFormatter'
 
 export default function EventCard({ item }) {
   const navigate = useNavigate()
@@ -19,9 +20,14 @@ export default function EventCard({ item }) {
       className="group relative flex h-[400px] cursor-pointer flex-col overflow-hidden rounded-3xl bg-white text-[#0d1f14] shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
     >
       <div className="flex bg-[#0d1f14] p-5 text-white">
+        <div className="absolute top-4 right-20">
+          <span className="rounded-full bg-green-500/20 text-green-400 border border-green-500/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
+            Event
+          </span>
+        </div>
         <div className="flex-1">
           <div className="flex items-center gap-2 text-xs uppercase tracking-wider opacity-80">
-            <span>{dateString}</span>
+            <span>{formatTimeAgo(eventMeta?.date)}</span>
             <span>•</span>
             <span>{eventMeta?.time}</span>
           </div>

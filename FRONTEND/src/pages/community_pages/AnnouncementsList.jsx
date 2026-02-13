@@ -102,9 +102,9 @@ export default function AnnouncementsList() {
                         </div>
                     ) : (
                         <>
-                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 {announcements.map(item => (
-                                    <AnnouncementCard key={item.id} item={item} />
+                                    <AnnouncementCard key={item.id} item={item} className="w-full" />
                                 ))}
                             </div>
 

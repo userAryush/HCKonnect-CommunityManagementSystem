@@ -24,7 +24,7 @@ export default function CommunityDashboard() {
     { label: 'View Announcements', path: `/community/${id}/manage/announcements`, icon: '📢' },
     { label: 'Create Announcement', path: `/community/${id}/manage/announcements/create`, icon: '✍️' },
     { label: 'Create Event', path: `/community/${id}/manage/events/create`, icon: '➕' },
-    { label: 'Start Discussion', path: `/community/${id}/manage/discussions/create`, icon: '💬' },
+    { label: 'Start Discussion', path: `/discussions/create`, icon: '💬' },
     { label: 'Upload Resource', path: `/community/${id}/manage/resources/upload`, icon: '📂' },
     { label: 'Manage Members', path: `/community/${id}/manage/members`, icon: '👥' },
     { label: 'Moderate Discussions', path: `/community/${id}/manage/moderation`, icon: '🛡️' },

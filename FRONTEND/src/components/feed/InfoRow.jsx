@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import eventService from '../../services/eventService'
 import announcementService from '../../services/announcementService'
+import MiniProfileCard from './MiniProfileCard'
 
 export default function InfoRow() {
   const [events, setEvents] = useState([])
@@ -10,21 +11,26 @@ export default function InfoRow() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [eventsData, announcementsData] = await Promise.all([
+        const [eventsResponse, announcementsResponse] = await Promise.all([
           eventService.getEvents(),
           announcementService.getAnnouncements()
         ])
 
-        const upcoming = (Array.isArray(eventsData) ? eventsData : [])
+        // 1. Safe parsing for Events (checks for .results or direct array)
+        const rawEvents = eventsResponse?.results || (Array.isArray(eventsResponse) ? eventsResponse : [])
+        const upcoming = rawEvents
           .filter(e => new Date(e.date) >= new Date())
           .sort((a, b) => new Date(a.date) - new Date(b.date))
-          .slice(0, 2) // Limit to 2
+          .slice(0, 3) // Changed to 3
         setEvents(upcoming)
 
-        const recent = (Array.isArray(announcementsData) ? announcementsData : [])
+        // 2. Safe parsing for Announcements
+        const rawAnnouncements = announcementsResponse?.results || (Array.isArray(announcementsResponse) ? announcementsResponse : [])
+        const recent = rawAnnouncements
           .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-          .slice(0, 2) // Limit to 2
+          .slice(0, 3) // Changed to 3
         setAnnouncements(recent)
+
       } catch (err) {
         console.error("Failed to fetch info row data", err)
       }
@@ -33,71 +39,54 @@ export default function InfoRow() {
   }, [])
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-
-      {/* Clean Events Card */}
-      <div className="bg-white rounded-3xl p-5 border border-[#e5e7eb] shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-[#75C043]"></span>
-            <h3 className="text-sm font-bold text-[#0d1f14] uppercase tracking-wider">Upcoming Events</h3>
-          </div>
-          <Link to="/events" className="text-xs font-medium text-[#4b4b4b] hover:text-[#75C043]">See All</Link>
+    <div className="flex flex-col gap-10">
+      <MiniProfileCard />
+      {/* Upcoming Events Section */}
+      <section>
+        <div className="flex items-center justify-between mb-5 border-b border-gray-200/60 pb-2">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Upcoming Events</h3>
+          <Link to="/events" className="text-[10px] font-bold text-[#75C043] hover:underline">VIEW ALL</Link>
         </div>
-
-        <div className="space-y-3">
-          {events.length > 0 ? events.map((event) => {
-            const dateObj = new Date(event.date || Date.now());
-            return (
-              <Link to={`/events/${event.id}`} key={event.id} className="group block">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-sm font-semibold text-[#0d1f14] group-hover:text-[#75C043] transition-colors line-clamp-1">{event.title}</h4>
-                    <p className="text-xs text-[#4b4b4b]">
-                      {dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} • {event.start_time}
-                    </p>
-                  </div>
-                  <div className="h-6 w-6 flex items-center justify-center rounded-full border border-gray-100 bg-gray-50 text-gray-400 group-hover:bg-[#75C043] group-hover:text-white group-hover:border-[#75C043] transition-all">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
-                  </div>
+        <div className="space-y-5">
+          {events.length > 0 ? events.map(event => (
+            <Link to={`/events/${event.id}`} key={event.id} className="group block">
+              <div className="flex gap-4">
+                <div className="flex-shrink-0 w-12 h-12 bg-white rounded-2xl border border-gray-100 flex flex-col items-center justify-center shadow-sm group-hover:border-[#75C043] transition-all group-hover:shadow-md">
+                  <span className="text-[9px] font-bold text-gray-400 uppercase">{new Date(event.date).toLocaleString('default', { month: 'short' })}</span>
+                  <span className="text-base font-black text-[#0d1f14] leading-none">{new Date(event.date).getDate()}</span>
                 </div>
-              </Link>
-            )
-          }) : (
-            <p className="text-xs text-gray-400 italic">No upcoming events right now.</p>
+                <div className="overflow-hidden pt-1">
+                  <h4 className="text-sm font-bold text-[#0d1f14] line-clamp-1 group-hover:text-[#75C043] transition-colors">{event.title}</h4>
+                  <p className="text-xs text-gray-400 mt-0.5">{event.start_time}</p>
+                </div>
+              </div>
+            </Link>
+          )) : (
+            <p className="text-xs italic text-gray-400">No upcoming events.</p>
           )}
         </div>
-      </div>
+      </section>
 
-      {/* Clean Announcements Card */}
-      <div className="bg-white rounded-3xl p-5 border border-[#e5e7eb] shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-blue-500"></span>
-            <h3 className="text-sm font-bold text-[#0d1f14] uppercase tracking-wider">Recent Announcements</h3>
-          </div>
-          <Link to="/announcements" className="text-xs font-medium text-[#4b4b4b] hover:text-[#75C043]">See All</Link>
+      {/* Recent Announcements Section */}
+      <section>
+        <div className="flex items-center justify-between mb-5 border-b border-gray-200/60 pb-2">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Recent News</h3>
+          <Link to="/announcements" className="text-[10px] font-bold text-[#75C043] hover:underline">VIEW ALL</Link>
         </div>
-
         <div className="space-y-3">
-          {announcements.length > 0 ? announcements.map((ann) => (
-            <div key={ann.id} className="group cursor-pointer">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-sm font-semibold text-[#0d1f14] group-hover:text-[#75C043] transition-colors line-clamp-1">{ann.title}</h4>
-                  <p className="text-xs text-[#4b4b4b] line-clamp-1">{ann.community_name}</p>
-                </div>
-                <div className="text-[10px] bg-gray-100 text-gray-500 px-2 py-1 rounded-md">
-                  {new Date(ann.created_at).toLocaleDateString(undefined, { month: '2-digit', day: '2-digit' })}
-                </div>
+          {announcements.length > 0 ? announcements.map(ann => (
+            <div key={ann.id} className="group p-4 bg-white/40 rounded-2xl border border-transparent hover:border-gray-200/60 hover:bg-white hover:shadow-sm transition-all cursor-pointer">
+              <h4 className="text-sm font-bold text-[#0d1f14] line-clamp-1 group-hover:text-[#75C043]">{ann.title}</h4>
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className="w-1 h-1 rounded-full bg-[#75C043]"></span>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-tight">{ann.community_name}</p>
               </div>
             </div>
           )) : (
-            <p className="text-xs text-gray-400 italic">No new announcements.</p>
+            <p className="text-xs italic text-gray-400">No new announcements.</p>
           )}
         </div>
-      </div>
-
+      </section>
     </div>
   )
 }

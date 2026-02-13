@@ -1,76 +1,63 @@
 import { useState, useEffect } from 'react'
+import { useParams, Link } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import api from '../../services/api'
+import AnnouncementCard from '../../components/cards/AnnouncementCard'
+import DiscussionCard from '../../components/cards/DiscussionCard'
+import EventCard from '../../components/cards/EventCard'
+import { Edit2, Linkedin, Github, Globe, MapPin, Calendar, Award } from 'lucide-react'
 
 export default function Profile() {
-    const [formData, setFormData] = useState({
-        username: '',
-        email: '',
-        role: '',
-        course: '',
-        bio: '',
-        linkedin_link: '',
-        github_link: '',
-        interests: '',
-        university_id: ''
-    })
-
-    // We keep interests as string for editing, convert to array on save
+    const { id } = useParams()
+    const [profile, setProfile] = useState(null)
     const [loading, setLoading] = useState(true)
     const [menuOpen, setMenuOpen] = useState(false)
-    const [message, setMessage] = useState('')
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}')
+
+    // If no ID is provided, it's the current user's profile
+    const profileId = id || currentUser.id
+    const isOwnProfile = !id || String(id) === String(currentUser.id)
 
     useEffect(() => {
         fetchProfile()
-    }, [])
+    }, [id])
 
     const fetchProfile = async () => {
+        setLoading(true)
         try {
-            const res = await api.get('/accounts/profile/')
-            const data = res.data
-            setFormData({
-                username: data.username || '',
-                email: data.email || '',
-                role: data.role || '',
-                course: data.course || '',
-                bio: data.bio || '',
-                linkedin_link: data.linkedin_link || '',
-                github_link: data.github_link || '',
-                university_id: data.university_id || '',
-                interests: Array.isArray(data.interests) ? data.interests.join(', ') : (data.interests || '')
-            })
+            const res = await api.get(`/accounts/profile/${profileId}/`)
+            setProfile(res.data)
         } catch (error) {
             console.error("Failed to load profile", error)
+            // Fallback for current user if UUID endpoint is not fully ready or if accessing /profile
+            if (isOwnProfile) {
+                try {
+                    const fallback = await api.get('/accounts/profile/')
+                    setProfile(fallback.data)
+                } catch (e) {
+                    console.error("Fallback failed", e)
+                }
+            }
         } finally {
             setLoading(false)
         }
     }
 
-    const handleChange = (e) => {
-        const { name, value } = e.target
-        setFormData(prev => ({ ...prev, [name]: value }))
-    }
+    if (loading) return (
+        <div className="flex min-h-screen items-center justify-center bg-[#f4f5f2]">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#75C043] border-t-transparent" />
+        </div>
+    )
 
-    const handleSubmit = async (e) => {
-        e.preventDefault()
-        setMessage('')
-        try {
-            const payload = {
-                ...formData,
-                interests: formData.interests.split(',').map(s => s.trim()).filter(Boolean)
-            }
-            // Remove readonly fields from payload just in case, though backend ignores them usually if check read_only_fields
-            // But PUT/PATCH to a serializer with read_only_fields ignores them safely.
+    if (!profile) return (
+        <div className="flex min-h-screen flex-col items-center justify-center bg-[#f4f5f2] p-4 text-center">
+            <h2 className="text-2xl font-bold">Profile not found</h2>
+            <Link to="/feed" className="mt-4 text-[#75C043] hover:underline">Back to Feed</Link>
+        </div>
+    )
 
-            await api.patch('/accounts/profile/', payload)
-            setMessage('Profile updated successfully!')
-        } catch (error) {
-            console.error("Update failed", error)
-            setMessage('Failed to update profile.')
-        }
-    }
-
-    if (loading) return <div className="p-10">Loading...</div>
+    const displayName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.username;
+    const initial = (profile.username || 'U').charAt(0).toUpperCase();
 
     return (
         <div className="min-h-screen bg-[#f4f5f2] text-[#0d1f14]">
@@ -82,116 +69,112 @@ export default function Profile() {
             />
 
             <main className="pt-24 pb-16">
-                <div className="mx-auto w-full max-w-3xl px-4">
-                    <header className="mb-8">
-                        <h1 className="text-3xl font-bold">My Profile</h1>
-                        <p className="text-[#4b4b4b]">Manage your personal information</p>
-                    </header>
+                <div className="mx-auto w-full max-w-4xl px-4">
+                    {/* Header Card */}
+                    <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
+                        {/* Cover Image */}
+                        <div className="h-48 w-full bg-gradient-to-r from-[#75C043] to-[#0d1f14]" />
 
-                    <div className="rounded-3xl border border-[#e5e7eb] bg-white p-8 shadow-sm">
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            {/* Read Only Fields */}
-                            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                                <div>
-                                    <label className="mb-2 block text-sm font-bold text-gray-500">Username</label>
-                                    <input type="text" value={formData.username} readOnly className="w-full rounded-xl bg-gray-100 px-4 py-3 text-gray-500 outline-none" />
-                                </div>
-                                <div>
-                                    <label className="mb-2 block text-sm font-bold text-gray-500">Email</label>
-                                    <input type="text" value={formData.email} readOnly className="w-full rounded-xl bg-gray-100 px-4 py-3 text-gray-500 outline-none" />
-                                </div>
+                        <div className="relative px-8 pb-8">
+                            {/* Profile Image */}
+                            <div className="absolute -top-16 left-8">
+                                {profile.profile_image ? (
+                                    <img
+                                        src={profile.profile_image}
+                                        alt={displayName}
+                                        className="h-32 w-32 rounded-full border-4 border-white object-cover shadow-md"
+                                    />
+                                ) : (
+                                    <div className="flex h-32 w-32 items-center justify-center rounded-full border-4 border-white bg-[#75C043] text-4xl font-bold text-[#0d1f14] shadow-md">
+                                        {initial}
+                                    </div>
+                                )}
                             </div>
 
-                            {/* Editable Fields */}
-                            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                                <div>
-                                    <label className="mb-2 block text-sm font-bold">Course</label>
-                                    <select
-                                        name="course"
-                                        value={formData.course}
-                                        onChange={handleChange}
-                                        className="w-full rounded-xl border border-[#e5e7eb] bg-[#f4f5f2] px-4 py-3 outline-none focus:border-[#75C043]"
+                            {/* Actions */}
+                            <div className="flex justify-end pt-4">
+                                {isOwnProfile && (
+                                    <Link
+                                        to="/profile/edit"
+                                        className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-6 py-2 text-sm font-bold transition hover:bg-gray-50"
                                     >
-                                        <option value="">Select Course</option>
-                                        <option value="bcs">Bachelor of Computer Science</option>
-                                        <option value="bba">Bachelor of Business Administration</option>
-                                        <option value="bibm">Bachelor in International Business Management</option>
-                                        <option value="cybersecurity">Bachelor in Cyber Security</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="mb-2 block text-sm font-bold">University ID</label>
-                                    <input
-                                        type="text"
-                                        name="university_id"
-                                        value={formData.university_id}
-                                        onChange={handleChange}
-                                        className="w-full rounded-xl border border-[#e5e7eb] bg-[#f4f5f2] px-4 py-3 outline-none focus:border-[#75C043]"
-                                    />
-                                </div>
+                                        <Edit2 size={16} />
+                                        Edit Profile
+                                    </Link>
+                                )}
                             </div>
 
-                            <div>
-                                <label className="mb-2 block text-sm font-bold">Bio</label>
-                                <textarea
-                                    rows="3"
-                                    name="bio"
-                                    value={formData.bio}
-                                    onChange={handleChange}
-                                    className="w-full rounded-xl border border-[#e5e7eb] bg-[#f4f5f2] px-4 py-3 outline-none focus:border-[#75C043] resize-none"
-                                />
-                            </div>
+                            {/* Name and Info */}
+                            <div className="mt-6">
+                                <h1 className="text-3xl font-black tracking-tight">{displayName}</h1>
+                                <p className="text-gray-500 font-medium">@{profile.username}</p>
 
-                            <div>
-                                <label className="mb-2 block text-sm font-bold">Interests <span className="text-xs font-normal text-gray-500">(comma separated)</span></label>
-                                <input
-                                    type="text"
-                                    name="interests"
-                                    value={formData.interests}
-                                    onChange={handleChange}
-                                    placeholder="e.g. AI, Web Dev, Music"
-                                    className="w-full rounded-xl border border-[#e5e7eb] bg-[#f4f5f2] px-4 py-3 outline-none focus:border-[#75C043]"
-                                />
-                            </div>
+                                <div className="mt-4 flex flex-wrap items-center gap-6 text-sm text-gray-600">
+                                    {profile.membership ? (
+                                        <div className="flex items-center gap-2">
+                                            <Award size={18} className="text-[#a16207]" />
+                                            <span className="font-semibold text-gray-700">
+                                                {profile.membership.role === 'representative' ? 'Representative' : 'Member'} of {profile.membership.community_name}
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2">
+                                            <Award size={18} className="text-gray-400" />
+                                            <span>Student</span>
+                                        </div>
+                                    )}
 
-                            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                                <div>
-                                    <label className="mb-2 block text-sm font-bold">LinkedIn URL</label>
-                                    <input
-                                        type="url"
-                                        name="linkedin_link"
-                                        value={formData.linkedin_link}
-                                        onChange={handleChange}
-                                        className="w-full rounded-xl border border-[#e5e7eb] bg-[#f4f5f2] px-4 py-3 outline-none focus:border-[#75C043]"
-                                    />
+                                    {profile.course && (
+                                        <div className="flex items-center gap-2">
+                                            <Globe size={18} className="text-gray-400" />
+                                            <span>{profile.course.toUpperCase()}</span>
+                                        </div>
+                                    )}
                                 </div>
-                                <div>
-                                    <label className="mb-2 block text-sm font-bold">GitHub URL</label>
-                                    <input
-                                        type="url"
-                                        name="github_link"
-                                        value={formData.github_link}
-                                        onChange={handleChange}
-                                        className="w-full rounded-xl border border-[#e5e7eb] bg-[#f4f5f2] px-4 py-3 outline-none focus:border-[#75C043]"
-                                    />
+
+                                {profile.bio && (
+                                    <p className="mt-6 max-w-2xl text-base leading-relaxed text-gray-700">
+                                        {profile.bio}
+                                    </p>
+                                )}
+
+                                {/* Links */}
+                                <div className="mt-6 flex gap-4">
+                                    {profile.linkedin_link && (
+                                        <a href={profile.linkedin_link} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-600 transition">
+                                            <Linkedin size={20} />
+                                        </a>
+                                    )}
+                                    {profile.github_link && (
+                                        <a href={profile.github_link} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-900 transition">
+                                            <Github size={20} />
+                                        </a>
+                                    )}
                                 </div>
                             </div>
+                        </div>
+                    </div>
 
-                            {message && (
-                                <div className={`p-4 rounded-xl ${message.includes('success') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                    {message}
+                    {/* Content Section */}
+                    <div className="mt-10">
+                        <div className="mb-6 flex items-center justify-between border-b border-gray-200 pb-2">
+                            <h2 className="text-xl font-bold tracking-tight">Recent Activity</h2>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6">
+                            {(profile.posted_content && profile.posted_content.length > 0) ? (
+                                profile.posted_content.map((item, idx) => {
+                                    if (item.type === 'announcement') return <AnnouncementCard key={`ann-${item.id}`} item={item} />
+                                    if (item.type === 'discussion') return <DiscussionCard key={`disc-${item.id}`} item={item} />
+                                    if (item.type === 'event') return <EventCard key={`ev-${item.id}`} item={item} />
+                                    return null
+                                })
+                            ) : (
+                                <div className="rounded-3xl border-2 border-dashed border-gray-200 bg-white/50 p-12 text-center">
+                                    <p className="text-gray-500">No recent activity to show.</p>
                                 </div>
                             )}
-
-                            <div className="flex justify-end">
-                                <button
-                                    type="submit"
-                                    className="rounded-xl bg-[#75C043] px-8 py-3 text-sm font-bold text-[#0d1f14] transition hover:bg-[#68ae3b]"
-                                >
-                                    Save Changes
-                                </button>
-                            </div>
-                        </form>
+                        </div>
                     </div>
                 </div>
             </main>

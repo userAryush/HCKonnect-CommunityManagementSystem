@@ -28,7 +28,7 @@ export default function Feed() {
 
 
   return (
-    <div className={`${theme === 'dark' ? 'bg-[#0b1a11] text-white' : 'bg-[#f4f5f2] text-[#0d1f14]'} min-h-screen`}>
+    <div className={`${theme === 'dark' ? 'bg-[#0b1a11] text-white' : 'bg-[#f4f5f2] text-[#0d1f14]'} min-h-screen antialiased`}>
       <Navbar
         menuOpen={menuOpen}
         toggleMenu={() => setMenuOpen((v) => !v)}
@@ -36,26 +36,49 @@ export default function Feed() {
         navSolid={true}
       />
 
+      <main className="pt-28 pb-16">
+        {/* We use a grid that takes up 100% width but has controlled gutters */}
+        <div className="w-full px-4 md:px-8 lg:px-12">
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
 
-      <main className="pt-24 pb-16">
-        <Toast message={toast} onClose={() => setToast('')} />
-        <div className="mx-auto w-full max-w-7xl px-4">
-          <header className="mb-8">
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[#75C043]">Common Feed</p>
-            <h1 className="mt-2 text-3xl font-bold">All communities in one place</h1>
-          </header>
+            {/* 1. Left Spacer - Helps center the main feed relative to Navbar */}
+            <div className="hidden xl:block xl:col-span-1" />
 
-          <HeaderActionsRow />
-          <InfoRow />
+            {/* 2. Main Feed Column - Max-width 4xl to keep it readable and "Centered" */}
+            <div className="xl:col-span-7 max-w-4xl w-full mx-auto xl:mx-0">
+              <header className="mb-10">
+                <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#75C043] mb-2">Common Feed</p>
+                <h1 className="text-4xl font-black tracking-tight text-[#0d1f14]">All communities in one place</h1>
+              </header>
 
-          <div className="flex flex-col gap-6">
-            <FeedFilter value={filter} onChange={setFilter} />
-            <FeedList
-              key={`${filter}-${hiddenTypes.join(',')}-${hiddenCommunities.join(',')}`}
-              filter={filter}
-              hiddenTypes={hiddenTypes}
-              hiddenCommunities={hiddenCommunities}
-            />
+              <HeaderActionsRow />
+
+              <div className="mt-8 flex flex-col gap-6">
+                <div className="sticky top-24 z-20 pb-2">
+                  <FeedFilter value={filter} onChange={setFilter} />
+                </div>
+                <FeedList
+                  key={filter}
+                  filter={filter}
+                  hiddenTypes={hiddenTypes || []}
+                  hiddenCommunities={hiddenCommunities || []}
+                />
+              </div>
+            </div>
+
+            {/* 3. InfoRow Column - Pushed to the COMPLETE EDGE */}
+            <aside className="hidden xl:block xl:col-span-4 self-start sticky top-28">
+              {/* This inner div ensures it stays at the right side of its column */}
+              <div className="max-w-[300px] ml-[30px]">
+                <InfoRow />
+              </div>
+            </aside>
+
+            {/* Mobile InfoRow (only shows on small screens at the bottom) */}
+            <div className="xl:hidden mt-12">
+              <InfoRow />
+            </div>
+
           </div>
         </div>
       </main>

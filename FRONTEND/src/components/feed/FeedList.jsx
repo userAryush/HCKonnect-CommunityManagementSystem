@@ -4,6 +4,8 @@ import EventCard from '../cards/EventCard'
 import { FeedItemSkeleton } from './FeedItem'
 import eventService from '../../services/eventService'
 import announcementService from '../../services/announcementService'
+import discussionService from '../../services/discussionService'
+import DiscussionCard from '../cards/DiscussionCard'
 
 export default function FeedList({
   filter = 'all',
@@ -17,9 +19,10 @@ export default function FeedList({
     const fetchData = async () => {
       setLoading(true)
       try {
-        const [eventsData, announcementsData] = await Promise.all([
+        const [eventsData, announcementsData, discussionsData] = await Promise.all([
           eventService.getEvents().catch(err => { console.error("Events fetch error", err); return { results: [] }; }),
-          announcementService.getAnnouncements().catch(err => { console.error("Announcements fetch error", err); return { results: [] }; })
+          announcementService.getAnnouncements().catch(err => { console.error("Announcements fetch error", err); return { results: [] }; }),
+          discussionService.getDiscussions().catch(err => { console.error("Discussions fetch error", err); return { results: [] }; })
         ]);
 
         const events = eventsData.results || [];
@@ -60,7 +63,20 @@ export default function FeedList({
           }
         })) : [];
 
-        const allItems = [...mappedEvents, ...mappedAnnouncements]
+        const discussions = discussionsData.results || [];
+        const mappedDiscussions = Array.isArray(discussions) ? discussions.map(d => ({
+          ...d,
+          type: 'discussion',
+          id: d.id,
+          createdAt: d.created_at,
+          // Adapter if needed, but DiscussionCard expects 'item' which matches 'd'
+          community: {
+            name: d.community_name || 'Community', // discussions endpoint should provide this
+            logoText: (d.community_name || 'CO').substring(0, 2).toUpperCase()
+          },
+        })) : [];
+
+        const allItems = [...mappedEvents, ...mappedAnnouncements, ...mappedDiscussions]
           .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
         // Apply local filtering (if needed beyond backend filtering)
@@ -106,6 +122,8 @@ export default function FeedList({
       {displayItems.map(item =>
         item.type === 'announcement' ? (
           <AnnouncementCard key={`ann-${item.id}`} item={item} />
+        ) : item.type === 'discussion' ? (
+          <DiscussionCard key={`disc-${item.id}`} item={item} />
         ) : (
           <EventCard key={`evt-${item.id}`} item={item} />
         )
