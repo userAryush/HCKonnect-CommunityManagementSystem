@@ -5,11 +5,14 @@ import api from '../../services/api'
 import AnnouncementCard from '../../components/cards/AnnouncementCard'
 import DiscussionCard from '../../components/cards/DiscussionCard'
 import EventCard from '../../components/cards/EventCard'
+import PostCard from '../../components/cards/PostCard'
+import postService from '../../services/postService'
 import { Edit2, Linkedin, Github, Globe, MapPin, Calendar, Award } from 'lucide-react'
 
 export default function Profile() {
     const { id } = useParams()
     const [profile, setProfile] = useState(null)
+    const [posts, setPosts] = useState([])
     const [loading, setLoading] = useState(true)
     const [menuOpen, setMenuOpen] = useState(false)
     const currentUser = JSON.parse(localStorage.getItem('user') || '{}')
@@ -20,6 +23,7 @@ export default function Profile() {
 
     useEffect(() => {
         fetchProfile()
+        fetchUserPosts()
     }, [id])
 
     const fetchProfile = async () => {
@@ -43,6 +47,15 @@ export default function Profile() {
         }
     }
 
+    const fetchUserPosts = async () => {
+        try {
+            const data = await postService.getPosts(1, profileId);
+            setPosts(data.results || []);
+        } catch (error) {
+            console.error("Failed to fetch user posts", error);
+        }
+    };
+
     if (loading) return (
         <div className="flex min-h-screen items-center justify-center bg-[#f4f5f2]">
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#75C043] border-t-transparent" />
@@ -58,6 +71,12 @@ export default function Profile() {
 
     const displayName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.username;
     const initial = (profile.username || 'U').charAt(0).toUpperCase();
+
+    // Combine and sort activity
+    const activity = [
+        ...(profile.posted_content || []).map(item => ({ ...item, isLegacy: true })),
+        ...posts.map(post => ({ ...post, type: 'post' }))
+    ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
     return (
         <div className="min-h-screen bg-[#f4f5f2] text-[#0d1f14]">
@@ -162,11 +181,12 @@ export default function Profile() {
                         </div>
 
                         <div className="grid grid-cols-1 gap-6">
-                            {(profile.posted_content && profile.posted_content.length > 0) ? (
-                                profile.posted_content.map((item, idx) => {
+                            {(activity.length > 0) ? (
+                                activity.map((item, idx) => {
                                     if (item.type === 'announcement') return <AnnouncementCard key={`ann-${item.id}`} item={item} />
                                     if (item.type === 'discussion') return <DiscussionCard key={`disc-${item.id}`} item={item} />
                                     if (item.type === 'event') return <EventCard key={`ev-${item.id}`} item={item} />
+                                    if (item.type === 'post') return <PostCard key={`post-${item.id}`} post={item} onDelete={(id) => setPosts(prev => prev.filter(p => p.id !== id))} />
                                     return null
                                 })
                             ) : (

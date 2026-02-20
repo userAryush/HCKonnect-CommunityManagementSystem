@@ -1,7 +1,7 @@
 export const Skeleton = ({ className = '', variant = 'rect' }) => {
     const baseClasses = 'animate-pulse bg-gray-200/80 shimmer'
     const variants = {
-        rect: 'rounded-xlLine',
+        rect: 'rounded-xl',
         circle: 'rounded-full',
         text: 'rounded h-4 w-full',
         card: 'rounded-3xl h-64 w-full',

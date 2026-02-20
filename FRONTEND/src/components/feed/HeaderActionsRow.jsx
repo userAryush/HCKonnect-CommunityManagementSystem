@@ -9,7 +9,7 @@ export default function HeaderActionsRow() {
       label: 'Create Post',
       description: 'Share updates with your community',
       icon: <PenLine size={20} />,
-      onClick: () => console.log('Create Post'),
+      onClick: () => navigate('/posts?create=true'),
       color: 'text-[#75C043]',
       bg: 'bg-[#75C043]/5'
     },

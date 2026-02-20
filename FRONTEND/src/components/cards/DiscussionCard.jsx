@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { MessageSquare, ThumbsUp, Trash2 } from 'lucide-react';
 import discussionService from '../../services/discussionService';
 import CommunityAvatar from '../shared/CommunityAvatar';
+import ActionButtons from '../shared/ActionButtons';
 import { formatTimeAgo } from '../../utils/timeFormatter';
 
 export default function DiscussionCard({ item, onDelete }) {
@@ -104,35 +105,26 @@ export default function DiscussionCard({ item, onDelete }) {
                         {itemState.content}
                     </p>
 
-                    <div className="mt-4 flex items-center gap-6 border-t border-gray-100 pt-3">
-                        <div className="flex items-center gap-1.5 text-gray-500 text-sm font-semibold">
-                            <MessageSquare size={16} />
-                            <span>{itemState.reply_count || 0} Replies</span>
-                        </div>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                const wasLiked = itemState.user_has_liked;
-                                // Optimistic update
-                                setItemState(prev => ({
-                                    ...prev,
-                                    user_has_liked: !wasLiked,
-                                    reaction_count: wasLiked ? Math.max(0, (prev.reaction_count || 0) - 1) : (prev.reaction_count || 0) + 1
-                                }));
+                    <ActionButtons
+                        item={itemState}
+                        onReaction={() => {
+                            const wasLiked = itemState.user_has_liked;
+                            // Optimistic update
+                            setItemState(prev => ({
+                                ...prev,
+                                user_has_liked: !wasLiked,
+                                reaction_count: wasLiked ? Math.max(0, (prev.reaction_count || 0) - 1) : (prev.reaction_count || 0) + 1
+                            }));
 
-                                discussionService.toggleReaction({ topic: itemState.id })
-                                    .catch(err => {
-                                        console.error(err);
-                                        // Revert on error
-                                        setItemState(item);
-                                    });
-                            }}
-                            className={`flex items-center gap-1.5 text-sm transition z-10 font-bold ${itemState.user_has_liked ? 'text-green-600' : 'text-gray-500 hover:text-gray-700'}`}
-                        >
-                            <ThumbsUp size={16} className={itemState.user_has_liked ? 'text-green-600 fill-green-600' : ''} />
-                            <span>{itemState.reaction_count || 0} Likes</span>
-                        </button>
-                    </div>
+                            discussionService.toggleReaction({ topic: itemState.id })
+                                .catch(err => {
+                                    console.error(err);
+                                    // Revert on error
+                                    setItemState(item);
+                                });
+                        }}
+                        onCommentClick={handleCardClick}
+                    />
                 </div>
             </div>
         </article>

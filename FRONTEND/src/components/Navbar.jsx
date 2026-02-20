@@ -1,24 +1,22 @@
 import { useLocation, Link, useParams } from 'react-router-dom'
 import ProfileDropdown from './ProfileDropdown'
 import logo from '../assets/logo.png'
+import { Search } from 'lucide-react'
 
 const studentLinks = [
   { label: 'Home', href: '/feed' },
   { label: 'Communities', href: '/communities' },
-  { label: 'Announcements', href: `/announcements` },
-  { label: 'Events', href: `/events` },
   { label: 'Discussions', href: '/discussions' },
+  { label: 'Posts', href: '/posts' },
   { label: 'Notifications', href: '#notifications' },
 ]
 
 const adminLinks = (communityId) => [
   { label: 'Dashboard', href: `/community/${communityId}/dashboard` },
-  { label: 'Announcements', href: `/announcements?community_id=${communityId}` },
-  { label: 'Events', href: `/events?community_id=${communityId}` },
   { label: 'Discussions', href: `/discussions?community_id=${communityId}` },
+  { label: 'Posts', href: '/posts' },
   { label: 'Feed', href: '/feed' },
   { label: 'Notifications', href: '#notifications' },
-
 ]
 
 import { useAuth } from '../context/AuthContext'
@@ -67,6 +65,20 @@ function Navbar({ menuOpen = false, toggleMenu = () => { }, closeMenu = () => { 
             Herald Community Konnect
           </span>
         </Link>
+
+        {/* Global Search */}
+        {!isLanding && (
+          <div className="hidden flex-1 max-w-sm mx-8 lg:block">
+            <div className="relative group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 group-focus-within:text-[#75C043] transition-colors" size={18} />
+              <input
+                type="text"
+                placeholder="Search people or communities..."
+                className="w-full bg-white/5 border border-white/10 rounded-full py-2 pl-12 pr-4 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#75C043]/50 focus:bg-white/10 transition-all"
+              />
+            </div>
+          </div>
+        )}
 
 
         <nav className="hidden items-center gap-6 text-sm font-medium lg:flex">

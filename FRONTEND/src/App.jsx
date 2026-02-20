@@ -21,6 +21,8 @@ import AnnouncementsList from './pages/community_pages/AnnouncementsList'
 import DiscussionList from './pages/community_pages/DiscussionList'
 import CreateDiscussion from './pages/community_pages/CreateDiscussion'
 import DiscussionDetail from './pages/community_pages/DiscussionDetail'
+import PostList from './pages/community_pages/PostList'
+import PostDetail from './pages/community_pages/PostDetail'
 
 import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -51,6 +53,8 @@ function App() {
             <Route path="/discussions" element={<DiscussionList />} />
             <Route path="/discussions/create" element={<CreateDiscussion />} />
             <Route path="/discussions/:id" element={<DiscussionDetail />} />
+            <Route path="/posts" element={<PostList />} />
+            <Route path="/posts/:id" element={<PostDetail />} />
             <Route path="/events/:eventId/register" element={<EventRegistrationPage />} />
 
             {/* Admin / Management Routes */}

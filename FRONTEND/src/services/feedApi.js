@@ -85,5 +85,5 @@ export async function fetchFeed({ page = 1, filter = 'all', hiddenTypes = [], hi
   return { results: filteredResults, nextPage: null };
 }
 
-export const CONTENT_TYPES = ['all', 'announcement', 'event', 'discussion'];
+export const CONTENT_TYPES = ['all', 'announcement', 'event', 'discussion', 'post'];
 

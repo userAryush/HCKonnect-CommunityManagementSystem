@@ -5,7 +5,9 @@ import { FeedItemSkeleton } from './FeedItem'
 import eventService from '../../services/eventService'
 import announcementService from '../../services/announcementService'
 import discussionService from '../../services/discussionService'
+import postService from '../../services/postService'
 import DiscussionCard from '../cards/DiscussionCard'
+import PostCard from '../cards/PostCard'
 
 export default function FeedList({
   filter = 'all',
@@ -19,10 +21,11 @@ export default function FeedList({
     const fetchData = async () => {
       setLoading(true)
       try {
-        const [eventsData, announcementsData, discussionsData] = await Promise.all([
+        const [eventsData, announcementsData, discussionsData, postsData] = await Promise.all([
           eventService.getEvents().catch(err => { console.error("Events fetch error", err); return { results: [] }; }),
           announcementService.getAnnouncements().catch(err => { console.error("Announcements fetch error", err); return { results: [] }; }),
-          discussionService.getDiscussions().catch(err => { console.error("Discussions fetch error", err); return { results: [] }; })
+          discussionService.getDiscussions().catch(err => { console.error("Discussions fetch error", err); return { results: [] }; }),
+          postService.getPosts().catch(err => { console.error("Posts fetch error", err); return { results: [] }; })
         ]);
 
         const events = eventsData.results || [];
@@ -76,13 +79,24 @@ export default function FeedList({
           },
         })) : [];
 
-        const allItems = [...mappedEvents, ...mappedAnnouncements, ...mappedDiscussions]
+        const posts = postsData.results || [];
+        const mappedPosts = Array.isArray(posts) ? posts.map(p => ({
+          ...p,
+          type: 'post',
+          id: p.id,
+          createdAt: p.created_at,
+          author: {
+            name: p.author_name || 'User'
+          }
+        })) : [];
+
+        const allItems = [...mappedEvents, ...mappedAnnouncements, ...mappedDiscussions, ...mappedPosts]
           .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
         // Apply local filtering (if needed beyond backend filtering)
         const finalFiltered = allItems.filter((item) => {
           if (hiddenTypes.includes(item.type)) return false
-          if (hiddenCommunities.includes(item.community.name)) return false
+          if (item.community?.name && hiddenCommunities.includes(item.community.name)) return false
           if (filter !== 'all' && item.type !== filter) return false
           return true
         })
@@ -119,15 +133,12 @@ export default function FeedList({
 
   return (
     <div className="flex flex-col gap-6">
-      {displayItems.map(item =>
-        item.type === 'announcement' ? (
-          <AnnouncementCard key={`ann-${item.id}`} item={item} />
-        ) : item.type === 'discussion' ? (
-          <DiscussionCard key={`disc-${item.id}`} item={item} />
-        ) : (
-          <EventCard key={`evt-${item.id}`} item={item} />
-        )
-      )}
+      {displayItems.map(item => {
+        if (item.type === 'announcement') return <AnnouncementCard key={`ann-${item.id}`} item={item} />
+        if (item.type === 'discussion') return <DiscussionCard key={`disc-${item.id}`} item={item} />
+        if (item.type === 'post') return <PostCard key={`post-${item.id}`} post={item} />
+        return <EventCard key={`evt-${item.id}`} item={item} />
+      })}
     </div>
   )
 }
