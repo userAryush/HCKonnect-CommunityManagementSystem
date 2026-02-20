@@ -44,6 +44,22 @@ class CanEditContent(BasePermission):
         # Check creator ownership (if exists)
         if getattr(obj, "created_by_user", None) == user:
             return True
+        
+        # Check if admin
+        if user.role == "admin":
+            return True
 
         return False
 
+
+class IsPostOwnerOrAdmin(BasePermission):
+    """
+    Allows only the author of the post or an admin to edit/delete.
+    """
+    def has_object_permission(self, request, view, obj):
+        if not request.user.is_authenticated:
+            return False
+        
+        # Check if the object has 'author' (Post) or 'created_by' (Comment/Reaction)
+        owner = getattr(obj, 'author', getattr(obj, 'created_by', None))
+        return owner == request.user or request.user.role == "admin"

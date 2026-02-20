@@ -1,8 +1,10 @@
 
-from rest_framework.serializers import ModelSerializer, ValidationError, CharField, ImageField, SerializerMethodField
+from rest_framework.serializers import ModelSerializer, ValidationError, CharField, ImageField, SerializerMethodField, IntegerField
 from django.contrib.auth import get_user_model
-from .models import Announcement
+from .models import Announcement, Post, PostComment, PostReaction
 from django.utils.timesince import timesince
+ 
+
 User = get_user_model()
 
 # announcements serializers
@@ -59,3 +61,106 @@ class AnnouncementUpdateSerializer(ModelSerializer):
     class Meta:
         model = Announcement
         fields = ["title", "description", "image", "visibility"]
+
+
+
+
+
+class PostCommentReadSerializer(ModelSerializer):
+    time_ago = SerializerMethodField()
+    author_name = SerializerMethodField()
+    user_has_liked = SerializerMethodField()
+    replies = SerializerMethodField()
+
+    class Meta:
+        model = PostComment
+        fields = ["id", "post", "parent_comment", "content", "author", "author_name", "time_ago", "user_has_liked", "replies", "created_at"]
+
+    def get_replies(self, obj):
+        if obj.parent_comment is None: # Only one level of nesting
+            replies = PostComment.objects.filter(parent_comment=obj)
+            return PostCommentReadSerializer(replies, many=True, context=self.context).data
+        return []
+
+    def get_user_has_liked(self, obj):
+        user = self.context['request'].user
+        return PostReaction.objects.filter(user=user, comment=obj).exists() if user.is_authenticated else False
+
+    def get_author_name(self, obj):
+        user = obj.author
+        return f"{user.first_name} {user.last_name}".strip() or user.username
+
+    def get_time_ago(self, obj):
+        return timesince(obj.created_at) + " ago"
+    
+class PostReadSerializer(ModelSerializer):
+    comments = SerializerMethodField()
+    comment_count = IntegerField(source="comments.count", read_only=True)
+    reaction_count = IntegerField(source="reactions.count", read_only=True)
+    time_ago = SerializerMethodField()
+    user_has_liked = SerializerMethodField()
+    author_name = SerializerMethodField()
+
+    class Meta:
+        model = Post
+        fields = "__all__"
+
+    def get_author_name(self, obj):
+        user = obj.author
+        return f"{user.first_name} {user.last_name}".strip() or user.username
+
+    def get_user_has_liked(self, obj):
+        user = self.context['request'].user
+        return PostReaction.objects.filter(user=user, post=obj).exists() if user.is_authenticated else False
+
+    def get_comments(self, obj):
+        # Only return top-level comments (those without a parent)
+        comments = obj.comments.filter(parent_comment__isnull=True)
+        return PostCommentReadSerializer(comments, many=True, context=self.context).data
+
+    def get_time_ago(self, obj):
+        return timesince(obj.created_at) + " ago"
+
+class PostCreateUpdateSerializer(ModelSerializer):
+    class Meta:
+        model = Post
+        fields = ["id", "content", "image", "is_pinned"]
+
+    def create(self, validated_data):
+        validated_data["author"] = self.context["request"].user
+        return super().create(validated_data)
+    
+
+class PostCommentCreateSerializer(ModelSerializer):
+    """
+    FIXED: Changed 'topic' to 'post' and 'parent_reply' to 'parent_comment'
+    to match the PostComment model fields.
+    """
+    class Meta:
+        model = PostComment
+        fields = ["id", "post", "parent_comment", "content"]
+
+    def create(self, validated_data):
+        
+        validated_data["author"] = self.context["request"].user
+        return super().create(validated_data)
+
+
+class PostReactionSerializer(ModelSerializer):
+    class Meta:
+        model = PostReaction
+        fields = ["id", "post", "comment", "reaction_type"]
+
+    def create(self, validated_data):
+        user = self.context["request"].user
+        obj, created = PostReaction.objects.get_or_create(
+            user=user,
+            post=validated_data.get("post"),
+            comment=validated_data.get("comment"),
+        )
+        if not created:
+            obj.delete() # Toggle logic
+            return None
+        return obj
+    
+
