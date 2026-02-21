@@ -7,7 +7,10 @@ export default function CommentSection({
     onDeleteComment,
     onToggleReaction,
     currentUser,
-    submitting
+    submitting,
+    hasMore = false,
+    onLoadMore = null,
+    loadingMore = false
 }) {
     const [mainComment, setMainComment] = useState('');
     const [replyingTo, setReplyingTo] = useState(null);
@@ -164,9 +167,28 @@ export default function CommentSection({
             {/* List */}
             <div className="space-y-2">
                 {comments && comments.length > 0 ? (
-                    comments.map(comment => (
-                        <ReplyItem key={comment.id} reply={comment} />
-                    ))
+                    <>
+                        {comments.map(comment => (
+                            <ReplyItem key={comment.id} reply={comment} />
+                        ))}
+
+                        {hasMore && (
+                            <div className="flex justify-center mt-8 pb-4">
+                                <button
+                                    onClick={onLoadMore}
+                                    disabled={loadingMore}
+                                    className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-white border border-gray-200 text-sm font-bold text-green-600 hover:bg-gray-50 transition shadow-sm disabled:opacity-50"
+                                >
+                                    {loadingMore ? (
+                                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-green-600 border-t-transparent" />
+                                    ) : (
+                                        <ChevronDown size={16} />
+                                    )}
+                                    View more comments
+                                </button>
+                            </div>
+                        )}
+                    </>
                 ) : (
                     <div className="text-center py-20 bg-gray-50/50 rounded-3xl border-2 border-dashed border-gray-200">
                         <p className="text-gray-500 font-bold">No comments yet. Start the conversation!</p>

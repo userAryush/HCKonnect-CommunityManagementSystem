@@ -13,6 +13,10 @@ export default function PostDetail() {
     const [post, setPost] = useState(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [comments, setComments] = useState([]);
+    const [commentPage, setCommentPage] = useState(1);
+    const [hasMoreComments, setHasMoreComments] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
     const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
 
     useEffect(() => {
@@ -24,6 +28,10 @@ export default function PostDetail() {
         try {
             const data = await postService.getPost(id);
             setPost(data);
+            setComments(data.comments || []);
+            setCommentPage(1);
+            // If we got exactly 10 comments, there might be more (backend limit is 10)
+            setHasMoreComments(data.comments?.length === 10);
         } catch (error) {
             console.error("Failed to fetch post", error);
             if (error.response?.status === 404) {
@@ -34,14 +42,30 @@ export default function PostDetail() {
         }
     };
 
+    const loadMoreComments = async () => {
+        if (loadingMore || !hasMoreComments) return;
+        setLoadingMore(true);
+        try {
+            const nextPage = commentPage + 1;
+            const data = await postService.getComments(id, nextPage);
+            setComments(prev => [...prev, ...data.results]);
+            setCommentPage(nextPage);
+            setHasMoreComments(!!data.next);
+        } catch (error) {
+            console.error("Failed to load more comments", error);
+        } finally {
+            setLoadingMore(false);
+        }
+    };
+
     const handleReaction = async (commentId = null) => {
         try {
             const payload = commentId ? { comment: commentId } : { post: id };
 
             // Optimistic update
             if (commentId) {
-                setPost(prev => {
-                    const updateRefs = (comments) => comments.map(c => {
+                setComments(prev => {
+                    const updateRefs = (commentsList) => commentsList.map(c => {
                         if (c.id === commentId) {
                             return {
                                 ...c,
@@ -54,7 +78,7 @@ export default function PostDetail() {
                         }
                         return c;
                     });
-                    return { ...prev, comments: updateRefs(prev.comments) };
+                    return updateRefs(prev);
                 });
             } else {
                 setPost(prev => ({
@@ -182,12 +206,15 @@ export default function PostDetail() {
                 </article>
 
                 <CommentSection
-                    comments={post.comments}
+                    comments={comments}
                     onPostComment={handlePostComment}
                     onDeleteComment={handleDeleteComment}
                     onToggleReaction={handleReaction}
                     currentUser={currentUser}
                     submitting={submitting}
+                    hasMore={hasMoreComments}
+                    onLoadMore={loadMoreComments}
+                    loadingMore={loadingMore}
                 />
             </main>
         </div>

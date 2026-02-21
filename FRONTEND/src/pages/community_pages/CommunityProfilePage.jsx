@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react'
 import Navbar from "../../components/Navbar";
 import EventCard from '../../components/cards/EventCard'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import apiClient from '../../services/apiClient'
+import ResourceList from './ResourceList';
 
 export default function CommunityPage() {
-  const [activeTab, setActiveTab] = useState('Overview')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const { id } = useParams()
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'Overview')
   const [menuOpen, setMenuOpen] = useState(false)
   const [membershipStatus, setMembershipStatus] = useState('none') // none, pending, joined
-  const { id } = useParams()
   const [communityData, setCommunityData] = useState(null)
   const [error, setError] = useState('')
   const tabs = ['Overview', 'Events', 'Discussions', 'Resources', 'Members']
@@ -32,6 +34,13 @@ export default function CommunityPage() {
     }
     fetchCommunity()
   }, [id])
+
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab && tabs.includes(tab)) {
+      setActiveTab(tab)
+    }
+  }, [searchParams])
 
   if (!communityData) {
     return <div className="pt-24 text-center">Loading community…</div>
@@ -207,7 +216,14 @@ export default function CommunityPage() {
             </div>
           )}
 
-          {activeTab !== 'Overview' && (
+          {activeTab === 'Resources' && (
+            <ResourceList
+              communityId={id}
+              initialUploadOpen={searchParams.get('action') === 'upload'}
+            />
+          )}
+
+          {activeTab !== 'Overview' && activeTab !== 'Resources' && (
             <div className="rounded-3xl border border-[#e5e7eb] bg-white p-10 text-center">
               <p className="text-[#4b4b4b]">Content for {activeTab} tab goes here.</p>
             </div>

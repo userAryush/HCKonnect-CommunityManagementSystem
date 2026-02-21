@@ -13,6 +13,10 @@ export default function DiscussionDetail() {
     const [discussion, setDiscussion] = useState(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [replies, setReplies] = useState([]);
+    const [replyPage, setReplyPage] = useState(1);
+    const [hasMoreReplies, setHasMoreReplies] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [sortOrder, setSortOrder] = useState('newest'); // 'newest' or 'oldest'
     const [replyingTo, setReplyingTo] = useState(null); // ID of reply we are replying to
 
@@ -27,10 +31,30 @@ export default function DiscussionDetail() {
         try {
             const data = await discussionService.getDiscussion(id);
             setDiscussion(data);
+            setReplies(data.replies || []);
+            setReplyPage(1);
+            // If we got exactly 10 replies, there might be more (backend limit is 10)
+            setHasMoreReplies(data.replies?.length === 10);
         } catch (error) {
             console.error("Failed to fetch discussion", error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const loadMoreReplies = async () => {
+        if (loadingMore || !hasMoreReplies) return;
+        setLoadingMore(true);
+        try {
+            const nextPage = replyPage + 1;
+            const data = await discussionService.getReplies(id, nextPage);
+            setReplies(prev => [...prev, ...data.results]);
+            setReplyPage(nextPage);
+            setHasMoreReplies(!!data.next);
+        } catch (error) {
+            console.error("Failed to load more replies", error);
+        } finally {
+            setLoadingMore(false);
         }
     };
 
@@ -81,8 +105,8 @@ export default function DiscussionDetail() {
 
             // Optimistic update
             if (replyId) {
-                setDiscussion(prev => {
-                    const updateReplies = (replies) => replies.map(r => {
+                setReplies(prev => {
+                    const updateReplies = (repliesList) => repliesList.map(r => {
                         if (r.id === replyId) {
                             return {
                                 ...r,
@@ -92,7 +116,7 @@ export default function DiscussionDetail() {
                         }
                         return r;
                     });
-                    return { ...prev, replies: updateReplies(prev.replies) };
+                    return updateReplies(prev);
                 });
             } else {
                 setDiscussion(prev => ({
@@ -216,12 +240,15 @@ export default function DiscussionDetail() {
                 </article>
 
                 <CommentSection
-                    comments={discussion.replies}
+                    comments={replies}
                     onPostComment={handlePostReply}
                     onDeleteComment={handleDeleteReply}
                     onToggleReaction={handleReaction}
                     currentUser={currentUser}
                     submitting={submitting}
+                    hasMore={hasMoreReplies}
+                    onLoadMore={loadMoreReplies}
+                    loadingMore={loadingMore}
                 />
 
             </main>

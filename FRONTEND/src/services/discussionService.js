@@ -65,6 +65,16 @@ const discussionService = {
         }
     },
 
+    // Get paginated replies for a topic
+    getReplies: async (topicId, page = 1) => {
+        try {
+            const response = await apiClient.get(`/discussions/replies/list/?topic_id=${topicId}&page=${page}`);
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    },
+
     // Update a reply
     updateReply: async (id, data) => {
         try {
