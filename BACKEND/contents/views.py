@@ -1,13 +1,18 @@
 from rest_framework.generics import CreateAPIView, ListAPIView, UpdateAPIView, DestroyAPIView, RetrieveAPIView, RetrieveUpdateDestroyAPIView
-from .models import Announcement, Post, PostComment, PostReaction
+from .models import Announcement, Post, PostComment, PostReaction, Resource
 from rest_framework.permissions import AllowAny
-from .serializers import AnnouncementCreateSerializer, AnnouncementReadSerializer, AnnouncementUpdateSerializer, PostCreateUpdateSerializer, PostReadSerializer, PostReactionSerializer
+from django.db.models import Q
+from .serializers import (
+    AnnouncementCreateSerializer, AnnouncementReadSerializer, AnnouncementUpdateSerializer, 
+    PostCreateUpdateSerializer, PostReadSerializer, PostReactionSerializer,
+    ResourceReadSerializer, ResourceCreateUpdateSerializer
+)
 from .permissions import IsPostOwnerOrAdmin
 from django.contrib.auth import get_user_model
 from .permissions import CanCreateCommunityContent, CanEditContent, IsPostOwnerOrAdmin
 from .serializers import PostCommentReadSerializer, PostCommentCreateSerializer
 from rest_framework.response import Response
-from utils.pagination import StandardPagination
+from utils.pagination import StandardPagination, CommentPagination
 
 
 User = get_user_model()
@@ -142,3 +147,63 @@ class PostCommentDeleteView(DestroyAPIView):
     """
     queryset = PostComment.objects.all()
     permission_classes = [IsPostOwnerOrAdmin]
+
+class PostCommentListView(ListAPIView):
+    serializer_class = PostCommentReadSerializer
+    permission_classes = [AllowAny]
+    pagination_class = CommentPagination
+
+    def get_queryset(self):
+        post_id = self.request.query_params.get("post_id")
+        if not post_id:
+            return PostComment.objects.none()
+        # Only top-level comments for the specific post
+        return PostComment.objects.filter(post_id=post_id, parent_comment__isnull=True).order_by("-created_at")
+
+# Resource Views
+
+class ResourceCreateView(CreateAPIView):
+    serializer_class = ResourceCreateUpdateSerializer
+    permission_classes = [CanCreateCommunityContent]
+
+class ResourceListView(ListAPIView):
+    serializer_class = ResourceReadSerializer
+    permission_classes = [AllowAny]
+    pagination_class = StandardPagination
+
+    def get_queryset(self):
+        user = self.request.user
+        
+        # Base filter: Public resources
+        query = Q(visibility="public")
+
+        if user.is_authenticated:
+            if user.role == "community":
+                # Resources for this community
+                query |= Q(visibility="private", community=user)
+            elif user.role == "student":
+                # Resources for student's community
+                membership = getattr(user, 'membership', None)
+                if membership:
+                    query |= Q(visibility="private", community=membership.community)
+
+        queryset = Resource.objects.filter(query)
+
+        # Apply community_id filter if provided
+        community_id = self.request.query_params.get("community_id")
+        if community_id:
+            try:
+                queryset = queryset.filter(community_id=community_id)
+            except Exception:
+                pass
+
+        # Optimization and order
+        return queryset.select_related("community", "created_by_user")\
+                       .prefetch_related("created_by_user__membership")\
+                       .distinct()\
+                       .order_by("-created_at")
+
+class ResourceUpdateDeleteView(RetrieveUpdateDestroyAPIView):
+    queryset = Resource.objects.all()
+    serializer_class = ResourceCreateUpdateSerializer
+    permission_classes = [CanEditContent]

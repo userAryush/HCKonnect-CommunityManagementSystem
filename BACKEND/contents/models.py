@@ -86,3 +86,69 @@ class PostReaction(BaseModel):
     def __str__(self):
         target = self.post if self.post else f"Comment {self.comment.id}"
         return f"{self.user} reacted {self.reaction_type} on {target}"
+
+
+class Resource(BaseModel):
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    file = models.FileField(upload_to="resources/", null=True, blank=True)
+    video_url = models.URLField(null=True, blank=True)
+    CATEGORY_CHOICES = [
+        ("slide", "Slide"),
+        ("video", "Video"),
+        ("image", "Image"),
+        ("other", "Other"),
+    ]
+    
+    VISIBILITY_CHOICES = [
+        ("public", "Public"),
+        ("private", "Private")
+    ]
+    visibility = models.CharField(max_length=20, choices=VISIBILITY_CHOICES, default="public")
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default="slide")
+    # Community posting (community user)
+    community = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="community_resources",
+        limit_choices_to={"role": "community"}
+    )
+
+    # Nullable: student(representative) posting on behalf of community
+    created_by_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="user_resources",
+        limit_choices_to={"role": "student"}
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.title
+
+    @property
+    def file_size(self):
+        try:
+            if self.file and hasattr(self.file, 'size'):
+                return self.file.size
+        except Exception:
+            pass
+        return 0
+
+    @property
+    def file_extension(self):
+        try:
+            if self.file and self.file.name:
+                ext = self.file.name.split('.')[-1].lower()
+                # If there's no dot or it's a very long string (like a path), handle it
+                if len(ext) > 10:
+                    return "file"
+                return ext
+        except Exception:
+            pass
+        return ""
+

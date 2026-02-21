@@ -11,6 +11,7 @@ urlpatterns = [
     path("<uuid:pk>/delete/", DiscussionDeleteView.as_view()),
 
     # replies
+    path("replies/list/", ReplyListView.as_view(), name="reply-list"),
     path("replies/create/", ReplyCreateView.as_view()),
     path("replies/<uuid:pk>/update/", ReplyUpdateView.as_view()),
     path("replies/<uuid:pk>/delete/", ReplyDeleteView.as_view()),

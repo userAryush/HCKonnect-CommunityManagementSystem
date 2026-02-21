@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import AnnouncementCreateView, AnnouncementListView, AnnouncementUpdateView, AnnouncementDeleteView, AnnouncementStatsView, PostCreateView, PostListView, PostDetailView, PostUpdateDeleteView, PostReactionToggleView, PostCommentCreateView, PostCommentUpdateView, PostCommentDeleteView
+from .views import AnnouncementCreateView, AnnouncementListView, AnnouncementUpdateView, AnnouncementDeleteView, AnnouncementStatsView, PostCreateView, PostListView, PostDetailView, PostUpdateDeleteView, PostReactionToggleView, PostCommentCreateView, PostCommentUpdateView, PostCommentDeleteView, PostCommentListView, ResourceCreateView, ResourceListView, ResourceUpdateDeleteView
 
 
 
@@ -20,8 +20,14 @@ urlpatterns = [
 
     # Post Comments (NEW)
     path("post/comments/create/", PostCommentCreateView.as_view(), name="comment-create"),
+    path("post/comments/list/", PostCommentListView.as_view(), name="comment-list"),
     path("post/comments/<uuid:pk>/update/", PostCommentUpdateView.as_view(), name="comment-update"),
     path("post/comments/<uuid:pk>/delete/", PostCommentDeleteView.as_view(), name="comment-delete"),
 
+
+    # Resources
+    path("resources/", ResourceListView.as_view(), name="resource-list"),
+    path("resources/create/", ResourceCreateView.as_view(), name="resource-create"),
+    path("resources/<uuid:pk>/manage/", ResourceUpdateDeleteView.as_view(), name="resource-manage"),
 
 ]

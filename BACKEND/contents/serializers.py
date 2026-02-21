@@ -1,7 +1,7 @@
 
 from rest_framework.serializers import ModelSerializer, ValidationError, CharField, ImageField, SerializerMethodField, IntegerField
 from django.contrib.auth import get_user_model
-from .models import Announcement, Post, PostComment, PostReaction
+from .models import Announcement, Post, PostComment, PostReaction, Resource
 from django.utils.timesince import timesince
  
 
@@ -48,13 +48,17 @@ class AnnouncementReadSerializer(ModelSerializer):
 
     def get_uploaded_by(self, obj):
         if obj.created_by_user:
-            role = getattr(obj.created_by_user.membership, "role", "Member") # tries to get the role, if missing member default
+            membership = getattr(obj.created_by_user, 'membership', None)
+            role = getattr(membership, "role", "Member") if membership else "Member"
             return f"{obj.created_by_user.username} ({role})" # Aryush (representative)
         return "Community Admin"
 
 
     def get_time_since_posted(self, obj):
-        return f"{timesince(obj.created_at)} ago"
+        time_str = timesince(obj.created_at)
+        if "0 minutes" in time_str:
+            return "Just now"
+        return f"{time_str} ago"
 
 # Separate update to avoid changing created_At and community data.    
 class AnnouncementUpdateSerializer(ModelSerializer):
@@ -114,8 +118,8 @@ class PostReadSerializer(ModelSerializer):
         return PostReaction.objects.filter(user=user, post=obj).exists() if user.is_authenticated else False
 
     def get_comments(self, obj):
-        # Only return top-level comments (those without a parent)
-        comments = obj.comments.filter(parent_comment__isnull=True)
+        # Only return top-level comments (those without a parent) - limited to 10
+        comments = obj.comments.filter(parent_comment__isnull=True).order_by("-created_at")[:10]
         return PostCommentReadSerializer(comments, many=True, context=self.context).data
 
     def get_time_ago(self, obj):
@@ -164,3 +168,94 @@ class PostReactionSerializer(ModelSerializer):
         return obj
     
 
+
+# Resource Serializers
+
+class ResourceCreateUpdateSerializer(ModelSerializer):
+    class Meta:
+        model = Resource
+        fields = ["title", "description", "file", "video_url", "visibility", "category"]
+
+    def validate_file(self, value):
+        if value:
+            # 15MB limit (15 * 1024 * 1024)
+            if value.size > 15 * 1024 * 1024:
+                raise ValidationError("File size cannot exceed 15MB.")
+        return value
+
+    def validate(self, data):
+        category = data.get('category')
+        file = data.get('file')
+        video_url = data.get('video_url')
+
+        if category == 'video':
+            if not video_url:
+                raise ValidationError({"video_url": "Video URL is required for video category."})
+            if file:
+                raise ValidationError({"file": "File should not be uploaded for video category (links only)."})
+        else:
+            if not file and not self.instance: # If creating
+                raise ValidationError({"file": "File is required for this category."})
+            if video_url:
+                raise ValidationError({"video_url": "Video URL is only for video category."})
+
+        return data
+
+    def create(self, validated_data):
+        user = self.context["request"].user
+
+        if user.role == "community":
+            community = user
+            created_by_user = None
+        elif user.role == "student":
+            membership = getattr(user, 'membership', None)
+            if not membership or membership.role != "representative":
+                raise ValidationError("Only community representatives can post resources.")
+            community = membership.community
+            created_by_user = user
+        else:
+            raise ValidationError("Unauthorized role.")
+
+        return Resource.objects.create(community=community, created_by_user=created_by_user, **validated_data)
+
+class ResourceReadSerializer(ModelSerializer):
+    community_name = CharField(source="community.community_name", read_only=True)
+    community_logo = ImageField(source="community.community_logo", read_only=True)
+    author_name = SerializerMethodField()
+    time_ago = SerializerMethodField()
+    file_size = SerializerMethodField()
+    file_extension = SerializerMethodField()
+
+    class Meta:
+        model = Resource
+        fields = [
+            "id", "community", "title", "description", "file", "video_url",
+            "community_name", "community_logo", "author_name", 
+            "time_ago", "file_size", "file_extension", "visibility", "category"
+        ]
+
+    def get_author_name(self, obj):
+        try:
+            if obj.created_by_user:
+                membership = getattr(obj.created_by_user, 'membership', None)
+                role = getattr(membership, "role", "Member") if membership else "Member"
+                name = f"{obj.created_by_user.first_name} {obj.created_by_user.last_name}".strip() or obj.created_by_user.username
+                return f"{name} ({role})"
+        except Exception:
+            pass
+        return "Community Admin"
+
+    def get_time_ago(self, obj):
+        try:
+            time_str = timesince(obj.created_at)
+            if "0 minutes" in time_str:
+                return "Just now"
+            return f"{time_str} ago"
+        except Exception:
+            return "Recently"
+
+    def get_file_size(self, obj):
+        return obj.file_size
+
+    def get_file_extension(self, obj):
+        return obj.file_extension

@@ -8,7 +8,7 @@ from django.db.models import Prefetch, Q
 from .models import DiscussionPanel, DiscussionReply, Reaction
 from .serializers import DiscussionCreateSerializer,DiscussionReadSerializer,DiscussionUpdateSerializer,ReplyCreateSerializer,ReactionSerializer
 from .permissions import CanCreateDiscussion, CanAccessDiscussion, IsOwner
-from utils.pagination import StandardPagination
+from utils.pagination import StandardPagination, CommentPagination
 
 
 # =====================================================
@@ -95,6 +95,19 @@ class ReplyDeleteView(DestroyAPIView):
     queryset = DiscussionReply.objects.all()
     permission_classes = [IsAuthenticated, IsOwner]
 
+class ReplyListView(ListAPIView):
+    serializer_class = ReplyCreateSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = CommentPagination
+
+    def get_queryset(self):
+        topic_id = self.request.query_params.get("topic_id")
+        if not topic_id:
+            return DiscussionReply.objects.none()
+        
+        # Only top-level replies (those without a parent_reply)
+        return DiscussionReply.objects.filter(topic_id=topic_id, parent_reply__isnull=True).order_by("-created_at")
+
 
 
 # =====================================================
@@ -134,8 +147,4 @@ class ReactionCreateView(CreateAPIView):
         pass
 
 
-# =====================================================
-# TAG
-# =====================================================
 
-# TagListCreateView removed

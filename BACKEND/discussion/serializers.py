@@ -54,7 +54,7 @@ class ReplyReadSerializer(serializers.ModelSerializer):
 
 
 class DiscussionReadSerializer(serializers.ModelSerializer):
-    replies = ReplyReadSerializer(many=True, read_only=True)
+    replies = serializers.SerializerMethodField()
     reply_count = serializers.IntegerField(source="replies.count", read_only=True)
     reaction_count = serializers.IntegerField(source="reactions.count", read_only=True)
     time_ago = serializers.SerializerMethodField()
@@ -84,6 +84,11 @@ class DiscussionReadSerializer(serializers.ModelSerializer):
         if not obj.created_at:
              return ""
         return timesince(obj.created_at) + " ago"
+
+    def get_replies(self, obj):
+        # Return only top-level replies, limited to 10
+        replies = obj.replies.filter(parent_reply__isnull=True).order_by("-created_at")[:10]
+        return ReplyReadSerializer(replies, many=True, context=self.context).data
 
 # -----------------------
 # DISCUSSION UPDATE
