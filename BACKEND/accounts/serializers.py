@@ -366,3 +366,7 @@ class GlobalSearchSerializer(Serializer):
     type = serializers.CharField()
     image = serializers.ImageField(allow_null=True)
     username = serializers.CharField()
+
+
+class GoogleAuthSerializer(Serializer):
+    id_token = CharField()

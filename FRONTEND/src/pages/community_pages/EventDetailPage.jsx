@@ -39,7 +39,7 @@ export default function EventDetailPage() {
                     community: {
                         id: data.community,
                         name: data.community_name,
-                        logoText: (data.community_name || 'CO').substring(0, 2).toUpperCase()
+                        logoText: (data.community_name || data.community?.name || 'CO').substring(0, 2).toUpperCase()
                     },
                     stats: {
                         registrations: { current: 0, capacity: 100 } // Mock for now
@@ -121,8 +121,8 @@ export default function EventDetailPage() {
                             <h1 className="mb-4 text-4xl font-bold">{event.title}</h1>
                             <div className="flex flex-wrap items-center gap-6 text-sm font-medium opacity-90">
                                 <div className="flex items-center gap-2">
-                                    <CommunityAvatar name={community.name} logoText={community.logoText} size="sm" />
-                                    <span>Hosted by {community.name}</span>
+                                    <CommunityAvatar name={community?.name} logoText={community?.logoText} size="sm" />
+                                    <span>Hosted by {community?.name || 'Community'}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span>📅 {eventMeta.date}</span>
@@ -141,7 +141,7 @@ export default function EventDetailPage() {
                 {/* Admin Actions */}
                 {canEdit && (
                     <div className="mb-8 flex justify-end gap-4 border-b border-[#e5e7eb] pb-8">
-                        <Link to={`/community/${community.id}/manage/events/${eventId}/edit`} className="rounded-xl border border-[#e5e7eb] bg-white px-6 py-2 font-bold text-[#0d1f14] hover:bg-[#f4f5f2]">
+                        <Link to={`/community/${community?.id}/manage/events/${eventId}/edit`} className="rounded-xl border border-[#e5e7eb] bg-white px-6 py-2 font-bold text-[#0d1f14] hover:bg-[#f4f5f2]">
                             Edit Event
                         </Link>
                         <button onClick={handleDelete} className="rounded-xl bg-red-500 px-6 py-2 font-bold text-white hover:bg-red-600">
@@ -255,13 +255,13 @@ export default function EventDetailPage() {
                         <div className="rounded-3xl border border-[#e5e7eb] bg-white p-6">
                             <h3 className="text-sm font-bold uppercase text-[#4b4b4b] mb-4">Organizer</h3>
                             <div className="flex items-center gap-4 mb-6">
-                                <CommunityAvatar name={community.name} logoText={community.logoText} size="md" />
+                                <CommunityAvatar name={community?.name} logoText={community?.logoText} size="md" />
                                 <div>
-                                    <h4 className="font-bold">{community.name}</h4>
+                                    <h4 className="font-bold">{community?.name || 'Community'}</h4>
                                     <span className="text-xs bg-[#f4f5f2] px-2 py-1 rounded-full text-[#4b4b4b]">Student Club</span>
                                 </div>
                             </div>
-                            <Link to={`/community/${community.id}`} className="block w-full rounded-xl bg-[#0d1f14] py-3 text-center text-sm font-bold text-white transition hover:opacity-90">
+                            <Link to={`/community/${community?.id}`} className="block w-full rounded-xl bg-[#0d1f14] py-3 text-center text-sm font-bold text-white transition hover:opacity-90">
                                 View Organizer Community
                             </Link>
                         </div>

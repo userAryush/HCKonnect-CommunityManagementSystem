@@ -1,5 +1,9 @@
 from django.urls import path
-from .views import RegisterView, LoginView, ForgotPasswordView, VerifyOTPView, ResetPasswordView, UserProfileView, UserProfileDetailView, GlobalSearchView
+from .views import (
+    RegisterView, LoginView, ForgotPasswordView, VerifyOTPView, 
+    ResetPasswordView, UserProfileView, UserProfileDetailView, 
+    GlobalSearchView, GoogleAuthView
+)
 
 
 
@@ -13,4 +17,5 @@ urlpatterns = [
     path('profile/', UserProfileView.as_view(), name='user-profile'),
     path('profile/<uuid:pk>/', UserProfileDetailView.as_view(), name='user-profile-detail'),
     path('global-search/', GlobalSearchView.as_view(), name='global-search'),
+    path('google/', GoogleAuthView.as_view(), name='google-auth'),
 ]

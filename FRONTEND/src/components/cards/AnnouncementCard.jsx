@@ -15,11 +15,11 @@ export default function AnnouncementCard({ item, onDelete }) {
 
   const canDelete = user && (
     // Community Admin check
-    (user.role === 'community' && String(user.id) === String(item.community.id)) ||
+    (user.role === 'community' && String(user.id) === String(item.community?.id)) ||
     // Representative check
-    (user.membership && user.membership.role === 'representative' && String(user.membership.community) === String(item.community.id)) ||
+    (user.membership && user.membership.role === 'representative' && String(user.membership.community) === String(item.community?.id)) ||
     // Author check (handling both object and ID)
-    (String(user.id) === String(item.author.id || item.author))
+    (String(user.id) === String(item.author?.id || item.author))
   );
 
   const handleDelete = async () => {
@@ -39,13 +39,13 @@ export default function AnnouncementCard({ item, onDelete }) {
     <article className="relative overflow-hidden rounded-3xl border border-[#e5e7eb] bg-[#fffcf5] p-5 shadow-sm transition hover:shadow-md">
       <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#c08619]" />
       <div className="flex items-start gap-3">
-        <CommunityAvatar name={item.community.name} logoText={item.community.logoText} />
+        <CommunityAvatar name={item.community?.name} logoText={item.community?.logoText} />
         <div className="flex-1">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-[#0d1f14]">{item.community.name}</p>
+              <p className="text-sm font-semibold text-[#0d1f14]">{item.community?.name || 'Community'}</p>
               <p className="text-xs text-[#4b4b4b]">
-                {item.author.name} • {formatTimeAgo(item.createdAt)}
+                {item.author?.name || 'User'} • {formatTimeAgo(item.createdAt)}
               </p>
             </div>
             <div className="flex items-center gap-2">

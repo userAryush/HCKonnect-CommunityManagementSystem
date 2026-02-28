@@ -21,6 +21,23 @@ const authService = {
         }
     },
 
+    googleLogin: async (id_token) => {
+        try {
+            const response = await apiClient.post('/accounts/google/', { id_token });
+            const data = response.data;
+
+            if (data?.access) {
+                localStorage.setItem('access_token', data.access);
+                if (data.refresh) {
+                    localStorage.setItem('refresh_token', data.refresh);
+                }
+            }
+            return data;
+        } catch (error) {
+            throw error;
+        }
+    },
+
     logout: () => {
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');

@@ -4,6 +4,7 @@ import ForgotPasswordWizard from '../../components/ForgotPasswordWizard'
 import { useNavigate, useLocation } from 'react-router-dom'
 import Toast from '../../components/others/Toast'
 import { useAuth } from '../../context/AuthContext'
+import { GoogleLogin } from '@react-oauth/google'
 
 
 // pattern for email -> must start with np and must end with @heraldcollege.edu.np
@@ -23,7 +24,7 @@ function Login() {
     const navigate = useNavigate()
     const location = useLocation()
     const [toastMessage, setToastMessage] = useState(location.state?.successMessage || '')
-    const { login } = useAuth()
+    const { login, googleLogin } = useAuth()
 
 
     const validate = () => {
@@ -48,6 +49,24 @@ function Login() {
         setErrors(validationErrors);
 
         return Object.keys(validationErrors).length === 0;
+    };
+
+
+    const handleLoginRedirect = (userData) => {
+        const role = userData?.role;
+        console.log("Redirecting for role:", role);
+
+        if (role === 'admin') {
+            window.location.href = 'http://127.0.0.1:8000/admin/';
+        } else if (role === 'community') {
+            if (userData.id) {
+                navigate(`/community/${userData.id}/dashboard`, { state: { success: 'Login successful!' } });
+            } else {
+                navigate('/feed', { state: { success: 'Login successful!' } });
+            }
+        } else {
+            navigate('/feed', { state: { success: 'Login successful!' } });
+        }
     };
 
 
@@ -76,24 +95,7 @@ function Login() {
             setEmail('')
             setPassword('')
 
-            // Role Based Redirects
-            const role = userData?.role;
-            console.log("Redirecting for role:", role);
-
-            if (role === 'admin') {
-                window.location.href = 'http://127.0.0.1:8000/admin/';
-            } else if (role === 'community') {
-                // The backend uses 'id' for UUID.
-                if (userData.id) {
-                    navigate(`/community/${userData.id}/dashboard`, { state: { success: 'Login successful!' } });
-                } else {
-                    console.error("Community user missing ID, redirecting to feed");
-                    navigate('/feed', { state: { success: 'Login successful!' } });
-                }
-            } else {
-                // Default to student/other -> feed
-                navigate('/feed', { state: { success: 'Login successful!' } });
-            }
+            handleLoginRedirect(userData);
 
         } catch (error) {
             console.error("Login Error:", error);
@@ -104,6 +106,21 @@ function Login() {
             setLoading(false)
         }
     }
+
+    const handleGoogleSuccess = async (credentialResponse) => {
+        setApiErrors({});
+        setLoading(true);
+        try {
+            const userData = await googleLogin(credentialResponse.credential);
+            handleLoginRedirect(userData);
+        } catch (error) {
+            console.error("Google Login Error:", error);
+            const backendError = error.response?.data?.error || "Google authentication failed";
+            setApiErrors({ google: backendError });
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const inputBase =
         'w-full max-w-[420px] rounded-lg border border-[#6d6e70]/40 bg-white px-4 py-2.5 text-sm placeholder:text-[#6d6e70]/60 focus:border-[#6d6e70] focus:outline-none'
@@ -199,7 +216,21 @@ function Login() {
 
                             <Divider />
 
-                            <GoogleButton label="Sign In with Google" />
+                            <div className="flex justify-center flex-col items-center gap-2">
+                                <GoogleLogin
+                                    onSuccess={handleGoogleSuccess}
+                                    onError={() => {
+                                        console.log('Login Failed');
+                                        setApiErrors({ google: "Google Login Failed" });
+                                    }}
+                                    theme="outline"
+                                    size="large"
+                                    shape="circle"
+                                    width="420px"
+                                    useOneTap
+                                />
+                                <FieldError message={apiErrors.google} />
+                            </div>
 
                             <p className="text-xs text-[#6d6e70]">
                                 New here?{' '}
@@ -237,17 +268,6 @@ function Divider() {
     )
 }
 
-function GoogleButton({ label }) {
-    return (
-        <button
-            type="button"
-            className="flex w-full max-w-[420px] items-center justify-center gap-2 rounded-full border border-[#6d6e70] bg-white py-2.5 text-sm font-semibold text-[#6d6e70] transition hover:bg-[#f6f6f6]"
-        >
-            <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="h-5 w-5" />
-            {label}
-        </button>
-    )
-}
 
 export default Login
 

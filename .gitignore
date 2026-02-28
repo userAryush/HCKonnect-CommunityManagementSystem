@@ -1,12 +1,14 @@
 #backend
 BACKEND/env/
-BACKEND/hckonnect/__pycache__/
-__pycache__/
-*.pyc
-design.txt
-rough.txt
+BACKEND/media/
+BACKEND/staticfiles/
 
-
+**/__pycache__/
 
 #frontend
 FRONTEND/node_modules/
+
+
+*.txt
+**/.env
+*.log

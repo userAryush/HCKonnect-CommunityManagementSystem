@@ -42,8 +42,8 @@ export default function EventCard({ item }) {
 
       <div className="p-5">
         <div className="flex items-center gap-3">
-          <CommunityAvatar name={item.community.name} logoText={item.community.logoText} size="sm" />
-          <p className="text-sm font-medium text-[#0d1f14]">Hosted by {item.community.name}</p>
+          <CommunityAvatar name={item.community?.name} logoText={item.community?.logoText} size="sm" />
+          <p className="text-sm font-medium text-[#0d1f14]">Hosted by {item.community?.name || 'Community'}</p>
         </div>
 
         <p className="mt-3 text-sm text-[#4b4b4b]">{item.description}</p>

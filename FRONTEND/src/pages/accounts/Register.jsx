@@ -3,7 +3,8 @@ import axios from 'axios'
 import logo from '../../assets/logo.png'
 import Toast from '../../components/others/Toast' // your component
 import { useNavigate } from 'react-router-dom'
-
+import { GoogleLogin } from '@react-oauth/google'
+import { useAuth } from '../../context/AuthContext'
 
 
 const COURSE_OPTIONS = [
@@ -29,6 +30,7 @@ function Register() {
   const [successMessage, setSuccessMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const { googleLogin } = useAuth()
 
   const handleChange = (event) => {
     const { name, value } = event.target
@@ -96,6 +98,24 @@ function Register() {
   };
 
 
+  const handleLoginRedirect = (userData) => {
+    const role = userData?.role;
+    console.log("Redirecting for role:", role);
+
+    if (role === 'admin') {
+      window.location.href = 'http://127.0.0.1:8000/admin/';
+    } else if (role === 'community') {
+      if (userData.id) {
+        navigate(`/community/${userData.id}/dashboard`, { state: { success: 'Login successful!' } });
+      } else {
+        navigate('/feed', { state: { success: 'Login successful!' } });
+      }
+    } else {
+      navigate('/feed', { state: { success: 'Login successful!' } });
+    }
+  };
+
+
   const handleSubmit = async (event) => {
     event.preventDefault()
     setSuccessMessage('')
@@ -143,6 +163,21 @@ function Register() {
       setLoading(false)
     }
   }
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setApiErrors({});
+    setLoading(true);
+    try {
+      const userData = await googleLogin(credentialResponse.credential);
+      handleLoginRedirect(userData);
+    } catch (error) {
+      console.error("Google Login Error:", error);
+      const backendError = error.response?.data?.error || "Google authentication failed";
+      setApiErrors({ google: backendError });
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
   const inputBase =
@@ -229,7 +264,21 @@ function Register() {
 
               <Divider />
 
-              <GoogleButton label="Sign In with Google" />
+              <div className="flex justify-center flex-col items-center gap-2">
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={() => {
+                    console.log('Login Failed');
+                    setApiErrors({ google: "Google Login Failed" });
+                  }}
+                  theme="outline"
+                  size="large"
+                  shape="circle"
+                  width="420px"
+                  useOneTap
+                />
+                <FieldError message={apiErrors.google} />
+              </div>
 
               <p className="text-xs text-[#6d6e70]">
                 Already have an account?{' '}
@@ -274,17 +323,4 @@ function Divider() {
   )
 }
 
-function GoogleButton({ label }) {
-  return (
-    <button
-      type="button"
-      className="flex w-full max-w-[420px] items-center justify-center gap-2 rounded-full border border-[#6d6e70] bg-white py-2.5 text-sm font-semibold text-[#6d6e70] transition hover:bg-[#f6f6f6]"
-    >
-      <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="h-5 w-5" />
-      {label}
-    </button>
-  )
-}
-
 export default Register
-

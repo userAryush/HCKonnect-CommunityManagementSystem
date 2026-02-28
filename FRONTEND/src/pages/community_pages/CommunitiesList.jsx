@@ -106,12 +106,12 @@ export default function CommunitiesList() {
                       </div>
                     ) : (
                       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#f4f5f2] text-lg font-bold">
-                        {c.community_name.slice(0, 2).toUpperCase()}
+                        {(c.community_name || c.username || 'C').slice(0, 2).toUpperCase()}
                       </div>
                     )}
 
                     <div>
-                      <h3 className="text-lg font-semibold">{c.community_name}</h3>
+                      <h3 className="text-lg font-semibold">{c.community_name || c.username}</h3>
                       <p className="text-xs text-[#4b4b4b]">{c.member_count} members</p>
                     </div>
                   </div>

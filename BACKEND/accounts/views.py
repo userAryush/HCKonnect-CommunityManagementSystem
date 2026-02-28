@@ -1,11 +1,17 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import RegisterSerializer, LoginSerializer, ForgotPasswordSerializer, VerifyOTPSerializer, ResetPasswordSerializer, UserProfileSerializer, UserProfileDetailSerializer, GlobalSearchSerializer
+from .serializers import (
+    RegisterSerializer, LoginSerializer, ForgotPasswordSerializer, 
+    VerifyOTPSerializer, ResetPasswordSerializer, UserProfileSerializer, 
+    UserProfileDetailSerializer, GlobalSearchSerializer, GoogleAuthSerializer
+)
 from django.db.models import Q
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.generics import RetrieveUpdateAPIView, RetrieveAPIView
 from .models import User
+from .services import GoogleAuthService
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 """
@@ -137,3 +143,45 @@ class GlobalSearchView(APIView):
             })
 
         return Response(results)
+
+
+class GoogleAuthView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = GoogleAuthSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        id_token = serializer.validated_data['id_token']
+
+        try:
+            # 1. Verify token and domain
+            id_info = GoogleAuthService.verify_google_id_token(id_token)
+            
+            # 2. Get or Create user
+            user = GoogleAuthService.get_or_create_user(id_info)
+
+            # 3. Generate JWT Tokens
+            refresh = RefreshToken.for_user(user)
+            
+            return Response({
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+                'user': {
+                    'id': user.id,
+                    'email': user.email,
+                    'username': user.username,
+                    'role': getattr(user, 'role', None)
+                }
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            # Handle specific status codes based on the error
+            error_msg = str(e)
+            if "Email not verified" in error_msg:
+                return Response({'error': error_msg}, status=status.HTTP_401_UNAUTHORIZED)
+            if "restricted to Herald College" in error_msg:
+                return Response({'error': error_msg}, status=status.HTTP_403_FORBIDDEN)
+            
+            return Response({'error': error_msg}, status=status.HTTP_400_BAD_REQUEST)
