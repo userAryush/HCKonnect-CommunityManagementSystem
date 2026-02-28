@@ -54,8 +54,9 @@ INSTALLED_APPS = [
     'corsheaders',
     'communities',
     'events',
+    'discussion',
     'contents',
-    'discussion'
+    'notifications'
 ]
 
 MIDDLEWARE = [

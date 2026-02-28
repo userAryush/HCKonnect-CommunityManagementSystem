@@ -359,3 +359,10 @@ class UserProfileDetailSerializer(ModelSerializer):
             })
             
         return content
+
+class GlobalSearchSerializer(Serializer):
+    id = serializers.UUIDField()
+    name = serializers.CharField()
+    type = serializers.CharField()
+    image = serializers.ImageField(allow_null=True)
+    username = serializers.CharField()

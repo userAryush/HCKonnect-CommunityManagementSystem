@@ -33,3 +33,14 @@ class Event(BaseModel):
 
     def __str__(self):
         return f"{self.title} ({self.date})"
+
+class EventRegistration(BaseModel):
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="registrations")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="event_registrations")
+    registered_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('event', 'user')
+
+    def __str__(self):
+        return f"{self.user.username} - {self.event.title}"

@@ -1,7 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import RegisterSerializer, LoginSerializer, ForgotPasswordSerializer, VerifyOTPSerializer, ResetPasswordSerializer, UserProfileSerializer, UserProfileDetailSerializer
+from .serializers import RegisterSerializer, LoginSerializer, ForgotPasswordSerializer, VerifyOTPSerializer, ResetPasswordSerializer, UserProfileSerializer, UserProfileDetailSerializer, GlobalSearchSerializer
+from django.db.models import Q
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.generics import RetrieveUpdateAPIView, RetrieveAPIView
 from .models import User
@@ -88,3 +89,51 @@ class UserProfileDetailView(RetrieveAPIView):
     queryset = User.objects.all()
     serializer_class = UserProfileDetailSerializer
     permission_classes = [IsAuthenticated]
+
+class GlobalSearchView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        query = request.query_params.get('q', '').strip()
+        if not query:
+            return Response([])
+
+        # Search for Students
+        students = User.objects.filter(
+            role='student',
+            status='active'
+        ).filter(
+            Q(username__icontains=query) |
+            Q(first_name__icontains=query) |
+            Q(last_name__icontains=query)
+        )[:10]
+
+        # Search for Communities
+        communities = User.objects.filter(
+            role='community',
+            status='active'
+        ).filter(
+            Q(community_name__icontains=query) |
+            Q(username__icontains=query)
+        )[:10]
+
+        results = []
+        for s in students:
+            results.append({
+                'id': s.id,
+                'name': f"{s.first_name} {s.last_name}".strip() or s.username,
+                'username': s.username,
+                'type': 'student',
+                'image': s.profile_image.url if s.profile_image else None
+            })
+
+        for c in communities:
+            results.append({
+                'id': c.id,
+                'name': c.community_name,
+                'username': c.username,
+                'type': 'community',
+                'image': c.community_logo.url if c.community_logo else None
+            })
+
+        return Response(results)
