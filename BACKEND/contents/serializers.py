@@ -73,12 +73,15 @@ class AnnouncementUpdateSerializer(ModelSerializer):
 class PostCommentReadSerializer(ModelSerializer):
     time_ago = SerializerMethodField()
     author_name = SerializerMethodField()
+    author_role = SerializerMethodField()
+    author_image = SerializerMethodField()
+    author_community = SerializerMethodField()
     user_has_liked = SerializerMethodField()
     replies = SerializerMethodField()
 
     class Meta:
         model = PostComment
-        fields = ["id", "post", "parent_comment", "content", "author", "author_name", "time_ago", "user_has_liked", "replies", "created_at"]
+        fields = ["id", "post", "parent_comment", "content", "author", "author_name", "author_role", "author_image", "author_community", "time_ago", "user_has_liked", "replies", "created_at"]
 
     def get_replies(self, obj):
         if obj.parent_comment is None: # Only one level of nesting
@@ -92,7 +95,34 @@ class PostCommentReadSerializer(ModelSerializer):
 
     def get_author_name(self, obj):
         user = obj.author
-        return f"{user.first_name} {user.last_name}".strip() or user.username
+        if not user: return "User"
+        if getattr(user, 'role', '') == 'community':
+            return getattr(user, 'community_name', '') or user.username
+        full_name = f"{getattr(user, 'first_name', '')} {getattr(user, 'last_name', '')}".strip()
+        return full_name if full_name else getattr(user, "username", str(user))
+
+    def get_author_role(self, obj):
+        return getattr(obj.author, 'role', 'student') if obj.author else 'student'
+
+    def get_author_image(self, obj):
+        user = obj.author
+        if not user: return None
+        if getattr(user, 'role', '') == 'community' and getattr(user, 'community_logo', None):
+            request = self.context.get('request')
+            return request.build_absolute_uri(user.community_logo.url) if request else user.community_logo.url
+        if getattr(user, 'profile_image', None):
+            request = self.context.get('request')
+            return request.build_absolute_uri(user.profile_image.url) if request else user.profile_image.url
+        return None
+
+    def get_author_community(self, obj):
+        user = obj.author
+        if not user: return ''
+        if getattr(user, 'role', '') == 'community':
+            return getattr(user, 'community_name', '')
+        if hasattr(user, 'membership') and getattr(user.membership, 'community', None):
+            return user.membership.community.community_name
+        return ''
 
     def get_time_ago(self, obj):
         return timesince(obj.created_at) + " ago"
@@ -104,6 +134,9 @@ class PostReadSerializer(ModelSerializer):
     time_ago = SerializerMethodField()
     user_has_liked = SerializerMethodField()
     author_name = SerializerMethodField()
+    author_role = SerializerMethodField()
+    author_image = SerializerMethodField()
+    author_community = SerializerMethodField()
 
     class Meta:
         model = Post
@@ -111,7 +144,34 @@ class PostReadSerializer(ModelSerializer):
 
     def get_author_name(self, obj):
         user = obj.author
-        return f"{user.first_name} {user.last_name}".strip() or user.username
+        if not user: return "User"
+        if getattr(user, 'role', '') == 'community':
+            return getattr(user, 'community_name', '') or user.username
+        full_name = f"{getattr(user, 'first_name', '')} {getattr(user, 'last_name', '')}".strip()
+        return full_name if full_name else getattr(user, "username", str(user))
+
+    def get_author_role(self, obj):
+        return getattr(obj.author, 'role', 'student') if obj.author else 'student'
+
+    def get_author_image(self, obj):
+        user = obj.author
+        if not user: return None
+        if getattr(user, 'role', '') == 'community' and getattr(user, 'community_logo', None):
+            request = self.context.get('request')
+            return request.build_absolute_uri(user.community_logo.url) if request else user.community_logo.url
+        if getattr(user, 'profile_image', None):
+            request = self.context.get('request')
+            return request.build_absolute_uri(user.profile_image.url) if request else user.profile_image.url
+        return None
+
+    def get_author_community(self, obj):
+        user = obj.author
+        if not user: return ''
+        if getattr(user, 'role', '') == 'community':
+            return getattr(user, 'community_name', '')
+        if hasattr(user, 'membership') and getattr(user.membership, 'community', None):
+            return user.membership.community.community_name
+        return ''
 
     def get_user_has_liked(self, obj):
         user = self.context['request'].user

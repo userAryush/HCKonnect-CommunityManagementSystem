@@ -249,7 +249,8 @@ class UserProfileSerializer(ModelSerializer):
         fields = [
             "id", "username", "first_name", "last_name", "email", "role", 
             "profile_image", "course", "interests",
-            "bio", "linkedin_link", "github_link", "university_id", "membership"
+            "bio", "linkedin_link", "github_link", "university_id", "membership",
+            "community_name", "community_description", "community_logo", "community_tag"
         ]
         read_only_fields = ["id", "email", "role"]
 
@@ -272,7 +273,8 @@ class UserProfileDetailSerializer(ModelSerializer):
         fields = [
             "id", "username", "first_name", "last_name", "role",
             "profile_image", "course", "interests", "bio",
-            "linkedin_link", "github_link", "membership", "posted_content"
+            "linkedin_link", "github_link", "membership", "posted_content",
+            "community_name", "community_description", "community_logo", "community_tag"
         ]
 
     def get_membership(self, obj):

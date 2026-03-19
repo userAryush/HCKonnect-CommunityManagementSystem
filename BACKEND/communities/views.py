@@ -160,7 +160,7 @@ class StudentListView(ListAPIView):
 
 class CommunityListView(ListAPIView):
     serializer_class = CommunityListSerializer
-    # permission_classes =[AllowAny]
+    permission_classes =[AllowAny]
 
     def get_queryset(self):
         return User.objects.filter(role="community",status="active").order_by("community_name")

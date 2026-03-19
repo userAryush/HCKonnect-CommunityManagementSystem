@@ -32,23 +32,50 @@ class DiscussionCreateSerializer(serializers.ModelSerializer):
 class ReplyReadSerializer(serializers.ModelSerializer):
     time_ago = serializers.SerializerMethodField()
     created_by_name = serializers.SerializerMethodField()
+    created_by_role = serializers.SerializerMethodField()
+    created_by_image = serializers.SerializerMethodField()
+    author_community = serializers.SerializerMethodField()
     user_has_liked = serializers.SerializerMethodField()
+
     class Meta:
         model = DiscussionReply
         fields = "__all__"
+
     def get_user_has_liked(self, obj):
         user = self.context['request'].user
         if user.is_authenticated:
             return Reaction.objects.filter(user=user, reply=obj).exists()
         return False
+
     def get_created_by_name(self, obj):
         user = obj.created_by
-        if not user:
-            return "User"
-        first = getattr(user, "first_name", "").strip()
-        last = getattr(user, "last_name", "").strip()
-        full_name = f"{first} {last}".strip()
+        if not user: return "User"
+        if getattr(user, 'role', '') == 'community':
+            return getattr(user, 'community_name', '') or user.username
+        full_name = f"{getattr(user, 'first_name', '')} {getattr(user, 'last_name', '')}".strip()
         return full_name if full_name else getattr(user, "username", str(user))
+
+    def get_created_by_role(self, obj):
+        return getattr(obj.created_by, 'role', 'student') if obj.created_by else 'student'
+
+    def get_created_by_image(self, obj):
+        user = obj.created_by
+        if not user: return None
+        if getattr(user, 'role', '') == 'community' and getattr(user, 'community_logo', None):
+            return user.community_logo.url
+        if getattr(user, 'profile_image', None):
+            return user.profile_image.url
+        return None
+
+    def get_author_community(self, obj):
+        user = obj.created_by
+        if not user: return ''
+        if getattr(user, 'role', '') == 'community':
+            return getattr(user, 'community_name', '')
+        if hasattr(user, 'membership') and getattr(user.membership, 'community', None):
+            return user.membership.community.community_name
+        return ''
+
     def get_time_ago(self, obj):
         return timesince(obj.created_at) + " ago"
 
@@ -60,35 +87,60 @@ class DiscussionReadSerializer(serializers.ModelSerializer):
     time_ago = serializers.SerializerMethodField()
     user_has_liked = serializers.SerializerMethodField()
     
-    # Explicitly define related fields to avoid potential serialization issues
     created_by_name = serializers.SerializerMethodField()
+    created_by_role = serializers.SerializerMethodField()
+    created_by_image = serializers.SerializerMethodField()
+    author_community = serializers.SerializerMethodField()
     community_name = serializers.CharField(source="community.community_name", read_only=True)
 
     class Meta:
         model = DiscussionPanel
         fields = "__all__"
+
     def get_created_by_name(self, obj):
         user = obj.created_by
-        if not user:
-            return "User"
-        first = getattr(user, "first_name", "").strip()
-        last = getattr(user, "last_name", "").strip()
-        full_name = f"{first} {last}".strip()
+        if not user: return "User"
+        if getattr(user, 'role', '') == 'community':
+            return getattr(user, 'community_name', '') or user.username
+        full_name = f"{getattr(user, 'first_name', '')} {getattr(user, 'last_name', '')}".strip()
         return full_name if full_name else getattr(user, "username", str(user))
+
+    def get_created_by_role(self, obj):
+        return getattr(obj.created_by, 'role', 'student') if obj.created_by else 'student'
+
+    def get_created_by_image(self, obj):
+        user = obj.created_by
+        if not user: return None
+        if getattr(user, 'role', '') == 'community' and getattr(user, 'community_logo', None):
+            return user.community_logo.url
+        if getattr(user, 'profile_image', None):
+            return user.profile_image.url
+        return None
+
+    def get_author_community(self, obj):
+        user = obj.created_by
+        if not user: return ''
+        if getattr(user, 'role', '') == 'community':
+            return getattr(user, 'community_name', '')
+        if hasattr(user, 'membership') and getattr(user.membership, 'community', None):
+            return user.membership.community.community_name
+        return ''
+
     def get_user_has_liked(self, obj):
         user = self.context['request'].user
         if user.is_authenticated:
             return Reaction.objects.filter(user=user, topic=obj).exists()
         return False
+
     def get_time_ago(self, obj):
         if not obj.created_at:
              return ""
         return timesince(obj.created_at) + " ago"
 
     def get_replies(self, obj):
-        # Return only top-level replies, limited to 10
         replies = obj.replies.filter(parent_reply__isnull=True).order_by("-created_at")[:10]
         return ReplyReadSerializer(replies, many=True, context=self.context).data
+
 
 # -----------------------
 # DISCUSSION UPDATE
