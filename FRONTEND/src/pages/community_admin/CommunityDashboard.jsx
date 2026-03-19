@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useLocation } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import eventService from '../../services/eventService'
 import announcementService from '../../services/announcementService'
@@ -22,6 +22,7 @@ import {
 export default function CommunityDashboard() {
 
   const { id } = useParams()
+  const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const [community, setCommunity] = useState(null)
   const [loading, setLoading] = useState(true)

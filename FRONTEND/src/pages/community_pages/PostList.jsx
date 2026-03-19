@@ -7,6 +7,7 @@ import PostCard from '../../components/cards/PostCard';
 import { Skeleton } from '../../components/shared/Skeleton';
 import Card from '../../components/shared/Card';
 import Button from '../../components/shared/Button';
+import { useToast } from '../../context/ToastContext';
 
 export default function PostList() {
     const [searchParams] = useSearchParams();
@@ -14,6 +15,7 @@ export default function PostList() {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(false);
+    const { showToast } = useToast();
 
     useEffect(() => {
         if (searchParams.get('create') === 'true') {
@@ -78,9 +80,11 @@ export default function PostList() {
             setImagePreview(null);
             setShowCreate(false);
             setPage(1);
+            showToast('post created successfully.', 'success');
             fetchPosts();
         } catch (error) {
             console.error("Failed to create post", error);
+            showToast('Failed to create post. Please try again.', 'error');
         } finally {
             setSubmitting(false);
         }
@@ -155,10 +159,12 @@ export default function PostList() {
                                     </label>
                                     <Button
                                         onClick={handleCreatePost}
-                                        disabled={submitting || (!newPostContent.trim() && !newPostImage)}
+                                        disabled={!newPostContent.trim() && !newPostImage}
+                                        isLoading={submitting}
+                                        loadingText="Posting..."
                                         className="px-8"
                                     >
-                                        {submitting ? 'Posting...' : 'Post'}
+                                        Post
                                     </Button>
                                 </div>
                             </div>

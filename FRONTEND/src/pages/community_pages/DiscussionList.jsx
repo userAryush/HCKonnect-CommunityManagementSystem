@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import discussionService from '../../services/discussionService';
 import DiscussionCard from '../../components/cards/DiscussionCard';
@@ -13,6 +13,7 @@ export default function DiscussionList() {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const navigate = useNavigate();
+    const location = useLocation();
 
     useEffect(() => {
         fetchDiscussions();

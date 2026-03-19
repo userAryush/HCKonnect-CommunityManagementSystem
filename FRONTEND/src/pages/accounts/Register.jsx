@@ -1,9 +1,12 @@
 import { useState } from 'react'
-import axios from 'axios'
+import api from '../../services/api'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import logo from '../../assets/favicon.png'
-import { useNavigate } from 'react-router-dom'
 import { GoogleLogin } from '@react-oauth/google'
 import { useAuth } from '../../context/AuthContext'
+import { useToast } from '../../context/ToastContext'
+import authService from '../../services/authService'
+import Button from '../../components/shared/Button'
 
 
 const COURSE_OPTIONS = [
@@ -26,7 +29,8 @@ function Register() {
 
   const [errors, setErrors] = useState({})
   const [apiErrors, setApiErrors] = useState({})
-  const [successMessage, setSuccessMessage] = useState('')
+  const { login } = useAuth()
+  const { showToast } = useToast()
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
   const { googleLogin } = useAuth()
@@ -101,23 +105,28 @@ function Register() {
     const role = userData?.role;
     console.log("Redirecting for role:", role);
 
+    const firstName = userData?.first_name || userData?.username || 'User';
+    const msg = `hello ${firstName}, successfully logged in.`;
+
     if (role === 'admin') {
       window.location.href = 'http://127.0.0.1:8000/admin/';
     } else if (role === 'community') {
       if (userData.id) {
-        navigate(`/community/${userData.id}/dashboard`, { state: { success: 'Login successful!' } });
+        showToast(`hello ${userData.community_name || userData.username}, successfully logged in.`, 'success')
+        navigate(`/community/${userData.id}/dashboard`)
       } else {
-        navigate('/feed', { state: { success: 'Login successful!' } });
+        showToast(`hello ${userData.first_name || userData.username}, successfully logged in.`, 'success')
+        navigate('/feed')
       }
     } else {
-      navigate('/feed', { state: { success: 'Login successful!' } });
+      showToast(`hello ${userData.first_name || userData.username}, successfully logged in.`, 'success')
+      navigate('/feed')
     }
   };
 
 
   const handleSubmit = async (event) => {
     event.preventDefault()
-    setSuccessMessage('')
     setApiErrors({})
     if (!validate()) return
 
@@ -133,11 +142,9 @@ function Register() {
         interests: formData.interests
       }
 
-      const response = await axios.post('http://localhost:8000/accounts/register/', payload)
+      const response = await api.post('/accounts/register/', payload)
 
-      // Set toast message
-      setSuccessMessage(response.data.message || 'Registration successful! Check your email for login credentials.')
-
+      showToast(response.data.message || 'Registration successful! Check your email for login credentials.', 'success')
 
       // Clear the form
       setFormData({ firstName: '', lastName: '', username: '', email: '', course: '', interests: [] })
@@ -153,10 +160,11 @@ function Register() {
 
       // Example: backend returns { email: ["Email already exists"], message: "..." }
       if (backendErrors.message) {
-        setSuccessMessage('') // Clear any leftover success
+        showToast(backendErrors.message, 'error')
         setApiErrors({ non_field_errors: backendErrors.message })
       } else {
         setApiErrors(backendErrors)
+        showToast(error.response?.data?.detail || "Registration failed", 'error')
       }
     } finally {
       setLoading(false)
@@ -173,6 +181,7 @@ function Register() {
       console.error("Google Login Error:", error);
       const backendError = error.response?.data?.error || "Google authentication failed";
       setApiErrors({ google: backendError });
+      showToast("Registration successful, but login failed.", 'error')
     } finally {
       setLoading(false);
     }
@@ -241,19 +250,26 @@ function Register() {
                 <FieldError message={errors.interests || apiErrors.interests} />
               </div>
 
-              {successMessage && <p className="text-sm text-green-600">{successMessage}</p>}
-
-              <button
+              <Button
                 type="submit"
-                disabled={loading}
-                className={`w-full rounded-button bg-primary py-2.5 text-sm font-bold text-white transition hover:scale-[1.01] active:scale-[0.99] ${loading ? 'cursor-not-allowed opacity-70' : ''}`}
+                className="w-full shadow-md mt-4"
+                isLoading={loading}
+                loadingText="Creating Account..."
               >
-                {loading ? 'Signing Up…' : 'Create Account'}
-              </button>
+                Create Account
+              </Button>
 
               <Divider />
 
-              <div className="w-full">
+              <div className="w-full relative">
+                {loading && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 rounded-md">
+                        <svg className="h-6 w-6 animate-spin text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                )}
                 <GoogleLogin
                   onSuccess={handleGoogleSuccess}
                   onError={() => {

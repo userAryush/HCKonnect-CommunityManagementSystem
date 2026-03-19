@@ -10,12 +10,6 @@ export default function Feed() {
   const [filter, setFilter] = useState('all')
   const location = useLocation()
 
-  useEffect(() => {
-    if (location.state?.success) {
-      window.history.replaceState({}, document.title)
-    }
-  }, [location.state])
-
   return (
     <div className="bg-[#F9FAFB] min-h-screen antialiased">
       <Navbar

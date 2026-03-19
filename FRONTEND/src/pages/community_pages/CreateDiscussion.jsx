@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Navbar from '../../components/Navbar';
 import discussionService from '../../services/discussionService';
+import { useToast } from '../../context/ToastContext';
+import Button from '../../components/shared/Button';
 
 export default function CreateDiscussion() {
     const navigate = useNavigate();
@@ -11,6 +12,7 @@ export default function CreateDiscussion() {
         content: '',
         visibility: 'public',
     });
+    const { showToast } = useToast();
 
     const user = JSON.parse(localStorage.getItem('user') || 'null');
     const hasMembership = user && (
@@ -36,10 +38,11 @@ export default function CreateDiscussion() {
             }
 
             await discussionService.createDiscussion(submitData);
+            showToast('discussion created successfully.', 'success');
             navigate('/discussions');
         } catch (error) {
             console.error("Failed to create discussion", error);
-            alert("Failed to post discussion. Please try again.");
+            showToast("Failed to post discussion. Please try again.", 'error');
         } finally {
             setLoading(false);
         }
@@ -102,14 +105,14 @@ export default function CreateDiscussion() {
                             >
                                 Cancel
                             </button>
-                            <button
+                            <Button
                                 type="submit"
-                                disabled={loading}
-                                className="px-6 py-2.5 rounded-xl bg-[#75C043] text-white font-medium hover:bg-[#75C043]/80 transition shadow-sm disabled:opacity-70 flex items-center gap-2"
+                                isLoading={loading}
+                                loadingText="Posting..."
+                                className="px-6 py-2.5 rounded-xl transition shadow-sm flex items-center gap-2"
                             >
-                                {loading && <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>}
                                 Post Discussion
-                            </button>
+                            </Button>
                         </div>
                     </form>
                 </div>

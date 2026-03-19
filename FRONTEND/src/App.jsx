@@ -25,51 +25,53 @@ import PostList from './pages/community_pages/PostList'
 import PostDetail from './pages/community_pages/PostDetail'
 
 import { AuthProvider } from './context/AuthContext'
+import { ToastProvider } from './context/ToastContext'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Landing />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/communities" element={<CommunitiesList />} />
-          <Route path="/events/:eventId" element={<EventDetailPage />} />
-          <Route path="/community" element={<CommunityProfilePage />} />
-          <Route path="/community/:id" element={<CommunityProfilePage />} />
+      <ToastProvider>
+        <AuthProvider>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Landing />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/communities" element={<CommunitiesList />} />
+            <Route path="/events/:eventId" element={<EventDetailPage />} />
+            <Route path="/community" element={<CommunityProfilePage />} />
+            <Route path="/community/:id" element={<CommunityProfilePage />} />
 
-          {/* Protected Routes */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/feed" element={<Feed />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/profile/:id" element={<Profile />} />
-            <Route path="/profile/edit" element={<EditProfile />} />
-            <Route path="/events" element={<EventsList />} />
-            <Route path="/events" element={<EventsList />} />
-            <Route path="/announcements" element={<AnnouncementsList />} />
-            <Route path="/discussions" element={<DiscussionList />} />
-            <Route path="/discussions/create" element={<CreateDiscussion />} />
-            <Route path="/discussions/:id" element={<DiscussionDetail />} />
-            <Route path="/posts" element={<PostList />} />
-            <Route path="/posts/:id" element={<PostDetail />} />
-            <Route path="/events/:eventId/register" element={<EventRegistrationPage />} />
+            {/* Protected Routes */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/feed" element={<Feed />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/profile/:id" element={<Profile />} />
+              <Route path="/profile/edit" element={<EditProfile />} />
+              <Route path="/events" element={<EventsList />} />
+              <Route path="/announcements" element={<AnnouncementsList />} />
+              <Route path="/discussions" element={<DiscussionList />} />
+              <Route path="/discussions/create" element={<CreateDiscussion />} />
+              <Route path="/discussions/:id" element={<DiscussionDetail />} />
+              <Route path="/posts" element={<PostList />} />
+              <Route path="/posts/:id" element={<PostDetail />} />
+              <Route path="/events/:eventId/register" element={<EventRegistrationPage />} />
 
-            {/* Admin / Management Routes */}
-            <Route path="/community/:id/dashboard" element={<CommunityDashboard />} />
-            <Route path="/community/:id/manage/announcements/create" element={<CreateAnnouncement />} />
-            <Route path="/community/:id/manage/members" element={<MemberManagement />} />
-            <Route path="/community/:id/manage/vacancies/create" element={<CreateVacancy />} />
-            <Route path="/community/:id/manage/events/create" element={<CreateEvent />} />
-            <Route path="/community/:id/manage/events/:eventId/edit" element={<CreateEvent />} />
-            <Route path="/community/:id/manage/events" element={<EventsList />} />
-            <Route path="/community/:id/manage/announcements" element={<AnnouncementsList />} />
-          </Route>
+              {/* Admin / Management Routes */}
+              <Route path="/community/:id/dashboard" element={<CommunityDashboard />} />
+              <Route path="/community/:id/manage/announcements/create" element={<CreateAnnouncement />} />
+              <Route path="/community/:id/manage/members" element={<MemberManagement />} />
+              <Route path="/community/:id/manage/vacancies/create" element={<CreateVacancy />} />
+              <Route path="/community/:id/manage/events/create" element={<CreateEvent />} />
+              <Route path="/community/:id/manage/events/:eventId/edit" element={<CreateEvent />} />
+              <Route path="/community/:id/manage/events" element={<EventsList />} />
+              <Route path="/community/:id/manage/announcements" element={<AnnouncementsList />} />
+            </Route>
 
-        </Routes>
-      </AuthProvider>
+          </Routes>
+        </AuthProvider>
+      </ToastProvider>
     </BrowserRouter>
   )
 }

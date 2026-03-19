@@ -41,7 +41,6 @@ const authService = {
     logout: () => {
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
-        window.location.href = '/login';
     },
 
     getCurrentUser: async () => {
@@ -56,6 +55,15 @@ const authService = {
 
     isAuthenticated: () => {
         return !!localStorage.getItem('access_token');
+    },
+
+    changePassword: async (old_password, new_password) => {
+        try {
+            const response = await apiClient.post('/accounts/change-password/', { old_password, new_password });
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
     }
 };
 

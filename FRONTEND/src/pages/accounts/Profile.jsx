@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useLocation } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import api from '../../services/api'
 import AnnouncementCard from '../../components/cards/AnnouncementCard'
@@ -21,6 +21,8 @@ export default function Profile() {
     // If no ID is provided, it's the current user's profile
     const profileId = id || currentUser.id
     const isOwnProfile = !id || String(id) === String(currentUser.id)
+
+    const location = useLocation()
 
     useEffect(() => {
         fetchProfile()

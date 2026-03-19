@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react'
 import Navbar from '../../components/Navbar'
 import api from '../../services/api'
-import { useNavigate } from 'react-router-dom'
+import authService from '../../services/authService'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useToast } from '../../context/ToastContext'
+import Button from '../../components/shared/Button'
 
 export default function EditProfile() {
     const navigate = useNavigate()
+    const location = useLocation()
     const { refreshUser } = useAuth()
+    const { showToast } = useToast()
     const [formData, setFormData] = useState({
         username: '',
         email: '',
@@ -26,11 +31,20 @@ export default function EditProfile() {
 
     const [loading, setLoading] = useState(true)
     const [menuOpen, setMenuOpen] = useState(false)
-    const [message, setMessage] = useState('')
+    const [submitLoading, setSubmitLoading] = useState(false)
+
+    const [passwordData, setPasswordData] = useState({ oldPassword: '', newPassword: '' })
+    const [passwordLoading, setPasswordLoading] = useState(false)
 
     useEffect(() => {
         fetchProfile()
     }, [])
+
+    useEffect(() => {
+        if (!loading && location.hash === '#change-password') {
+            document.getElementById('change-password')?.scrollIntoView({ behavior: 'smooth' })
+        }
+    }, [location.hash, loading])
 
     const fetchProfile = async () => {
         try {
@@ -65,6 +79,27 @@ export default function EditProfile() {
         setFormData(prev => ({ ...prev, [name]: value }))
     }
 
+    const handlePasswordChange = (e) => {
+        const { name, value } = e.target
+        setPasswordData(prev => ({ ...prev, [name]: value }))
+    }
+
+    const handlePasswordSubmit = async (e) => {
+        e.preventDefault()
+        setPasswordLoading(true)
+        try {
+            await authService.changePassword(passwordData.oldPassword, passwordData.newPassword)
+            showToast('Password changed successfully! Please use it on your next login.', 'success')
+            setPasswordData({ oldPassword: '', newPassword: '' })
+        } catch (error) {
+            console.error("Change password failed", error)
+            const errorMsg = error.response?.data?.old_password?.[0] || error.response?.data?.new_password?.[0] || 'Failed to change password.'
+            showToast(errorMsg, 'error')
+        } finally {
+            setPasswordLoading(false)
+        }
+    }
+
     const handleFileChange = (e) => {
         const file = e.target.files[0]
         if (file) {
@@ -75,8 +110,7 @@ export default function EditProfile() {
 
     const handleSubmit = async (e) => {
         e.preventDefault()
-        setMessage('')
-        setLoading(true)
+        setSubmitLoading(true)
         try {
             const data = new FormData()
             // Removed data.append('username', formData.username) as it's read-only
@@ -110,16 +144,16 @@ export default function EditProfile() {
             // Refresh global user state to update Navbar etc.
             await refreshUser()
             
-            setMessage('Profile updated successfully!')
+            showToast('Profile updated successfully!', 'success')
             setTimeout(() => navigate('/profile'), 1500)
         } catch (error) {
             console.error("Update failed", error.response?.data || error)
             const errorMsg = error.response?.data 
                 ? Object.entries(error.response.data).map(([field, msgs]) => `${field}: ${msgs.join(', ')}`).join(' | ')
                 : 'Failed to update profile.'
-            setMessage(errorMsg)
+            showToast(errorMsg, 'error')
         } finally {
-            setLoading(false)
+            setSubmitLoading(false)
         }
     }
 
@@ -290,12 +324,6 @@ export default function EditProfile() {
                                 </div>
                             </div>
 
-                            {message && (
-                                <div className={`p-4 rounded-xl ${message.includes('success') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                    {message}
-                                </div>
-                            )}
-
                             <div className="flex justify-end gap-4">
                                 <button
                                     type="button"
@@ -304,12 +332,56 @@ export default function EditProfile() {
                                 >
                                     Cancel
                                 </button>
-                                <button
+                                <Button
                                     type="submit"
-                                    className="rounded-xl bg-[#75C043] px-8 py-3 text-sm font-bold text-[#0d1f14] transition hover:bg-[#68ae3b]"
+                                    isLoading={submitLoading}
+                                    loadingText="Saving..."
+                                    className="rounded-xl px-8 py-3 text-sm font-bold transition"
                                 >
                                     Save Changes
-                                </button>
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div id="change-password" className="mt-8 rounded-3xl border border-[#e5e7eb] bg-white p-8 shadow-sm">
+                        <h2 className="mb-6 text-xl font-bold">Change Password</h2>
+                        <form onSubmit={handlePasswordSubmit} className="space-y-6">
+                            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                                <div>
+                                    <label className="mb-2 block text-sm font-bold">Current Password</label>
+                                    <input
+                                        type="password"
+                                        name="oldPassword"
+                                        value={passwordData.oldPassword}
+                                        onChange={handlePasswordChange}
+                                        required
+                                        className="w-full rounded-xl border border-[#e5e7eb] bg-[#f4f5f2] px-4 py-3 outline-none focus:border-[#75C043]"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="mb-2 block text-sm font-bold">New Password</label>
+                                    <input
+                                        type="password"
+                                        name="newPassword"
+                                        value={passwordData.newPassword}
+                                        onChange={handlePasswordChange}
+                                        required
+                                        minLength={8}
+                                        className="w-full rounded-xl border border-[#e5e7eb] bg-[#f4f5f2] px-4 py-3 outline-none focus:border-[#75C043]"
+                                    />
+                                </div>
+                            </div>
+                            
+                            <div className="flex justify-end">
+                                <Button
+                                    type="submit"
+                                    isLoading={passwordLoading}
+                                    loadingText="Changing..."
+                                    className="rounded-xl px-8 py-3 text-sm font-bold transition"
+                                >
+                                    Change Password
+                                </Button>
                             </div>
                         </form>
                     </div>

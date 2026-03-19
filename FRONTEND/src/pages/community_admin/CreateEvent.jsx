@@ -3,7 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import eventService from '../../services/eventService'
 import { Plus, Trash2, Calendar, Clock, MapPin, Upload, Loader2 } from 'lucide-react'
-import Toast from '../../components/others/Toast'
+import { useToast } from '../../context/ToastContext'
+import Button from '../../components/shared/Button'
 
 
 export default function CreateEvent() {
@@ -11,7 +12,8 @@ export default function CreateEvent() {
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const isEditMode = !!eventId;
-  const [toast, setToast] = useState('')
+  const { showToast } = useToast()
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [formData, setFormData] = useState({
     title: '',
@@ -29,7 +31,7 @@ export default function CreateEvent() {
   const [w2eInput, setW2eInput] = useState('')
   try {
     // Fetch event data if in edit mode
-    useState(() => {
+    useEffect(() => {
       if (isEditMode) {
         eventService.getEvent(eventId).then(data => {
           setFormData({
@@ -120,22 +122,23 @@ export default function CreateEvent() {
 
         if (isEditMode) {
           await eventService.updateEvent(eventId, data);
-          navigate(`/events/${eventId}`, { state: { success: 'Event updated successfully!' } });
+          showToast('Event updated successfully!', 'success');
+          navigate(`/events/${eventId}`);
         } else {
           await eventService.createEvent(data);
-          navigate(`/community/${id}/dashboard`, { state: { success: 'Event created successfully!' } });
+          showToast('event posted successfully.', 'success');
+          navigate(`/community/${id}/dashboard`);
         }
       } catch (e) {
         console.error("Failed to save event", e);
         if (e.response && e.response.data) {
           console.log("Validation Errors:", e.response.data);
-          // Try to stringify error for display if it's an object
           const errorMsg = typeof e.response.data === 'object'
             ? Object.entries(e.response.data).map(([k, v]) => `${k}: ${v}`).join(', ')
             : e.response.data;
-          setToast(`Error: ${errorMsg}`);
+          showToast(`Error: ${errorMsg}`, 'error');
         } else {
-          setToast(`Failed to ${isEditMode ? 'update' : 'create'} event. Please try again.`);
+          showToast(`Failed to ${isEditMode ? 'update' : 'create'} event. Please try again.`, 'error');
         }
       }
     }
@@ -150,7 +153,6 @@ export default function CreateEvent() {
         closeMenu={() => setMenuOpen(false)}
         navSolid={true}
       />
-      <Toast message={toast} onClose={() => setToast('')} />
 
       <main className="pt-24 pb-16">
         <div className="mx-auto w-full max-w-5xl px-4">
@@ -320,17 +322,14 @@ export default function CreateEvent() {
               </div>
 
               <div className="flex items-center gap-4">
-                <button
+                <Button
                   onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  className="flex items-center gap-2 rounded-xl bg-[#75C043] px-8 py-3 text-sm font-bold text-[#0d1f14] transition hover:bg-[#68ae3b] disabled:opacity-70 disabled:cursor-not-allowed"
+                  isLoading={isSubmitting}
+                  loadingText={isEditMode ? 'Updating...' : 'Creating...'}
+                  className="rounded-xl px-8 py-3 text-sm font-bold transition"
                 >
-                  {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {isSubmitting
-                    ? (isEditMode ? 'Updating...' : 'Creating...')
-                    : (isEditMode ? 'Update Event' : 'Create Event')
-                  }
-                </button>
+                  {isEditMode ? 'Update Event' : 'Create Event'}
+                </Button>
                 <button
                   onClick={() => navigate(`/community/${id}/dashboard`)}
                   className="rounded-xl border border-[#e5e7eb] bg-white px-8 py-3 text-sm font-bold text-[#0d1f14] transition hover:bg-[#f4f5f2]"

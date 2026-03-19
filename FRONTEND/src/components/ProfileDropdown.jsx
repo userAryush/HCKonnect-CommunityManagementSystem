@@ -1,17 +1,25 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../context/ToastContext'
 import { LogOut, User, Settings, ShieldCheck, Edit3 } from 'lucide-react'
 import { getDisplayName, getInitials, getProfileImage } from '../utils/userUtils'
+import Button from './shared/Button'
 
 export default function ProfileDropdown() {
   const [isOpen, setIsOpen] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const navigate = useNavigate()
   const { user, logout } = useAuth()
+  const { showToast } = useToast()
 
   const handleLogout = () => {
-    logout()
-    navigate('/')
+    setIsLoggingOut(true)
+    setTimeout(() => {
+        logout()
+        showToast('successfully logged out.', 'success')
+        navigate('/login')
+    }, 500)
   }
 
   const displayName = getDisplayName(user)
@@ -71,7 +79,7 @@ export default function ProfileDropdown() {
               Settings
             </Link> */}
             <Link
-              to="/change-password"
+              to="/profile/edit#change-password"
               className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50 hover:text-primary transition-colors font-semibold"
               onClick={() => setIsOpen(false)}
             >
@@ -81,13 +89,18 @@ export default function ProfileDropdown() {
 
             <div className="my-1 border-t border-zinc-100" />
 
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-3 w-full px-4 py-2.5 text-left text-sm text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors font-bold"
-            >
-              <LogOut size={16} />
-              Logout
-            </button>
+            <div className="px-2 pb-2">
+              <Button
+                onClick={handleLogout}
+                variant="ghost"
+                isLoading={isLoggingOut}
+                loadingText="Logging out..."
+                className="w-full justify-start text-red-500 hover:bg-red-50 hover:text-red-600"
+              >
+                {!isLoggingOut && <LogOut size={16} className="mr-3" />}
+                Logout
+              </Button>
+            </div>
           </div>
         </>
       )}
