@@ -158,7 +158,7 @@ export default function MemberManagement() {
     }
   };
   return (
-    <div className="min-h-screen bg-[#f4f5f2] text-[#0d1f14]">
+    <div className="min-h-screen bg-secondary text-[#0d1f14]">
       <Navbar menuOpen={menuOpen} toggleMenu={() => setMenuOpen(!menuOpen)} closeMenu={() => setMenuOpen(false)} navSolid />
 
       <main className="pt-24 pb-16">

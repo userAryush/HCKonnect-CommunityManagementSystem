@@ -46,7 +46,7 @@ export default function CreateDiscussion() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col pt-20">
+        <div className="min-h-screen bg-secondary flex flex-col pt-20">
             <Navbar navSolid={true} />
             <main className="flex-1 w-full max-w-2xl mx-auto px-4 py-8">
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
@@ -105,7 +105,7 @@ export default function CreateDiscussion() {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="px-6 py-2.5 rounded-xl bg-green-600 text-white font-medium hover:bg-green-700 transition shadow-sm disabled:opacity-70 flex items-center gap-2"
+                                className="px-6 py-2.5 rounded-xl bg-[#75C043] text-white font-medium hover:bg-[#75C043]/80 transition shadow-sm disabled:opacity-70 flex items-center gap-2"
                             >
                                 {loading && <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>}
                                 Post Discussion

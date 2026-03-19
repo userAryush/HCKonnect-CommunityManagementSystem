@@ -1,22 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
-import Toast from '../../components/others/Toast'
-
 import Navbar from '../../components/Navbar'
 import FeedFilter from '../../components/feed/FeedFilter'
 import FeedList from '../../components/feed/FeedList'
-import HeaderActionsRow from '../../components/feed/HeaderActionsRow'
 import InfoRow from '../../components/feed/InfoRow'
-
 
 export default function Feed() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [filter, setFilter] = useState('all')
-  const [theme, setTheme] = useState('light')
-  const [hiddenTypes, setHiddenTypes] = useState([])
-  const [hiddenCommunities, setHiddenCommunities] = useState([])
   const location = useLocation()
-  const [toast, setToast] = useState(location.state?.success || '')
 
   useEffect(() => {
     if (location.state?.success) {
@@ -24,11 +16,8 @@ export default function Feed() {
     }
   }, [location.state])
 
-
-
-
   return (
-    <div className={`${theme === 'dark' ? 'bg-[#0b1a11] text-white' : 'bg-[#f4f5f2] text-[#0d1f14]'} min-h-screen antialiased`}>
+    <div className="bg-[#F9FAFB] min-h-screen antialiased">
       <Navbar
         menuOpen={menuOpen}
         toggleMenu={() => setMenuOpen((v) => !v)}
@@ -36,46 +25,36 @@ export default function Feed() {
         navSolid={true}
       />
 
-      <main className="pt-28 pb-16">
-        {/* We use a grid that takes up 100% width but has controlled gutters */}
-        <div className="w-full px-4 md:px-8 lg:px-12">
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-
-            {/* 1. Left Spacer - Helps center the main feed relative to Navbar */}
-            <div className="hidden xl:block xl:col-span-1" />
-
-            {/* 2. Main Feed Column - Max-width 4xl to keep it readable and "Centered" */}
-            <div className="xl:col-span-7 max-w-4xl w-full mx-auto xl:mx-0">
-              <header className="mb-10">
-                <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#75C043] mb-2">Common Feed</p>
-                <h1 className="text-4xl font-black tracking-tight text-[#0d1f14]">All communities in one place</h1>
+      <main className="pt-24 pb-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
+            
+            {/* Main Feed Column */}
+            <div className="lg:col-span-8 flex flex-col gap-6">
+              <header className="flex flex-col gap-2 mb-2">
+                <h1 className="text-2xl font-bold tracking-tight text-surface-dark sm:text-3xl">Daily Feed</h1>
+                <p className="text-sm text-surface-muted">Central hub for all community updates and discussions.</p>
               </header>
 
-              <HeaderActionsRow />
+              <div className="sticky top-[72px] z-20 bg-[#F9FAFB]/80 backdrop-blur-md py-4 border-b border-surface-border/50 -mx-4 px-4 sm:mx-0 sm:px-0">
+                <FeedFilter value={filter} onChange={setFilter} />
+              </div>
 
-              <div className="mt-8 flex flex-col gap-6">
-                <div className="sticky top-24 z-20 pb-2">
-                  <FeedFilter value={filter} onChange={setFilter} />
-                </div>
+              <div className="mt-2">
                 <FeedList
                   key={filter}
                   filter={filter}
-                  hiddenTypes={hiddenTypes || []}
-                  hiddenCommunities={hiddenCommunities || []}
                 />
               </div>
             </div>
 
-            {/* 3. InfoRow Column - Pushed to the COMPLETE EDGE */}
-            <aside className="hidden xl:block xl:col-span-4 self-start sticky top-28">
-              {/* This inner div ensures it stays at the right side of its column */}
-              <div className="max-w-[300px] ml-[30px]">
-                <InfoRow />
-              </div>
+            {/* Sidebar */}
+            <aside className="hidden lg:block lg:col-span-4 sticky top-24 self-start">
+              <InfoRow />
             </aside>
 
-            {/* Mobile InfoRow (only shows on small screens at the bottom) */}
-            <div className="xl:hidden mt-12">
+            {/* Mobile Sidebar */}
+            <div className="lg:hidden mt-12 pt-12 border-t border-surface-border">
               <InfoRow />
             </div>
 

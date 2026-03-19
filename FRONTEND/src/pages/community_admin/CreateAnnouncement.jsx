@@ -53,7 +53,7 @@ export default function CreateAnnouncement() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f5f2] text-[#0d1f14]">
+    <div className="min-h-screen bg-secondary text-[#0d1f14]">
       <Navbar
         menuOpen={menuOpen}
         toggleMenu={() => setMenuOpen((v) => !v)}

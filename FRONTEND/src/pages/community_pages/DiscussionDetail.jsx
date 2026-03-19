@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MessageSquare, ThumbsUp, Trash2, Reply, CornerDownRight, ChevronDown, ChevronUp, Clock } from 'lucide-react';
+import { formatTimeAgo } from '../../utils/timeFormatter';
+import { getInitials, getDisplayName, getRoleLabel, getProfileImage } from '../../utils/userUtils';
 import discussionService from '../../services/discussionService';
 import Navbar from '../../components/Navbar';
 import CommunityAvatar from '../../components/shared/CommunityAvatar';
@@ -179,19 +181,22 @@ export default function DiscussionDetail() {
                 {/* Main Topic Header */}
                 <article className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-10 relative group">
                     <div className="flex items-start gap-4">
-                        <CommunityAvatar name={discussion.community ? (discussion.community_name || discussion.community?.name) : (discussion.created_by_name || 'User')} />
+                        <div className="h-12 w-12 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-500 font-bold overflow-hidden border border-zinc-200 uppercase text-sm tracking-wider flex-shrink-0 mt-1">
+                            {getProfileImage(discussion) ? (
+                                <img src={getProfileImage(discussion)} alt={getDisplayName(discussion)} className="h-full w-full object-cover" />
+                            ) : (
+                                getInitials(getDisplayName(discussion))
+                            )}
+                        </div>
 
                         <div className="flex-1">
                             <div className="flex items-center justify-between">
                                 {/* LEFT */}
                                 <div>
-                                    <span className="text-xs font-medium text-gray-500">
-                                        Posted by{" "}
-                                        <span className="text-gray-900 font-semibold">
-                                            {discussion.created_by_name || "User"}
-                                        </span>{" "}
-                                        • {discussion.time_ago}
-                                    </span>
+                                    <p className="text-sm font-semibold text-surface-dark">{getDisplayName(discussion)}</p>
+                                    <p className="text-metadata">
+                                        {getRoleLabel(discussion)} • {discussion.time_ago || formatTimeAgo(discussion.created_at)}
+                                    </p>
                                 </div>
 
                                 {/* RIGHT (badges + delete) */}

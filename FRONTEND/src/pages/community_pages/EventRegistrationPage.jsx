@@ -68,7 +68,7 @@ export default function EventRegistrationPage() {
   if (!event) return <div className="p-10 text-center">Event not found.</div>
 
   return (
-    <div className="min-h-screen bg-[#f4f5f2] text-[#0d1f14]">
+    <div className="min-h-screen bg-secondary text-[#0d1f14]">
       <Navbar navSolid={true} />
 
       <main className="mx-auto w-full max-w-2xl px-4 py-24">

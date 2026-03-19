@@ -1,4 +1,6 @@
-export default function CommunityAvatar({ name, logoText, size = 'md', className = '' }) {
+import { getInitials } from '../../utils/userUtils';
+
+export default function CommunityAvatar({ name, logo, logoText, size = 'md', className = '' }) {
   const sizeClasses = {
     sm: 'w-8 h-8 text-xs',
     md: 'w-10 h-10 text-sm',
@@ -7,10 +9,14 @@ export default function CommunityAvatar({ name, logoText, size = 'md', className
 
   return (
     <div
-      className={`flex items-center justify-center rounded-xl bg-[#0d1f14] font-bold text-white shadow-sm ${sizeClasses[size]} ${className}`}
+      className={`flex items-center justify-center rounded-full bg-zinc-100 border border-zinc-200 font-bold text-zinc-500 uppercase tracking-wider overflow-hidden ${sizeClasses[size]} ${className}`}
       aria-label={`${name} logo`}
     >
-      {logoText}
+      {logo ? (
+        <img src={logo} alt={name} className="h-full w-full object-cover" />
+      ) : (
+        logoText || getInitials(name || 'C')
+      )}
     </div>
   )
 }

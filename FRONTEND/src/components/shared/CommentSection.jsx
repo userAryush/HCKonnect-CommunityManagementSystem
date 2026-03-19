@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { ThumbsUp, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { formatTimeAgo } from '../../utils/timeFormatter';
+import { getInitials } from '../../utils/userUtils';
 
 export default function CommentSection({
     comments,
@@ -42,14 +44,24 @@ export default function CommentSection({
                 <div className="p-5">
                     <div className="flex justify-between items-start mb-3">
                         <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-700 text-sm font-bold">
-                                {(reply.author_name || reply.created_by_name || 'U')[0].toUpperCase()}
+                            <div className="h-8 w-8 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-500 font-bold overflow-hidden border border-zinc-200 uppercase text-[10px] tracking-wider">
+                                {reply.author_image || reply.created_by_image ? (
+                                    <img src={reply.author_image || reply.created_by_image} alt={reply.author_name || reply.created_by_name} className="h-full w-full object-cover" />
+                                ) : (
+                                    getInitials(reply.author_name || reply.created_by_name || 'User')
+                                )}
                             </div>
                             <div>
-                                <p className="font-bold text-sm text-gray-900 leading-none">
+                                <p className="text-sm font-semibold text-surface-dark">
                                     {reply.author_name || reply.created_by_name || 'User'}
                                 </p>
-                                <p className="text-[11px] text-gray-400 mt-1">{reply.time_ago}</p>
+                                <p className="text-metadata">
+                                    {reply.author_role === 'community' 
+                                        ? 'Community Admin' 
+                                        : reply.author_community 
+                                            ? `Member of ${reply.author_community}` 
+                                            : 'Student'} • {formatTimeAgo(reply.created_at)}
+                                </p>
                             </div>
                         </div>
                         {isAuthor && (

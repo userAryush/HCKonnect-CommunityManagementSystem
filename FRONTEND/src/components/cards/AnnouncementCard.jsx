@@ -1,24 +1,16 @@
-import CommunityAvatar from '../shared/CommunityAvatar'
 import { Trash2 } from 'lucide-react'
 import { formatTimeAgo } from '../../utils/timeFormatter'
+import { getInitials, getDisplayName, getRoleLabel, getProfileImage } from '../../utils/userUtils'
 import announcementService from '../../services/announcementService'
+import Card from '../shared/Card'
+import Badge from '../shared/Badge'
 
 export default function AnnouncementCard({ item, onDelete }) {
-  // Determine if user can delete
-  // Determine if user can delete
   const user = JSON.parse(localStorage.getItem('user') || 'null');
 
-  // Debugging
-  if (user && item) {
-    console.log(`Announcement ${item.id} - User: ${user.id} (${user.role}), Community: ${item.community.id}, Author: ${item.author.id || item.author}`);
-  }
-
   const canDelete = user && (
-    // Community Admin check
     (user.role === 'community' && String(user.id) === String(item.community?.id)) ||
-    // Representative check
     (user.membership && user.membership.role === 'representative' && String(user.membership.community) === String(item.community?.id)) ||
-    // Author check (handling both object and ID)
     (String(user.id) === String(item.author?.id || item.author))
   );
 
@@ -30,50 +22,60 @@ export default function AnnouncementCard({ item, onDelete }) {
         else window.location.reload();
       } catch (error) {
         console.error("Failed to delete", error);
-        alert("Failed to delete announcement");
       }
     }
   }
 
   return (
-    <article className="relative overflow-hidden rounded-3xl border border-[#e5e7eb] bg-[#fffcf5] p-5 shadow-sm transition hover:shadow-md">
-      <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#c08619]" />
-      <div className="flex items-start gap-3">
-        <CommunityAvatar name={item.community?.name} logoText={item.community?.logoText} />
-        <div className="flex-1">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-[#0d1f14]">{item.community?.name || 'Community'}</p>
-              <p className="text-xs text-[#4b4b4b]">
-                {item.author?.name || 'User'} • {formatTimeAgo(item.createdAt)}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="rounded-full bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
-                Announcement
-              </span>
-              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide border ${item.visibility === 'public'
-                ? 'bg-green-100 text-green-700 border-green-200'
-                : 'bg-gray-100 text-gray-600 border-gray-200'
-                }`}>
-                {item.visibility || 'Public'}
-              </span>
-
-              {canDelete && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleDelete(); }}
-                  className="text-red-400 hover:text-red-600 p-1"
-                  title="Delete Announcement"
-                >
-                  <Trash2 size={16} />
-                </button>
-              )}
-            </div>
+    <Card className="group relative">
+      <div className="flex items-center justify-between mb-4">
+        <header className="flex items-center gap-3">
+          <div
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 font-bold overflow-hidden border border-zinc-200 uppercase text-xs tracking-wider"
+            aria-hidden
+          >
+            {getProfileImage(item) ? (
+              <img src={getProfileImage(item)} alt={getDisplayName(item)} className="h-full w-full object-cover" />
+            ) : (
+              getInitials(getDisplayName(item))
+            )}
           </div>
-          <h3 className="mt-3 text-lg font-semibold text-[#0d1f14]">{item.title}</h3>
-          <p className="mt-2 text-sm text-[#4b4b4b]">{item.description}</p>
+          <div>
+            <p className="text-sm font-semibold text-surface-dark">{getDisplayName(item)}</p>
+            <p className="text-metadata cursor-default">
+              {getRoleLabel(item)} • {formatTimeAgo(item.createdAt || item.created_at)}
+            </p>
+          </div>
+        </header>
+
+        <div className="flex items-center gap-2">
+          <Badge variant="gray">Announcement</Badge>
+          {item.visibility && (
+            <Badge variant={item.visibility === 'public' ? 'success' : 'gray'}>
+              {item.visibility}
+            </Badge>
+          )}
+
+          {canDelete && (
+            <button
+              onClick={(e) => { e.stopPropagation(); handleDelete(); }}
+              className="text-zinc-400 hover:text-red-500 p-1.5 transition-colors rounded-full hover:bg-red-50"
+              title="Delete Announcement"
+            >
+              <Trash2 size={16} />
+            </button>
+          )}
         </div>
       </div>
-    </article>
+
+      <div className="space-y-2">
+        <h3 className="text-title group-hover:text-primary transition-colors">
+          {item.title}
+        </h3>
+        <p className="text-body leading-relaxed">
+          {item.description}
+        </p>
+      </div>
+    </Card>
   )
 }

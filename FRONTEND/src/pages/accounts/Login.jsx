@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import logo from '../../assets/logo.png'
+import logo from '../../assets/favicon.png'
 import ForgotPasswordWizard from '../../components/ForgotPasswordWizard'
 import { useNavigate, useLocation } from 'react-router-dom'
 import Toast from '../../components/others/Toast'
@@ -126,28 +126,27 @@ function Login() {
         'w-full max-w-[420px] rounded-lg border border-[#6d6e70]/40 bg-white px-4 py-2.5 text-sm placeholder:text-[#6d6e70]/60 focus:border-[#6d6e70] focus:outline-none'
 
     return (
-        <div className="flex min-h-screen w-full bg-[#f4f5f2] font-['Inter',sans-serif] text-[#111]">
-            <Toast message={toastMessage} onClose={() => setToastMessage('')} duration={10000} />
+        <div className="theme-original">
+            <div className="flex min-h-screen w-full items-center justify-center bg-secondary px-6 py-12 antialiased">
+                <Toast message={toastMessage} onClose={() => setToastMessage('')} duration={10000} />
 
-            <div className="flex min-h-screen w-full flex-col overflow-hidden bg-white shadow-2xl lg:flex-row">
-                <div className="flex flex-1 items-center justify-center bg-[#0d1f14] px-8 py-16">
-                    <img src={logo} alt="HCKonnect logo" className="w-full max-w-[250px]" />
-                </div>
-                <div className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center lg:px-12">
-                    <div className="w-full max-w-[420px] space-y-6">
-                        <div>
-                            <p className="text-sm uppercase tracking-[0.4em] text-[#6d6e70]">Login</p>
-                            <h1 className="mt-3 text-3xl font-semibold text-[#74bf44]">Welcome Back</h1>
-                            <p className="mt-2 text-sm text-[#6d6e70]">Log in to continue exploring Herald College Communities</p>
+                <div className="w-full max-w-md">
+                    <div className="card-border bg-surface p-10 shadow-xl">
+                        <div className="mb-10 text-center">
+                            <img src={logo} alt="HCKonnect" className="mx-auto h-12 w-12 mb-6" />
+                            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary mb-2">Welcome Back</p>
+                            <h1 className="text-3xl font-display font-bold tracking-tight text-surface-dark">Sign in to HCKonnect</h1>
+                            <p className="mt-3 text-sm text-surface-body leading-relaxed text-center">One platform. Every community.</p>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="flex flex-col items-center">
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-surface-body ml-1">Email Address</label>
                                 <input
                                     type="email"
                                     name="email"
-                                    placeholder="Email"
-                                    className={inputBase}
+                                    placeholder="use-email-with@heraldcollege.edu.np"
+                                    className="w-full rounded-button border border-surface-border bg-secondary/30 px-4 py-3 text-sm text-surface-dark placeholder:text-surface-body focus:border-primary focus:ring-4 focus:ring-brand/10 focus:outline-none transition-all"
                                     value={email}
                                     onChange={(event) => {
                                         setEmail(event.target.value)
@@ -155,17 +154,25 @@ function Login() {
                                         setApiErrors((prev) => ({ ...prev, email: '' }))
                                     }} />
                                 <FieldError message={errors.email || apiErrors.email} />
-
-
                             </div>
 
-                            <div className="flex flex-col items-center">
-                                <div className="relative w-full max-w-[420px]">
+                            <div className="space-y-1">
+                                <div className="flex justify-between items-end mb-1">
+                                    <label className="text-[10px] font-bold uppercase tracking-wider text-surface-body ml-1">Password</label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowForgotPassword(true)}
+                                        className="text-[10px] font-bold uppercase tracking-wider text-primary hover:underline underline-offset-4"
+                                    >
+                                        Forgot?
+                                    </button>
+                                </div>
+                                <div className="relative">
                                     <input
                                         type={showPassword ? 'text' : 'password'}
                                         name="password"
-                                        placeholder="Password"
-                                        className={inputBase}
+                                        placeholder="password.."
+                                        className="w-full rounded-button border border-surface-border bg-secondary/30 px-4 py-3 text-sm text-surface-dark placeholder:text-surface-body focus:border-primary focus:ring-4 focus:ring-brand/10 focus:outline-none transition-all"
                                         value={password}
                                         onChange={(event) => {
                                             setPassword(event.target.value)
@@ -175,10 +182,9 @@ function Login() {
                                                 non_field_errors: '',
                                                 detail: '',
                                             }))
-
                                         }} />
                                     <button type="button" onClick={() => setShowPassword((prev) => !prev)}
-                                        className="absolute inset-y-0 right-4 flex items-center text-xs font-semibold text-[#6d6e70]">
+                                        className="absolute inset-y-0 right-4 flex items-center text-[10px] font-bold uppercase tracking-wider text-surface-body hover:text-surface-dark">
                                         {showPassword ? 'Hide' : 'Show'}
                                     </button>
                                 </div>
@@ -192,31 +198,19 @@ function Login() {
                                 />
                             </div>
 
-                            <div className="flex justify-end">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowForgotPassword(true)}
-                                    className="text-xs font-semibold text-[#74bf44] hover:underline"
-                                >
-                                    Forgot Password?
-                                </button>
-                            </div>
-
-
-
-
-
                             {successMessage && <p className="text-sm text-green-600">{successMessage}</p>}
 
-                            <button type="submit" disabled={loading}
-                                className={`w-full max-w-[420px] rounded-full bg-[#74bf44] py-2.5 text-sm font-semibold text-white transition hover:bg-[#62a837] ${loading ? 'cursor-not-allowed opacity-70' : ''
-                                    }`}>
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className={`w-full rounded-button bg-primary py-2.5 text-sm font-bold text-white transition hover:scale-[1.01] active:scale-[0.99] shadow-lg shadow-brand/20 ${loading ? 'cursor-not-allowed opacity-70' : ''}`}
+                            >
                                 {loading ? 'Signing In…' : 'Sign In'}
                             </button>
 
                             <Divider />
 
-                            <div className="flex justify-center flex-col items-center gap-2">
+                            <div className="w-full">
                                 <GoogleLogin
                                     onSuccess={handleGoogleSuccess}
                                     onError={() => {
@@ -225,16 +219,15 @@ function Login() {
                                     }}
                                     theme="outline"
                                     size="large"
-                                    shape="circle"
-                                    width="420px"
-                                    useOneTap
+                                    shape="rectangular"
+                                    width="100%"
                                 />
                                 <FieldError message={apiErrors.google} />
                             </div>
 
-                            <p className="text-xs text-[#6d6e70]">
+                            <p className="text-center text-xs text-surface-body font-medium">
                                 New here?{' '}
-                                <a href="/register" className="font-semibold text-[#6d6e70] underline-offset-4 hover:underline">
+                                <a href="/register" className="font-bold text-surface-dark hover:text-primary transition-colors underline decoration-brand decoration-2 underline-offset-4">
                                     Create an account
                                 </a>
                             </p>
@@ -242,14 +235,10 @@ function Login() {
                     </div>
                 </div>
 
-                {/* <div className="flex flex-1 items-center justify-center bg-[#0d1f14] px-8 py-16">
-                    <img src={logo} alt="HCKonnect logo" className="w-full max-w-[250px]" />
-                </div> */}
+                {showForgotPassword && (
+                    <ForgotPasswordWizard onClose={() => setShowForgotPassword(false)} />
+                )}
             </div>
-            {showForgotPassword && (
-                <ForgotPasswordWizard onClose={() => setShowForgotPassword(false)} />
-            )}
-
         </div>
     )
 }
@@ -260,10 +249,10 @@ function FieldError({ message }) {
 }
 function Divider() {
     return (
-        <div className="flex items-center gap-4 text-xs text-[#6d6e70]">
-            <span className="h-px flex-1 bg-[#6d6e70]/30" />
+        <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-surface-body">
+            <span className="h-px flex-1 bg-oat" />
             OR
-            <span className="h-px flex-1 bg-[#6d6e70]/30" />
+            <span className="h-px flex-1 bg-oat" />
         </div>
     )
 }

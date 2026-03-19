@@ -8,6 +8,7 @@ import EventCard from '../../components/cards/EventCard'
 import PostCard from '../../components/cards/PostCard'
 import postService from '../../services/postService'
 import { Edit2, Linkedin, Github, Globe, MapPin, Calendar, Award } from 'lucide-react'
+import { getDisplayName, getInitials, getProfileImage } from '../../utils/userUtils'
 
 export default function Profile() {
     const { id } = useParams()
@@ -57,20 +58,21 @@ export default function Profile() {
     };
 
     if (loading) return (
-        <div className="flex min-h-screen items-center justify-center bg-[#f4f5f2]">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#75C043] border-t-transparent" />
+        <div className="flex min-h-screen items-center justify-center bg-secondary">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>
     )
 
     if (!profile) return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-[#f4f5f2] p-4 text-center">
-            <h2 className="text-2xl font-bold">Profile not found</h2>
-            <Link to="/feed" className="mt-4 text-[#75C043] hover:underline">Back to Feed</Link>
+        <div className="flex min-h-screen flex-col items-center justify-center bg-secondary p-6 text-center">
+            <h2 className="text-2xl font-display font-bold text-surface-dark">Profile not found</h2>
+            <Link to="/feed" className="mt-4 text-primary font-bold hover:underline">Back to Feed</Link>
         </div>
     )
 
-    const displayName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.username;
-    const initial = (profile.username || 'U').charAt(0).toUpperCase();
+    const displayName = getDisplayName(profile);
+    const profileImage = getProfileImage(profile);
+    const initials = getInitials(displayName);
 
     // Combine and sort activity
     const activity = [
@@ -79,7 +81,7 @@ export default function Profile() {
     ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
     return (
-        <div className="min-h-screen bg-[#f4f5f2] text-[#0d1f14]">
+        <div className="min-h-screen bg-secondary text-surface-dark antialiased">
             <Navbar
                 menuOpen={menuOpen}
                 toggleMenu={() => setMenuOpen((v) => !v)}
@@ -87,85 +89,89 @@ export default function Profile() {
                 navSolid={true}
             />
 
-            <main className="pt-24 pb-16">
-                <div className="mx-auto w-full max-w-4xl px-4">
+            <main className="pt-28 pb-20">
+                <div className="mx-auto w-full max-w-4xl px-6">
                     {/* Header Card */}
-                    <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
+                    <div className="card-border p-0 overflow-hidden shadow-sm">
                         {/* Cover Image */}
-                        <div className="h-48 w-full bg-gradient-to-r from-[#75C043] to-[#0d1f14]" />
+                        <div className="h-48 w-full bg-oat/50 relative overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-br from-brand/20 to-surface-border" />
+                        </div>
 
                         <div className="relative px-8 pb-8">
                             {/* Profile Image */}
-                            <div className="absolute -top-16 left-8">
-                                {profile.profile_image ? (
-                                    <img
-                                        src={profile.profile_image}
-                                        alt={displayName}
-                                        className="h-32 w-32 rounded-full border-4 border-white object-cover shadow-md"
-                                    />
+                            <div className="absolute -top-20 left-10">
+                                {profileImage ? (
+                                    <div className="h-40 w-40 rounded-2xl border-4 border-surface shadow-xl bg-surface overflow-hidden">
+                                        <img
+                                            src={profileImage}
+                                            alt={displayName}
+                                            className="h-full w-full object-cover"
+                                        />
+                                    </div>
                                 ) : (
-                                    <div className="flex h-32 w-32 items-center justify-center rounded-full border-4 border-white bg-[#75C043] text-4xl font-bold text-[#0d1f14] shadow-md">
-                                        {initial}
+                                    <div className="flex h-40 w-40 items-center justify-center rounded-2xl border-4 border-surface bg-primary text-5xl font-bold text-white shadow-xl uppercase">
+                                        {initials}
                                     </div>
                                 )}
                             </div>
 
                             {/* Actions */}
-                            <div className="flex justify-end pt-4">
+                            <div className="flex justify-end pt-6 pr-2">
                                 {isOwnProfile && (
                                     <Link
                                         to="/profile/edit"
-                                        className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-6 py-2 text-sm font-bold transition hover:bg-gray-50"
+                                        className="flex items-center gap-2 rounded-button border border-surface-border bg-white px-6 py-2.5 text-sm font-bold text-surface-dark transition hover:bg-secondary hover:border-primary/30"
                                     >
-                                        <Edit2 size={16} />
+                                        <Edit2 size={16} className="text-primary" />
                                         Edit Profile
                                     </Link>
                                 )}
                             </div>
 
                             {/* Name and Info */}
-                            <div className="mt-6">
-                                <h1 className="text-3xl font-black tracking-tight">{displayName}</h1>
-                                <p className="text-gray-500 font-medium">@{profile.username}</p>
+                            <div className="mt-8 px-2">
+                                <h1 className="text-4xl font-display font-bold tracking-tight text-surface-dark">{displayName}</h1>
+                                <p className="text-surface-body font-medium mt-1">@{profile.username}</p>
 
-                                <div className="mt-4 flex flex-wrap items-center gap-6 text-sm text-gray-600">
+                                <div className="mt-6 flex flex-wrap items-center gap-6">
                                     {profile.membership ? (
-                                        <div className="flex items-center gap-2">
-                                            <Award size={18} className="text-[#a16207]" />
-                                            <span className="font-semibold text-gray-700">
-                                                {profile.membership.role === 'representative' ? 'Representative' : 'Member'} of {profile.membership.community_name}
+                                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20">
+                                            <Award size={16} className="text-primary" />
+                                            <span className="text-xs font-bold text-primary uppercase tracking-wider">
+                                                {profile.membership.role === 'representative' ? 'Representative' : 'Member'} • {profile.membership.community_name}
                                             </span>
                                         </div>
                                     ) : (
-                                        <div className="flex items-center gap-2">
-                                            <Award size={18} className="text-gray-400" />
-                                            <span>Student</span>
+                                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-oat/40 border border-surface-border text-surface-body">
+                                            <Award size={16} />
+                                            <span className="text-xs font-bold uppercase tracking-wider">Student</span>
                                         </div>
                                     )}
 
                                     {profile.course && (
-                                        <div className="flex items-center gap-2">
-                                            <Globe size={18} className="text-gray-400" />
-                                            <span>{profile.course.toUpperCase()}</span>
+                                        <div className="flex items-center gap-2 text-surface-body">
+                                            <Globe size={18} />
+                                            <span className="text-sm font-medium">{profile.course.toUpperCase()}</span>
                                         </div>
                                     )}
                                 </div>
 
                                 {profile.bio && (
-                                    <p className="mt-6 max-w-2xl text-base leading-relaxed text-gray-700">
+                                    <p className="mt-8 max-w-2xl text-[15px] leading-relaxed text-surface-dark/80 bg-secondary/30 p-4 rounded-xl border border-surface-border/50">
                                         {profile.bio}
                                     </p>
                                 )}
 
                                 {/* Links */}
-                                <div className="mt-6 flex gap-4">
+                                <div className="mt-8 flex gap-4">
                                     {profile.linkedin_link && (
-                                        <a href={profile.linkedin_link} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-600 transition">
+                                        <a href={profile.linkedin_link} target="_blank" rel="noopener noreferrer" className="h-10 w-10 flex items-center justify-center rounded-lg border border-surface-border bg-white text-surface-body hover:text-primary hover:border-primary/30 transition-all shadow-sm">
                                             <Linkedin size={20} />
                                         </a>
                                     )}
                                     {profile.github_link && (
-                                        <a href={profile.github_link} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-900 transition">
+                                        <a href={profile.github_link} target="_blank" rel="noopener noreferrer" className="h-10 w-10 flex items-center justify-center rounded-lg border border-surface-border bg-white text-surface-body hover:text-surface-dark hover:border-surface-body transition-all shadow-sm">
                                             <Github size={20} />
                                         </a>
                                     )}
@@ -175,23 +181,24 @@ export default function Profile() {
                     </div>
 
                     {/* Content Section */}
-                    <div className="mt-10">
-                        <div className="mb-6 flex items-center justify-between border-b border-gray-200 pb-2">
-                            <h2 className="text-xl font-bold tracking-tight">Recent Activity</h2>
+                    <div className="mt-16">
+                        <div className="mb-8 flex items-center justify-between">
+                            <h2 className="text-2xl font-display font-bold tracking-tight text-surface-dark">Recent Activity</h2>
+                            <div className="h-px flex-1 mx-6 bg-oat" />
                         </div>
 
                         <div className="grid grid-cols-1 gap-6">
                             {(activity.length > 0) ? (
                                 activity.map((item, idx) => {
-                                    if (item.type === 'announcement') return <AnnouncementCard key={`ann-${item.id}`} item={item} />
-                                    if (item.type === 'discussion') return <DiscussionCard key={`disc-${item.id}`} item={item} />
-                                    if (item.type === 'event') return <EventCard key={`ev-${item.id}`} item={item} />
-                                    if (item.type === 'post') return <PostCard key={`post-${item.id}`} post={item} onDelete={(id) => setPosts(prev => prev.filter(p => p.id !== id))} />
+                                    if (item.type === 'announcement') return <div className="mb-6"><AnnouncementCard key={`ann-${item.id}`} item={item} /></div>
+                                    if (item.type === 'discussion') return <div className="mb-6"><DiscussionCard key={`disc-${item.id}`} item={item} /></div>
+                                    if (item.type === 'event') return <div className="mb-6"><EventCard key={`ev-${item.id}`} item={item} /></div>
+                                    if (item.type === 'post') return <div className="mb-6"><PostCard key={`post-${item.id}`} post={item} onDelete={(id) => setPosts(prev => prev.filter(p => p.id !== id))} /></div>
                                     return null
                                 })
                             ) : (
-                                <div className="rounded-3xl border-2 border-dashed border-gray-200 bg-white/50 p-12 text-center">
-                                    <p className="text-gray-500">No recent activity to show.</p>
+                                <div className="card-border border-dashed p-16 text-center bg-transparent">
+                                    <p className="text-surface-body font-medium">No recent activity detected.</p>
                                 </div>
                             )}
                         </div>

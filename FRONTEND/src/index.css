@@ -1,1 +1,76 @@
 @import "tailwindcss";
+
+@theme {
+    /* Strict Brand Palette */
+    --color-primary: #75C043;
+    --color-primary-hover: #5fa334;
+    --color-secondary: #FAFAFA; /* Very light neutral gray */
+
+    /* UI Surface & Text - Using Zinc (Neutral Grayscale) */
+    --color-surface-dark: #09090b; /* Zinc 950 - Titles */
+    --color-surface-body: #3f3f46; /* Zinc 700 - Content */
+    --color-surface-muted: #71717a; /* Zinc 500 - Metadata */
+    --color-surface-border: #e4e4e7; /* Zinc 200 - Borders */
+
+    /* Layout & Spacing */
+    --radius-standard: 12px;
+    --radius-button: 8px;
+
+    /* Typography */
+    --font-sans: "Inter", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+    --font-display: "Plus Jakarta Sans", "Inter", sans-serif;
+}
+
+@layer base {
+    body {
+        @apply bg-[#F9FAFB] text-surface-body font-sans antialiased;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        @apply font-display font-semibold tracking-tight text-surface-dark;
+    }
+}
+
+/* Custom Utilities - Modern DRY approach */
+@layer utilities {
+    .card-border {
+        @apply border border-surface-border rounded-standard bg-white p-6 shadow-sm transition-all hover:shadow-md;
+    }
+
+    .text-title {
+        @apply text-lg font-semibold text-surface-dark;
+    }
+
+    .text-body {
+        @apply text-sm text-surface-body;
+    }
+
+    .text-metadata {
+        @apply text-xs text-surface-muted;
+    }
+
+    .input-standard {
+        @apply bg-white border border-surface-border rounded-full px-4 py-2 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30;
+    }
+
+    .btn-primary {
+        @apply rounded-button bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-primary-hover active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+    }
+
+    .btn-secondary {
+        @apply rounded-button border border-surface-border bg-white px-5 py-2.5 text-sm font-semibold text-surface-body transition-all hover:bg-secondary hover:text-surface-dark active:scale-[0.98];
+    }
+
+    .nav-link {
+        @apply text-sm font-medium text-surface-muted hover:text-surface-dark transition-colors relative py-2 px-1;
+    }
+
+    .nav-link-active {
+        @apply text-surface-dark;
+    }
+
+    .nav-link-active::after {
+        content: '';
+        @apply absolute -bottom-0.5 left-0 right-0 h-0.5 bg-primary rounded-full;
+    }
+}

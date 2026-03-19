@@ -1,16 +1,19 @@
 import { useLocation, Link, useParams, useNavigate } from 'react-router-dom'
 import ProfileDropdown from './ProfileDropdown'
-import logo from '../assets/logo.png'
-import { Search, User as UserIcon, Users, Loader2, Bell } from 'lucide-react'
+import logo from '../assets/favicon.png'
+import { Search, User as UserIcon, Users, Loader2, Bell, Menu, X } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import apiClient from '../services/apiClient'
+import { useAuth } from '../context/AuthContext'
+import NotificationPopover from './notifications/NotificationPopover'
+import notificationService from '../services/notificationService'
+import { getDisplayName, getInitials, getProfileImage } from '../utils/userUtils'
 
 const studentLinks = [
   { label: 'Home', href: '/feed' },
   { label: 'Communities', href: '/communities' },
   { label: 'Discussions', href: '/discussions' },
   { label: 'Posts', href: '/posts' },
-  { label: 'Notifications', href: '#notifications' },
 ]
 
 const adminLinks = (communityId) => [
@@ -18,18 +21,13 @@ const adminLinks = (communityId) => [
   { label: 'Discussions', href: `/discussions?community_id=${communityId}` },
   { label: 'Posts', href: '/posts' },
   { label: 'Feed', href: '/feed' },
-  { label: 'Notifications', href: '#notifications' },
 ]
 
-import { useAuth } from '../context/AuthContext'
-import NotificationPopover from './notifications/NotificationPopover'
-import notificationService from '../services/notificationService'
-
-function Navbar({ menuOpen = false, toggleMenu = () => { }, closeMenu = () => { }, navSolid = false, rightActions = null }) {
+function Navbar({ menuOpen = false, toggleMenu = () => { }, closeMenu = () => { }, navSolid = false }) {
   const { user } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  const { id } = useParams() // Get community ID from URL if available
+  const { id } = useParams()
   const isLanding = location.pathname === '/'
   const isAdminRoute = location.pathname.includes('/dashboard') || location.pathname.includes('/manage')
 
@@ -44,7 +42,6 @@ function Navbar({ menuOpen = false, toggleMenu = () => { }, closeMenu = () => { 
   const notificationRef = useRef(null)
   const mobileNotificationRef = useRef(null)
 
-  // Handle outside click to close dropdowns
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -61,10 +58,8 @@ function Navbar({ menuOpen = false, toggleMenu = () => { }, closeMenu = () => { 
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Fetch unread count and set up polling
   useEffect(() => {
     if (!user) return
-
     const fetchUnreadCount = async () => {
       try {
         const data = await notificationService.getNotifications()
@@ -73,13 +68,11 @@ function Navbar({ menuOpen = false, toggleMenu = () => { }, closeMenu = () => { 
         console.error('Error fetching unread count')
       }
     }
-
     fetchUnreadCount()
-    const interval = setInterval(fetchUnreadCount, 15000) // Poll every 15s
+    const interval = setInterval(fetchUnreadCount, 15000)
     return () => clearInterval(interval)
   }, [user])
 
-  // Debounced search
   useEffect(() => {
     const timer = setTimeout(async () => {
       if (searchQuery.trim().length > 1) {
@@ -99,7 +92,6 @@ function Navbar({ menuOpen = false, toggleMenu = () => { }, closeMenu = () => { 
         setShowDropdown(false)
       }
     }, 300)
-
     return () => clearTimeout(timer)
   }, [searchQuery])
 
@@ -113,249 +105,168 @@ function Navbar({ menuOpen = false, toggleMenu = () => { }, closeMenu = () => { 
     }
   }
 
-  const baseStyles =
-    'fixed inset-x-0 top-0 z-50 border-b border-white/10 backdrop-blur-lg transition-colors duration-300'
-  const transparent = 'bg-transparent text-white'
-  const solid = 'bg-[#0d1f14]/95 text-white shadow-xl'
+  const baseStyles = 'fixed inset-x-0 top-0 z-50 transition-all duration-300 backdrop-blur-md border-b'
+  const transparent = 'bg-transparent border-transparent'
+  const solid = 'bg-white/90 border-surface-border shadow-sm'
 
-  // Determine links based on route
-  // Filter out Notifications from the standard links as we'll show it as an icon
-  let navLinks = studentLinks.filter(l => l.label !== 'Notifications')
-  // Prioritize user role if logged in
+  let navLinks = studentLinks
   if (user?.role === 'community') {
-    navLinks = adminLinks(user.id).filter(l => l.label !== 'Notifications')
+    navLinks = adminLinks(user.id)
   } else if (isAdminRoute && id) {
-    navLinks = adminLinks(id).filter(l => l.label !== 'Notifications')
+    navLinks = adminLinks(id)
   }
 
   return (
     <header className={`${baseStyles} ${navSolid ? solid : transparent}`}>
-      <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
-        <Link
-          to={isLanding ? '/' : '/feed'}
-          onClick={closeMenu}
-          className="flex flex-col items-start gap-1"
-        >
-          <div className="flex items-center gap-2">
-            <img
-              src={logo}
-              alt="HCKonnect logo"
-              className="h-8 w-8 rounded-full"
-            />
-            <span className="text-lg font-semibold tracking-wide">
-              HCKonnect
-            </span>
-          </div>
-          <span className="text-xs uppercase text-white/70">
-            Herald Community Konnect
-          </span>
-        </Link>
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-3">
+        <div className="flex items-center justify-between gap-4 md:gap-8">
 
-        {/* Global Search */}
-        {!isLanding && (
-          <div className="hidden flex-1 max-w-md mx-8 lg:block relative" ref={dropdownRef}>
-            <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 group-focus-within:text-[#75C043] transition-colors" size={18} />
-              <input
-                type="text"
-                placeholder="Search people or communities..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => searchQuery.trim().length > 1 && setShowDropdown(true)}
-                className="w-full bg-white/5 border border-white/10 rounded-full py-2 pl-12 pr-4 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#75C043]/50 focus:bg-white/10 transition-all"
-              />
-              {isSearching && (
-                <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                  <Loader2 className="animate-spin text-[#75C043]" size={16} />
+          {/* ZONE 1: BRAND */}
+          <Link
+            to={isLanding ? '/' : '/feed'}
+            onClick={closeMenu}
+            className="flex-shrink-0 flex flex-col group"
+          >
+            <div className="flex items-center gap-2 group cursor-pointer">
+              <img src={logo} alt="logo" className="h-8 w-8 rounded-lg transition-transform group-hover:scale-105" />
+
+              <span className="text-xl text-primary font-display font-bold tracking-tight">
+                HCKonnect
+              </span>
+            </div>
+            <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-surface-muted mt-0.5 ml-0.5">
+              Herald Community Konnect
+            </span>
+          </Link>
+
+          {/* ZONE 2: SEARCH */}
+          {!isLanding && (
+            <div className="hidden md:flex flex-1 justify-center max-w-md relative" ref={dropdownRef}>
+              <div className="relative w-full group">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-primary transition-colors" size={16} />
+                <input
+                  type="text"
+                  placeholder="Search anything..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-zinc-100/80 border border-transparent rounded-xl py-2 pl-10 pr-4 text-sm transition-all focus:bg-white focus:ring-4 focus:ring-zinc-100 focus:border-zinc-200 outline-none placeholder:text-zinc-500 font-medium"
+                />
+                {isSearching && (
+                  <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 animate-spin text-primary" size={16} />
+                )}
+              </div>
+
+              {showDropdown && searchQuery.trim().length > 1 && (
+                <div className="absolute top-full left-0 right-0 mt-3 bg-white border border-surface-border rounded-2xl shadow-xl overflow-hidden z-[60]">
+                  {isSearching ? (
+                    <div className="p-8 flex flex-col items-center justify-center gap-3">
+                      <Loader2 className="animate-spin text-primary" size={20} />
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Searching...</p>
+                    </div>
+                  ) : searchResults.length > 0 ? (
+                    <div className="py-2 max-h-[420px] overflow-y-auto">
+                      {searchResults.map((result) => (
+                        <button
+                          key={`${result.type}-${result.id}`}
+                          onClick={() => handleSelectResult(result)}
+                          className="w-full flex items-center gap-3.5 px-4 py-3 hover:bg-zinc-50 transition-all group text-left"
+                        >
+                          <div className="h-10 w-10 rounded-full border border-zinc-100 overflow-hidden bg-zinc-50 flex-shrink-0 flex items-center justify-center">
+                            {result.image ? (
+                              <img src={result.image} alt={result.name} className="h-full w-full object-cover" />
+                            ) : (
+                              <div className="h-full w-full flex items-center justify-center text-zinc-400 font-bold text-xs bg-zinc-100">
+                                {getInitials(result.name)}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-surface-dark truncate group-hover:text-primary transition-colors">
+                              {result.name}
+                            </p>
+                            <p className="text-xs text-zinc-400 truncate mt-0.5">
+                              {result.type === 'student' ? `@${result.username}` : 'Community'}
+                            </p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center">
+                      <p className="text-sm font-medium text-surface-dark">No matches found</p>
+                      <p className="text-xs text-zinc-400 mt-1">Try a different search term.</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
+          )}
 
-            {/* Search Dropdown */}
-            {showDropdown && (searchQuery.trim().length > 1) && (
-              <div className="absolute top-full mt-2 w-full bg-[#0d1f14] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-[60] backdrop-blur-xl">
-                {searchResults.length > 0 ? (
-                  <div className="py-2 max-h-[400px] overflow-y-auto">
-                    {searchResults.map((result) => (
-                      <button
-                        key={`${result.type}-${result.id}`}
-                        onClick={() => handleSelectResult(result)}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left"
-                      >
-                        <div className="h-10 w-10 rounded-full overflow-hidden bg-white/10 flex-shrink-0">
-                          {result.image ? (
-                            <img src={result.image} alt={result.name} className="h-full w-full object-cover" />
-                          ) : (
-                            <div className="h-full w-full flex items-center justify-center text-white/40">
-                              {result.type === 'student' ? <UserIcon size={20} /> : <Users size={20} />}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-white truncate">{result.name}</p>
-                          <p className="text-xs text-white/50 truncate">
-                            {result.type === 'student' ? `@${result.username}` : 'Community'}
-                          </p>
-                        </div>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full ${result.type === 'student' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'
-                          } uppercase font-bold tracking-wider`}>
-                          {result.type}
+          {/* ZONE 3: NAV & ACTIONS */}
+          <div className="flex items-center gap-2 md:gap-4">
+            <nav className="hidden xl:flex items-center gap-1">
+              {navLinks.map((link) => {
+                const isActive = location.pathname === link.href
+                return (
+                  <Link
+                    key={link.label}
+                    to={link.href}
+                    className={`px-4 py-2 text-sm font-semibold transition-colors rounded-lg ${
+                      isActive 
+                        ? 'text-primary bg-primary/5' 
+                        : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50'
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                )
+              })}
+            </nav>
+
+            <div className="flex items-center gap-1 sm:gap-4 md:pl-4 xl:border-l border-zinc-100">
+              {!user ? (
+                <div className="flex items-center gap-2">
+                  <Link to="/login" className="px-4 py-2 text-sm font-bold text-zinc-600 hover:text-zinc-900 transition-colors">Login</Link>
+                  <Link to="/register" className="bg-primary text-white px-5 py-2 rounded-xl text-sm font-bold shadow-md shadow-primary/20 hover:bg-primary-hover transition-all">Join</Link>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2.5">
+                  <div className="relative" ref={notificationRef}>
+                    <button
+                      onClick={() => setShowNotifications(!showNotifications)}
+                      className={`p-2.5 rounded-xl transition-all ${
+                        showNotifications 
+                          ? 'bg-primary/10 text-primary' 
+                          : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600'
+                      }`}
+                    >
+                      <Bell size={20} />
+                      {unreadCount > 0 && (
+                        <span className="absolute top-2 right-2 h-3.5 w-3.5 bg-primary text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-white">
+                          {unreadCount}
                         </span>
-                      </button>
-                    ))}
+                      )}
+                    </button>
+                    <NotificationPopover isOpen={showNotifications} onClose={() => setShowNotifications(false)} />
                   </div>
-                ) : (
-                  !isSearching && (
-                    <div className="p-8 text-center">
-                      <p className="text-sm text-white/40">No results found for "{searchQuery}"</p>
-                    </div>
-                  )
-                )}
-              </div>
-            )}
-          </div>
-        )}
+                  <ProfileDropdown />
+                </div>
+              )}
 
-
-        <nav className="hidden items-center gap-6 text-sm font-medium lg:flex">
-          {navLinks.map((link) => (
-            <Link
-              key={link.label}
-              to={link.href}
-              className="text-white/80 transition hover:text-white"
-              onClick={closeMenu}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="hidden items-center gap-3 lg:flex">
-          {rightActions}
-          {isLanding ? (
-            <>
-              <Link to="/login" className="rounded-full border border-white/40 px-5 py-2 text-sm font-semibold text-white transition hover:border-white hover:bg-white/10">
-                Login
-              </Link>
-              <Link to="/register" className="rounded-full bg-[#75C043] px-5 py-2 text-sm font-semibold text-[#0f1a12] shadow-lg shadow-[#75C043]/40 transition hover:scale-105">
-                Get Started
-              </Link>
-            </>
-          ) : (
-            <div className="flex items-center gap-4">
-              {/* Notification Bell */}
-              <div className="relative" ref={notificationRef}>
-                <button
-                  onClick={() => setShowNotifications(!showNotifications)}
-                  className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-all relative group"
-                  aria-label="View notifications"
-                >
-                  <Bell size={22} className={showNotifications ? 'text-[#75C043]' : ''} />
-                  {unreadCount > 0 && (
-                    <span className="absolute top-1.5 right-1.5 h-4 min-w-[1rem] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1 border-2 border-[#0d1f14]">
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </span>
-                  )}
-                </button>
-                <NotificationPopover
-                  isOpen={showNotifications}
-                  onClose={() => setShowNotifications(false)}
-                />
-              </div>
-              <ProfileDropdown />
-            </div>
-          )}
-        </div>
-
-        {/* Mobile Actions */}
-        <div className="flex items-center gap-2 lg:hidden">
-          {user && !isLanding && (
-            <div className="relative" ref={mobileNotificationRef}>
-              <button
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-all relative"
-                aria-label="View notifications"
+              {/* Mobile Toggle */}
+              <button 
+                onClick={toggleMenu} 
+                className="lg:hidden p-2 text-zinc-600 hover:bg-zinc-100 rounded-xl transition-colors"
               >
-                <Bell size={22} className={showNotifications ? 'text-[#75C043]' : ''} />
-                {unreadCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 h-4 min-w-[1rem] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1 border-2 border-[#0d1f14]">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
+                {menuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
-              <NotificationPopover
-                isOpen={showNotifications}
-                onClose={() => setShowNotifications(false)}
-              />
             </div>
-          )}
-          <button
-            className="relative flex h-11 w-11 items-center justify-center rounded-full border border-white/30"
-            onClick={toggleMenu}
-            aria-label="Toggle navigation menu"
-          >
-            <span
-              className={`absolute h-0.5 w-6 bg-white transition-all ${menuOpen ? 'translate-y-0 rotate-45' : '-translate-y-2'
-                }`}
-            />
-            <span className={`h-0.5 w-6 bg-white transition ${menuOpen ? 'opacity-0' : 'opacity-100'}`} />
-            <span
-              className={`absolute h-0.5 w-6 bg-white transition-all ${menuOpen ? 'translate-y-0 -rotate-45' : 'translate-y-2'
-                }`}
-            />
-          </button>
-        </div>
-      </div>
-
-      <div
-        className={`lg:hidden ${menuOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'} transition`}
-      >
-        <div className="mx-4 mt-2 rounded-3xl bg-[#0d1f14]/95 p-6 shadow-2xl ring-1 ring-white/10">
-          <nav className="flex flex-col gap-4 text-base font-semibold text-white/90">
-            {navLinks.map((link) => (
-              <Link key={link.label} to={link.href} onClick={closeMenu} className="hover:text-white">
-                {link.label}
-              </Link>
-            ))}
-            {user && (
-              <button
-                onClick={() => {
-                  toggleMenu();
-                  setShowNotifications(true);
-                }}
-                className="text-left hover:text-white flex items-center justify-between"
-              >
-                <span>Notifications</span>
-                {unreadCount > 0 && (
-                  <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
-            )}
-          </nav>
-          <div className="mt-6 flex flex-col gap-3">
-            {isLanding ? (
-              <>
-                <Link to="/login" className="rounded-full border border-white/30 px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/10">
-                  Login
-                </Link>
-                <Link to="/register" className="rounded-full bg-[#75C043] px-5 py-3 text-center text-sm font-semibold text-[#0f1a12] shadow-lg shadow-[#75C043]/40 transition hover:scale-105">
-                  Get Started
-                </Link>
-              </>
-            ) : (
-              <div className="flex justify-center">
-                <ProfileDropdown />
-              </div>
-            )}
           </div>
         </div>
       </div>
     </header>
   )
 }
-
 
 export default Navbar
 

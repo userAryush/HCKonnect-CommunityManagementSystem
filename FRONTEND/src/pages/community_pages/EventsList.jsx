@@ -86,7 +86,7 @@ export default function EventsList() {
                 navSolid={true}
             />
             <main className="pt-24 pb-16">
-                <div className="mx-auto w-full max-w-7xl px-4">
+                <div className="mx-auto w-full max-w-4xl px-4">
                     <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
                         <div>
                             <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[#75C043]">Discussion</p>

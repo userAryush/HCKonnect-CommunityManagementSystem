@@ -70,8 +70,19 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('user'); // Clear from local storage
     };
 
+    const refreshUser = async () => {
+        try {
+            const userData = await authService.getCurrentUser();
+            setUser(userData);
+            localStorage.setItem('user', JSON.stringify(userData));
+            return userData;
+        } catch (error) {
+            console.error("Failed to refresh user", error);
+        }
+    };
+
     return (
-        <AuthContext.Provider value={{ user, loading, login, logout, googleLogin, isAuthenticated: !!user }}>
+        <AuthContext.Provider value={{ user, loading, login, logout, googleLogin, refreshUser, isAuthenticated: !!user }}>
             {children}
         </AuthContext.Provider>
     );

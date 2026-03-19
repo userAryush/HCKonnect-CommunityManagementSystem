@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import apiClient from '../../services/apiClient'
 import Navbar from "../../components/Navbar";
 import { Link } from 'react-router-dom'
+import { ArrowRight } from 'lucide-react'
+import { getInitials } from '../../utils/userUtils'
 
 export default function CommunitiesList() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -59,86 +61,72 @@ export default function CommunitiesList() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f5f2] text-[#0d1f14]">
-      <Navbar
-        menuOpen={menuOpen}
-        toggleMenu={() => setMenuOpen((v) => !v)}
-        closeMenu={() => setMenuOpen(false)}
-        navSolid={true}
-      />
-      <main className="pt-24 pb-16">
-        <div className="mx-auto w-full max-w-7xl px-4">
-          <header className="mb-8">
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[#75C043]">Communities</p>
-            <h1 className="mt-2 text-3xl font-bold">Explore and Apply</h1>
+    <div className="min-h-screen bg-secondary text-surface-dark">
+      <Navbar navSolid={true} />
+      <main className="pt-32 pb-16">
+        <div className="mx-auto max-w-4xl px-6">
+          <header className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-6">
+            <div className="max-w-xl">
+              <h1 className="text-4xl font-display font-bold text-surface-dark">Find your <br /><span className="text-primary">Community.</span></h1>
+              <p className="mt-4 text-surface-body text-sm">
+                Discover communities where curiosity meets collaboration. From tech to arts, find the collective that speaks to you.
+              </p>
+            </div>
+            <div className="text-right">
+              <span className="text-3xl font-display italic text-primary/60">{communities.length}</span>
+              <p className="text-[10px] uppercase tracking-widest text-surface-body font-bold">Available Communities</p>
+            </div>
           </header>
 
-          {success && <div className="mb-4 rounded-xl bg-green-100 px-4 py-3 text-sm text-green-700">{success}</div>}
-          {error && <div className="mb-4 rounded-xl bg-red-100 px-4 py-3 text-sm text-red-700">{error}</div>}
-
-          {loading ? (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="rounded-3xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
-                  <div className="h-6 w-24 animate-pulse rounded bg-[#f4f5f2]" />
-                  <div className="mt-3 h-4 w-48 animate-pulse rounded bg-[#f4f5f2]" />
-                  <div className="mt-5 h-10 w-full animate-pulse rounded bg-[#f4f5f2]" />
-                </div>
-              ))}
-            </div>
-          ) : communities.length === 0 ? (
-            <div className="rounded-3xl border border-[#e5e7eb] bg-white p-10 text-center">
-              <p className="text-[#4b4b4b]">No communities available.</p>
-            </div>
-          ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {communities.map((c) => (
-                <article key={c.id} className="flex flex-col rounded-3xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
-                  <div className="flex items-center gap-3">
+          <div className="flex flex-col border-t border-surface-border">
+            {communities.map((c) => (
+              <Link
+                key={c.id}
+                to={`/community/${c.id}`}
+                className="group flex flex-col md:flex-row md:items-center gap-8 py-10 border-b border-surface-border transition-all hover:bg-white/30 hover:px-6"
+              >
+                <div className="flex-shrink-0 relative">
+                  {/* Logo container: rounded-full and removed rotate-3 */}
+                  <div className="h-20 w-20 rounded-full bg-white shadow-sm border border-surface-border overflow-hidden flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
                     {c.community_logo ? (
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white border border-[#75C043] shadow-sm">
-
-                        <img
-                          src={c.community_logo}
-                          alt={c.community_name}
-                          className="h-10 w-10 rounded-full object-contain"
-                        />
-                      </div>
+                      <img
+                        src={c.community_logo}
+                        alt={c.community_name}
+                        className="h-full w-full object-cover"
+                      />
                     ) : (
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#f4f5f2] text-lg font-bold">
-                        {(c.community_name || c.username || 'C').slice(0, 2).toUpperCase()}
-                      </div>
+                      <span className="text-xl font-bold text-zinc-500">
+                        {getInitials(c.community_name || 'Community')}
+                      </span>
                     )}
+                  </div>
+                </div>
 
-                    <div>
-                      <h3 className="text-lg font-semibold">{c.community_name || c.username}</h3>
-                      <p className="text-xs text-[#4b4b4b]">{c.member_count} members</p>
-                    </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-1">
+                    <h3 className="text-2xl font-bold tracking-tight text-surface-dark group-hover:text-primary transition-colors">
+                      {c.community_name || c.username}
+                    </h3>
+                    <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">
+                      {c.member_count} Members
+                    </span>
                   </div>
-                  <p className="mt-3 text-sm text-[#4b4b4b]">{c.community_description}</p>
-                  <div className="mt-5 flex gap-3">
-                    <Link
-                      to={`/community/${c.id}`}
-                      className="rounded-xl border border-[#e5e7eb] bg-white px-4 py-2 text-sm font-bold text-[#0d1f14] transition hover:bg-[#f4f5f2]"
-                    >
-                      View
-                    </Link>
-                    {/* {c.vacancy?.is_open ? (
-                      <button
-                        onClick={() => handleApply(c.id)}
-                        disabled={applyingId === c.id}
-                        className="rounded-xl bg-[#75C043] px-4 py-2 text-sm font-bold text-[#0f1a12] shadow-lg shadow-[#75C043]/20 transition hover:bg-[#68ae3b] disabled:opacity-70"
-                      >
-                        {applyingId === c.id ? 'Applying…' : 'Apply'}
-                      </button>
-                    ) : (
-                      <span className="rounded-xl bg-[#f4f5f2] px-4 py-2 text-sm font-semibold text-[#4b4b4b]">No vacancies</span>
-                    )} */}
+                  <p className="text-surface-body text-sm max-w-2xl line-clamp-1">
+                    {c.community_description}
+                  </p>
+                </div>
+
+                {/* View Arrow - adjusted for better alignment */}
+                <div className="opacity-0 group-hover:opacity-100 transition-all -translate-x-4 group-hover:translate-x-0 hidden md:block">
+                  <div className="flex items-center gap-2 text-primary font-bold text-sm">
+                    <span>View</span>
+                    <ArrowRight size={18} />
                   </div>
-                </article>
-              ))}
-            </div>
-          )}
+                </div>
+              </Link>
+
+            ))}
+          </div>
         </div>
       </main>
     </div>

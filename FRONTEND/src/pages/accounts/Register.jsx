@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import axios from 'axios'
-import logo from '../../assets/logo.png'
-import Toast from '../../components/others/Toast' // your component
+import logo from '../../assets/favicon.png'
 import { useNavigate } from 'react-router-dom'
 import { GoogleLogin } from '@react-oauth/google'
 import { useAuth } from '../../context/AuthContext'
@@ -184,40 +183,30 @@ function Register() {
     'w-full max-w-[420px] rounded-lg border border-[#6d6e70]/40 bg-white px-4 py-2.5 text-sm placeholder:text-[#6d6e70]/60 focus:border-[#6d6e70] focus:outline-none'
 
   return (
-    <div className="flex min-h-screen w-full font-['Inter',sans-serif] text-[#111]">
-      <div className="flex min-h-screen w-full bg-white">
-        <div className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center lg:px-12">
-          <Toast
-            message={successMessage}
-            onClose={() => setSuccessMessage('')}
-            duration={10000} // 10 seconds
-          />
-          <div className="w-full max-w-[420px] space-y-6">
-            <div>
-              <p className="text-sm uppercase tracking-[0.4em] text-[#6d6e70]">Register</p>
-              <h1 className="mt-3 text-3xl font-semibold text-[#74bf44]">Create an Account</h1>
-
-              <p className="mt-2 text-sm text-[#6d6e70]">
-                Join HCKonnect to access community events, discussions, and resources.
-              </p>
+    <div className="theme-original">
+      <div className="flex min-h-screen w-full items-center justify-center bg-secondary px-6 py-12 antialiased">
+        <div className="w-full max-w-2xl">
+          <div className="card-border bg-surface p-10 shadow-xl">
+            <div className="mb-10 text-center">
+              <img src={logo} alt="HCKonnect" className="mx-auto h-12 w-12 mb-6" />
+              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary mb-2">Join HCKonnect</p>
+              <h1 className="text-3xl font-display font-bold tracking-tight text-surface-dark">Create Your Account</h1>
+              <p className="mt-3 text-sm text-surface-body leading-relaxed max-w-md mx-auto">One platform. Every community.</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="flex flex-col gap-4 sm:flex-row">
-                <InputField name="firstName" placeholder="First Name" value={formData.firstName} onChange={handleChange} className={inputBase} wrapperClass="flex-1" error={errors.firstName || apiErrors.firstName} />
-
-
-                <InputField name="lastName" placeholder="Last Name" value={formData.lastName} onChange={handleChange} className={inputBase} wrapperClass="flex-1" error={errors.lastName || apiErrors.lastName} />
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <InputField name="firstName" placeholder="First Name" value={formData.firstName} onChange={handleChange} className="w-full rounded-button border border-surface-border bg-secondary/30 px-4 py-3 text-sm text-surface-dark placeholder:text-surface-body focus:border-primary focus:ring-4 focus:ring-brand/10 focus:outline-none transition-all" wrapperClass="flex-1" error={errors.firstName || apiErrors.firstName} />
+                <InputField name="lastName" placeholder="Last Name" value={formData.lastName} onChange={handleChange} className="w-full rounded-button border border-surface-border bg-secondary/30 px-4 py-3 text-sm text-surface-dark placeholder:text-surface-body focus:border-primary focus:ring-4 focus:ring-brand/10 focus:outline-none transition-all" wrapperClass="flex-1" error={errors.lastName || apiErrors.lastName} />
               </div>
-              <div className="flex flex-col gap-4 sm:flex-row">
-                <InputField name="username" placeholder="Username" value={formData.username} onChange={handleChange} className={inputBase} wrapperClass="flex-1" error={errors.username || apiErrors.username} />
-                <InputField type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} className={inputBase} wrapperClass="flex-1" error={errors.email || apiErrors.email} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <InputField name="username" placeholder="Username" value={formData.username} onChange={handleChange} className="w-full rounded-button border border-surface-border bg-secondary/30 px-4 py-3 text-sm text-surface-dark placeholder:text-surface-body focus:border-primary focus:ring-4 focus:ring-brand/10 focus:outline-none transition-all" wrapperClass="flex-1" error={errors.username || apiErrors.username} />
+                <InputField type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} className="w-full rounded-button border border-surface-border bg-secondary/30 px-4 py-3 text-sm text-surface-dark placeholder:text-surface-body focus:border-primary focus:ring-4 focus:ring-brand/10 focus:outline-none transition-all" wrapperClass="flex-1" error={errors.email || apiErrors.email} />
               </div>
 
-              <div className="flex flex-col items-center">
-
-                <select name="course" value={formData.course} onChange={handleChange} className={`${inputBase} appearance-none`} >
-                  <option value="">Select Course</option>
+              <div className="flex flex-col">
+                <select name="course" value={formData.course} onChange={handleChange} className="w-full rounded-button border border-surface-border bg-secondary/30 px-4 py-3 text-sm text-surface-dark focus:border-primary focus:ring-4 focus:ring-brand/10 focus:outline-none transition-all appearance-none" >
+                  <option value="">Select Your Course</option>
                   {COURSE_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
@@ -228,27 +217,25 @@ function Register() {
                 <FieldError message={errors.course || apiErrors.course} />
               </div>
 
-              <div className="flex flex-col items-center">
-                <p className="mb-2 w-full max-w-[420px] text-left text-sm font-medium text-[#6d6e70]">Interests</p>
-                <div className="grid w-full max-w-[420px] gap-2 sm:grid-cols-2">
+              <div className="flex flex-col">
+                <p className="mb-4 text-[10px] font-bold uppercase tracking-widest text-surface-body px-1">Select Your Interests</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {INTEREST_OPTIONS.map((interest) => (
                     <label
                       key={interest}
-                      className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm ${formData.interests.includes(interest) ? 'border-[#6d6e70] bg-[#f5f5f5]' : 'border-[#e0e0e0]'
+                      className={`flex cursor-pointer items-center gap-2 rounded-button border px-3 py-2 text-xs transition-all ${formData.interests.includes(interest) ? 'border-primary bg-primary/10 text-primary ring-1 ring-brand shadow-sm shadow-brand/10' : 'border-surface-border bg-secondary/30 text-surface-body hover:border-primary hover:bg-white'
                         }`}
                     >
                       <input
                         type="checkbox"
-                        className="accent-[#6d6e70]"
+                        className="hidden"
                         checked={formData.interests.includes(interest)}
                         onChange={() => toggleInterest(interest)}
                       />
-                      <span className="capitalize truncate" title={interest.replace(/_/g, ' ')}>
+                      <span className="capitalize truncate leading-none">
                         {interest.replace(/_/g, ' ')}
                       </span>
-
                     </label>
-
                   ))}
                 </div>
                 <FieldError message={errors.interests || apiErrors.interests} />
@@ -256,15 +243,17 @@ function Register() {
 
               {successMessage && <p className="text-sm text-green-600">{successMessage}</p>}
 
-              <button type="submit" disabled={loading}
-                className={`w-full max-w-[420px] rounded-full bg-[#74bf44] py-2.5 text-sm font-semibold text-white transition hover:bg-[#62a837] ${loading ? 'cursor-not-allowed opacity-70' : ''}`}>
-
-                {loading ? 'Signing Up…' : 'Sign Up'}
+              <button
+                type="submit"
+                disabled={loading}
+                className={`w-full rounded-button bg-primary py-2.5 text-sm font-bold text-white transition hover:scale-[1.01] active:scale-[0.99] ${loading ? 'cursor-not-allowed opacity-70' : ''}`}
+              >
+                {loading ? 'Signing Up…' : 'Create Account'}
               </button>
 
               <Divider />
 
-              <div className="flex justify-center flex-col items-center gap-2">
+              <div className="w-full">
                 <GoogleLogin
                   onSuccess={handleGoogleSuccess}
                   onError={() => {
@@ -273,25 +262,20 @@ function Register() {
                   }}
                   theme="outline"
                   size="large"
-                  shape="circle"
-                  width="420px"
-                  useOneTap
+                  shape="rectangular"
+                  width="100%"
                 />
                 <FieldError message={apiErrors.google} />
               </div>
 
-              <p className="text-xs text-[#6d6e70]">
+              <p className="text-center text-xs text-surface-body font-medium">
                 Already have an account?{' '}
-                <a href="/login" className="font-semibold text-[#6d6e70] underline-offset-4 hover:underline">
+                <a href="/login" className="font-bold text-surface-dark hover:text-primary transition-colors underline decoration-brand decoration-2 underline-offset-4">
                   Sign In
                 </a>
               </p>
             </form>
           </div>
-        </div>
-
-        <div className="flex flex-1 items-center justify-center bg-[#0d1f14] px-8 py-16">
-          <img src={logo} alt="HCKonnect logo" className="w-full max-w-[250px]" />
         </div>
       </div>
     </div>
@@ -315,10 +299,10 @@ function FieldError({ message }) {
 
 function Divider() {
   return (
-    <div className="flex items-center gap-4 text-xs text-[#6d6e70]">
-      <span className="h-px flex-1 bg-[#6d6e70]/30" />
+    <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-surface-body">
+      <span className="h-px flex-1 bg-oat" />
       OR
-      <span className="h-px flex-1 bg-[#6d6e70]/30" />
+      <span className="h-px flex-1 bg-oat" />
     </div>
   )
 }

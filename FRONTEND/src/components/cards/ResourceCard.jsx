@@ -11,6 +11,7 @@ import {
     ExternalLink
 } from 'lucide-react';
 import { formatTimeAgo } from '../../utils/timeFormatter';
+import { getInitials, getDisplayName, getRoleLabel, getProfileImage } from '../../utils/userUtils';
 
 const getResourceIcon = (category) => {
     switch (category) {
@@ -56,23 +57,44 @@ export default function ResourceCard({ resource, onEdit, onDelete }) {
 
     return (
         <div className="group relative overflow-hidden rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm transition hover:shadow-md break-words">
+            <header className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-500 font-bold overflow-hidden border border-zinc-200 uppercase text-xs tracking-wider">
+                        {getProfileImage(resource) ? (
+                            <img src={getProfileImage(resource)} alt={getDisplayName(resource)} className="h-full w-full object-cover" />
+                        ) : (
+                            getInitials(getDisplayName(resource))
+                        )}
+                    </div>
+                    <div>
+                        <p className="text-sm font-semibold text-surface-dark">{getDisplayName(resource)}</p>
+                        <p className="text-metadata">
+                            {getRoleLabel(resource)} • {formatTimeAgo(resource.created_at || new Date())}
+                        </p>
+                    </div>
+                </div>
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide border ${resource.visibility === 'public'
+                    ? 'bg-green-100 text-green-700 border-green-200'
+                    : 'bg-gray-100 text-gray-600 border-gray-200'
+                    }`}>
+                    {resource.visibility}
+                </span>
+            </header>
+
             <div className="flex items-start gap-4">
                 {/* Icon Container */}
-                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-[#f4f5f2] transition group-hover:bg-[#eaf0e6]">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#f4f5f2] transition group-hover:bg-[#eaf0e6]">
                     {getResourceIcon(resource.category)}
                 </div>
 
                 {/* Info */}
                 <div className="flex-1 min-w-0 overflow-hidden">
                     <div className="flex items-center justify-between gap-2">
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide border ${resource.visibility === 'public'
-                            ? 'bg-green-100 text-green-700 border-green-200'
-                            : 'bg-gray-100 text-gray-600 border-gray-200'
-                            }`}>
-                            {resource.visibility}
-                        </span>
+                        <h3 className="text-lg font-bold text-[#0d1f14] truncate group-hover:text-primary transition-colors" title={resource.title}>
+                            {resource.title}
+                        </h3>
 
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             {canManage && (
                                 <>
                                     <button
@@ -94,26 +116,22 @@ export default function ResourceCard({ resource, onEdit, onDelete }) {
                         </div>
                     </div>
 
-                    <h3 className="mt-2 text-lg font-bold text-[#0d1f14] truncate" title={resource.title}>
-                        {resource.title}
-                    </h3>
-                    <p className="mt-1 text-xs text-[#4b4b4b] line-clamp-2 break-words">
+                    <p className="mt-1 text-xs text-[#4b4b4b] line-clamp-2 break-words leading-relaxed">
                         {resource.description}
                     </p>
 
                     <div className="mt-4 flex items-center justify-between text-[11px] text-[#4b4b4b]">
                         <div className="flex items-center gap-2 overflow-hidden">
                             {resource.category === 'video' ? (
-                                <span className="shrink-0">LINK</span>
+                                <span className="shrink-0 font-bold text-primary">LINK</span>
                             ) : (
                                 <>
-                                    <span className="truncate max-w-[60px] uppercase">{resource.file_extension || 'FILE'}</span>
+                                    <span className="truncate max-w-[60px] uppercase font-bold">{resource.file_extension || 'FILE'}</span>
                                     <span>•</span>
-                                    <span className="shrink-0">{formatFileSize(resource.file_size)}</span>
+                                    <span className="shrink-0 font-medium">{formatFileSize(resource.file_size)}</span>
                                 </>
                             )}
                         </div>
-                        <span className="shrink-0 ml-2">{resource.time_ago}</span>
                     </div>
                 </div>
             </div>

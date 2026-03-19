@@ -8,7 +8,7 @@ import FinalCTA from '../../components/landing/FinalCTA'
 import Navbar from '../../components/Navbar'
 
 function Landing() {
-  return (<div>
+  return (<div className="theme-original">
     <Navbar />
     <HeroSection />
     <Communities />

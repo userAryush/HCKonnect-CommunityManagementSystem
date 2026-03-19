@@ -13,7 +13,7 @@ function CommunityShowcase() {
     axios
       .get(`${API_BASE_URL}/communities/communities-list/`)
       .then((res) => {
-        setCommunities(res.data || [])
+        setCommunities(res.data?.communities || res.data || [])
       })
       .finally(() => setLoading(false))
   }, [])
@@ -45,17 +45,17 @@ function CommunityShowcase() {
                       />
                     ) : (
                       <span className="text-sm font-bold text-[#75C043]">
-                        {c.community_name.slice(0, 2).toUpperCase()}
+                        {(c.community_name || '??').slice(0, 2).toUpperCase()}
                       </span>
                     )}
                   </div>
 
                   <h3 className="mt-6 text-2xl font-semibold text-[#0f1f15]">
-                    {c.community_name}
+                    {c.community_name || 'Unnamed Community'}
                   </h3>
 
                   <p className="mt-2 text-sm text-[#4b4b4b]">
-                    {c.community_description}
+                    {c.community_description || 'No description available.'}
                   </p>
                 </div>
 

@@ -5,6 +5,8 @@ import postService from '../../services/postService';
 import Navbar from '../../components/Navbar';
 import PostCard from '../../components/cards/PostCard';
 import { Skeleton } from '../../components/shared/Skeleton';
+import Card from '../../components/shared/Card';
+import Button from '../../components/shared/Button';
 
 export default function PostList() {
     const [searchParams] = useSearchParams();
@@ -79,39 +81,46 @@ export default function PostList() {
             fetchPosts();
         } catch (error) {
             console.error("Failed to create post", error);
-            alert("Failed to create post");
         } finally {
             setSubmitting(false);
         }
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 pt-28">
+        <div className="min-h-screen bg-[#F9FAFB] pt-28">
             <Navbar navSolid={true} />
-            <main className="max-w-2xl mx-auto px-4 pb-20">
+            <main className="max-w-4xl mx-auto px-4 pb-20">
+
+                <header className="mb-8">
+                    <h1 className="text-2xl font-bold tracking-tight text-surface-dark sm:text-3xl">Community Posts</h1>
+                    <p className="text-sm text-surface-muted mt-1">Shared stories and updates from your neighbors.</p>
+                </header>
 
                 {/* Create Post Bar */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-                    <div className="flex gap-4">
-                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold shrink-0">
+                <Card className="p-4 mb-6 !rounded-2xl">
+                    <div className="flex gap-4 items-center">
+                        <div className="h-10 w-10 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-600 font-bold shrink-0">
                             {JSON.parse(localStorage.getItem('user'))?.first_name?.[0] || 'U'}
                         </div>
                         <button
                             onClick={() => setShowCreate(true)}
-                            className="bg-gray-100 hover:bg-gray-200 text-gray-500 rounded-full px-4 py-2 flex-1 text-left transition"
+                            className="input-standard flex-1 text-left text-surface-muted hover:border-zinc-300 transition-colors"
                         >
                             What's on your mind?
                         </button>
                     </div>
-                </div>
+                </Card>
 
                 {/* Create Post Modal/Sheet */}
                 {showCreate && (
-                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                        <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
-                            <div className="flex items-center justify-between p-4 border-b">
-                                <h2 className="text-black text-lg font-bold">Create Post</h2>
-                                <button onClick={() => setShowCreate(false)} className="bg-red-300 text-white p-1 hover:bg-red-500 rounded-full">
+                    <div className="fixed inset-0 bg-zinc-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                        <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200 border border-surface-border">
+                            <div className="flex items-center justify-between p-4 border-b border-surface-border">
+                                <h2 className="text-surface-dark text-lg font-semibold">Create Post</h2>
+                                <button 
+                                    onClick={() => setShowCreate(false)} 
+                                    className="text-surface-muted hover:text-surface-dark p-2 hover:bg-zinc-100 rounded-full transition-colors"
+                                >
                                     <X size={20} />
                                 </button>
                             </div>
@@ -120,37 +129,37 @@ export default function PostList() {
                                     value={newPostContent}
                                     onChange={(e) => setNewPostContent(e.target.value)}
                                     placeholder="Share your thoughts..."
-                                    className="w-full min-h-[150px] p-2 resize-none outline-none text-lg text-black"
+                                    className="w-full min-h-[150px] p-2 resize-none outline-none text-sm text-surface-dark placeholder:text-surface-muted"
                                 />
 
                                 {imagePreview && (
-                                    <div className="relative mt-2 rounded-xl overflow-hidden border">
+                                    <div className="relative mt-2 rounded-xl overflow-hidden border border-surface-border">
                                         <img src={imagePreview} alt="Preview" className="w-full max-h-[300px] object-cover" />
                                         <button
                                             onClick={() => {
                                                 setNewPostImage(null);
                                                 setImagePreview(null);
                                             }}
-                                            className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full hover:bg-black/70"
+                                            className="absolute top-2 right-2 p-1.5 bg-zinc-900/50 text-white rounded-full hover:bg-zinc-900/70 backdrop-blur-md"
                                         >
                                             <X size={16} />
                                         </button>
                                     </div>
                                 )}
 
-                                <div className="mt-4 flex items-center justify-between">
-                                    <label className="flex items-center gap-2 text-[#75C043] hover:bg-blue-[#75C043] px-3 py-2 rounded-lg cursor-pointer transition">
+                                <div className="mt-6 flex items-center justify-between">
+                                    <label className="flex items-center gap-2 text-surface-muted hover:text-primary hover:bg-primary/5 px-3 py-2 rounded-lg cursor-pointer transition text-sm font-medium">
                                         <ImageIcon size={20} />
-                                        <span className="font-bold text-sm">Photo</span>
+                                        <span>Add Photo</span>
                                         <input type="file" hidden accept="image/*" onChange={handleImageChange} />
                                     </label>
-                                    <button
+                                    <Button
                                         onClick={handleCreatePost}
                                         disabled={submitting || (!newPostContent.trim() && !newPostImage)}
-                                        className="bg-[#75C043] text-white px-8 py-2 rounded-lg font-bold hover:bg-[#62a337] disabled:opacity-50 transition"
+                                        className="px-8"
                                     >
                                         {submitting ? 'Posting...' : 'Post'}
-                                    </button>
+                                    </Button>
                                 </div>
                             </div>
                         </div>
@@ -158,31 +167,32 @@ export default function PostList() {
                 )}
 
                 {/* Post List */}
-                <div className="space-y-4">
+                <div className="space-y-4 mt-6">
                     {posts.map(post => (
                         <PostCard key={post.id} post={post} onDelete={(id) => setPosts(prev => prev.filter(p => p.id !== id))} />
                     ))}
 
                     {loading && (
                         <div className="space-y-4">
-                            <Skeleton className="h-40 w-full" />
-                            <Skeleton className="h-40 w-full" />
+                            <Skeleton className="h-40 w-full rounded-standard" />
+                            <Skeleton className="h-40 w-full rounded-standard" />
                         </div>
                     )}
 
                     {!loading && hasMore && (
-                        <button
+                        <Button
+                            variant="secondary"
                             onClick={() => setPage(prev => prev + 1)}
-                            className="w-full py-3 text-blue-600 font-bold hover:bg-blue-50 rounded-xl transition"
+                            className="w-full py-3"
                         >
                             Load more
-                        </button>
+                        </Button>
                     )}
 
                     {!loading && posts.length === 0 && (
-                        <div className="text-center py-20 bg-white rounded-2xl border border-gray-200">
-                            <p className="text-gray-500 font-bold">No posts yet. Be the first to post!</p>
-                        </div>
+                        <Card className="text-center py-20 px-6 border-zinc-200 border-dashed bg-zinc-50/50 shadow-none">
+                            <p className="text-surface-muted font-medium">No posts yet. Be the first to post!</p>
+                        </Card>
                     )}
                 </div>
             </main>

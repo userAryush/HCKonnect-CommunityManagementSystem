@@ -74,71 +74,53 @@ const NotificationPopover = ({ isOpen, onClose }) => {
     if (!isOpen) return null;
 
     return (
+
         <div
             ref={popoverRef}
-            className="absolute top-full right-0 mt-3 w-80 md:w-96 bg-[#0d1f14] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-[60] animate-in fade-in zoom-in duration-200"
+            className="absolute top-full right-0 mt-4 w-80 md:w-[400px] bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-surface-border overflow-hidden z-[60] animate-in slide-in-from-top-2 duration-300"
         >
-            <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
+            {/* Header */}
+            <div className="px-5 py-4 flex items-center justify-between border-b border-surface-border bg-[#FFFBF1]">
                 <div className="flex items-center gap-2">
-                    <Bell size={18} className="text-[#75C043]" />
-                    <h3 className="font-bold text-white">Notifications</h3>
+                    <span className="text-xs font-bold uppercase tracking-[0.2em] text-surface-dark">Notifications</span>
                     {unreadCount > 0 && (
-                        <span className="bg-[#75C043] text-[#0d1f14] text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                            {unreadCount}
-                        </span>
+                        <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
                     )}
                 </div>
-                {/* <div className="flex items-center gap-1">
-                    {unreadCount > 0 && (
-                        <button
-                            onClick={handleMarkAllRead}
-                            className="p-2 hover:bg-white/10 rounded-full text-white/60 transition-colors"
-                            title="Mark all as read"
-                        >
-                            <CheckCheck size={16} />
-                        </button>
-                    )}
-                    <button className="p-2 hover:bg-white/10 rounded-full text-white/60 transition-colors">
-                        <Settings size={16} />
+
+                {unreadCount > 0 && (
+                    <button
+                        onClick={handleMarkAllRead}
+                        className="text-[11px] font-bold text-primary hover:opacity-70 transition-opacity"
+                    >
+                        Mark all read
                     </button>
-                </div> */}
+                )}
             </div>
 
-            <div className="max-h-[450px] overflow-y-auto custom-scrollbar">
+            {/* Content */}
+            <div className="max-h-[480px] overflow-y-auto overflow-x-hidden">
                 {loading ? (
-                    <div className="p-10 flex flex-col items-center justify-center gap-3">
-                        <Loader2 size={24} className="animate-spin text-[#75C043]" />
-                        <p className="text-xs text-white/40">Loading notifications...</p>
+                    <div className="py-20 flex flex-col items-center gap-3">
+                        <Loader2 size={20} className="animate-spin text-primary" />
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-surface-body/40">Syncing...</p>
                     </div>
                 ) : notifications.length > 0 ? (
-                    notifications.map(notification => (
-                        <NotificationItem
-                            key={notification.id}
-                            notification={notification}
-                            onMarkRead={handleMarkRead}
-                            onDelete={handleDelete}
-                        />
+                    notifications.map(n => (
+                        <NotificationItem key={n.id} notification={n} onMarkRead={handleMarkRead} onDelete={handleDelete} />
                     ))
                 ) : (
-                    <div className="p-12 flex flex-col items-center justify-center gap-4 text-center">
-                        <div className="h-16 w-16 bg-white/5 rounded-full flex items-center justify-center text-white/20">
-                            <BellOff size={32} />
+                    <div className="py-20 px-10 text-center">
+                        <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-surface-body/30 mb-4">
+                            <BellOff size={20} />
                         </div>
-                        <div>
-                            <p className="text-sm font-medium text-white/70">No notifications yet</p>
-                            <p className="text-xs text-white/40 mt-1 px-4">We'll notify you when something important happens.</p>
-                        </div>
+                        <p className="text-xs text-surface-body mt-1">No new activity to show right now.</p>
                     </div>
                 )}
             </div>
 
-            {notifications.length > 0 && (
-                <div className="p-3 border-t border-white/10 text-center bg-white/[0.01]">
-                    {/* <button className="text-xs font-semibold text-[#75C043] hover:underline transition-all">
-                        View all activity
-                    </button> */}
-                </div>
-            )}
+            {/* Subtle Footer Spacer */}
+            <div className="h-2 bg-gradient-to-t from-cream/50 to-transparent pointer-events-none" />
         </div>
     );
 };

@@ -39,6 +39,7 @@ export default function EventDetailPage() {
                     community: {
                         id: data.community,
                         name: data.community_name,
+                        logo: data.community_logo,
                         logoText: (data.community_name || data.community?.name || 'CO').substring(0, 2).toUpperCase()
                     },
                     stats: {
@@ -75,17 +76,6 @@ export default function EventDetailPage() {
 
     const { eventMeta, community } = event
 
-    // Permission check
-    // Allow if: 
-    // 1. User is the creator (event.created_by == user.id)
-    // 2. User is the community account (user.id == event.community.id) AND role is community
-    // 3. User is a representative of the SAME community
-
-    // Debugging permissions
-    console.log('CurrentUser:', currentUser);
-    console.log('Event CreatedBy:', event.created_by);
-    console.log('Event Community:', event.community);
-
     const canEdit = currentUser && (
         // Check if user is the creator (direct comparison)
         (String(currentUser.id) === String(event.created_by)) ||
@@ -96,7 +86,7 @@ export default function EventDetailPage() {
     );
 
     return (
-        <div className="min-h-screen bg-[#f4f5f2] text-[#0d1f14]">
+        <div className="min-h-screen bg-secondary text-[#0d1f14]">
             <Navbar
                 menuOpen={menuOpen}
                 toggleMenu={() => setMenuOpen((v) => !v)}
@@ -121,7 +111,7 @@ export default function EventDetailPage() {
                             <h1 className="mb-4 text-4xl font-bold">{event.title}</h1>
                             <div className="flex flex-wrap items-center gap-6 text-sm font-medium opacity-90">
                                 <div className="flex items-center gap-2">
-                                    <CommunityAvatar name={community?.name} logoText={community?.logoText} size="sm" />
+                                    <CommunityAvatar name={community?.name} logo={community?.logo} size="sm" />
                                     <span>Hosted by {community?.name || 'Community'}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -255,7 +245,7 @@ export default function EventDetailPage() {
                         <div className="rounded-3xl border border-[#e5e7eb] bg-white p-6">
                             <h3 className="text-sm font-bold uppercase text-[#4b4b4b] mb-4">Organizer</h3>
                             <div className="flex items-center gap-4 mb-6">
-                                <CommunityAvatar name={community?.name} logoText={community?.logoText} size="md" />
+                                <CommunityAvatar name={community?.name} logo={community?.logo} size="md" />
                                 <div>
                                     <h4 className="font-bold">{community?.name || 'Community'}</h4>
                                     <span className="text-xs bg-[#f4f5f2] px-2 py-1 rounded-full text-[#4b4b4b]">Student Club</span>

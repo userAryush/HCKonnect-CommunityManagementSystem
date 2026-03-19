@@ -8,11 +8,14 @@ import discussionService from '../../services/discussionService'
 import postService from '../../services/postService'
 import DiscussionCard from '../cards/DiscussionCard'
 import PostCard from '../cards/PostCard'
+import Card from '../shared/Card'
+
+const EMPTY_ARRAY = [];
 
 export default function FeedList({
   filter = 'all',
-  hiddenTypes = [],
-  hiddenCommunities = [],
+  hiddenTypes = EMPTY_ARRAY,
+  hiddenCommunities = EMPTY_ARRAY,
 }) {
   const [displayItems, setDisplayItems] = useState([])
   const [loading, setLoading] = useState(true)
@@ -35,65 +38,67 @@ export default function FeedList({
           ...e,
           type: 'event',
           id: e.id,
-          createdAt: e.created_at || new Date().toISOString(), // Fallback
-          // Adapter for EventCard
+          createdAt: e.created_at || new Date().toISOString(),
+          author_name: e.community_name || 'Community',
+          author_image: e.community_logo || null,
+          author_role: 'community',
           eventMeta: {
             date: e.date,
-            time: e.start_time, // Using start_time as primary time
+            time: e.start_time,
             location: e.location
           },
           stats: {
-            registrations: { current: 0, capacity: 100 } // Mock stats if not provided
+            registrations: { current: e.registrations_count || 0, capacity: e.capacity || 100 }
           },
           community: {
             name: e.community_name || 'Community',
             logoText: (e.community_name || 'CO').substring(0, 2).toUpperCase()
           }
         })) : [];
-
+  
         const mappedAnnouncements = Array.isArray(announcements) ? announcements.map(a => ({
           ...a,
           type: 'announcement',
           id: a.id,
           createdAt: a.created_at,
-          // Adapter for AnnouncementCard
+          author_name: a.community_name || 'Community',
+          author_image: a.community_logo || null,
+          author_role: 'community',
           community: {
             name: a.community_name || 'Community',
             logoText: (a.community_name || 'CO').substring(0, 2).toUpperCase()
-          },
-          author: {
-            name: a.uploaded_by || 'Admin'
           }
         })) : [];
-
+  
         const discussions = discussionsData.results || [];
         const mappedDiscussions = Array.isArray(discussions) ? discussions.map(d => ({
           ...d,
           type: 'discussion',
           id: d.id,
           createdAt: d.created_at,
-          // Adapter if needed, but DiscussionCard expects 'item' which matches 'd'
+          author_name: d.created_by_name || 'User',
+          author_image: d.created_by_image || null,
+          author_role: d.created_by_role || 'student',
           community: {
-            name: d.community_name || 'Community', // discussions endpoint should provide this
+            name: d.community_name || 'Community',
             logoText: (d.community_name || 'CO').substring(0, 2).toUpperCase()
           },
         })) : [];
-
+  
         const posts = postsData.results || [];
         const mappedPosts = Array.isArray(posts) ? posts.map(p => ({
           ...p,
           type: 'post',
           id: p.id,
           createdAt: p.created_at,
-          author: {
-            name: p.author_name || 'User'
-          }
+          author_name: p.author_name || 'User',
+          author_image: p.author_image || null,
+          author_role: p.author_role || 'student'
         })) : [];
 
         const allItems = [...mappedEvents, ...mappedAnnouncements, ...mappedDiscussions, ...mappedPosts]
           .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-        // Apply local filtering (if needed beyond backend filtering)
         const finalFiltered = allItems.filter((item) => {
           if (hiddenTypes.includes(item.type)) return false
           if (item.community?.name && hiddenCommunities.includes(item.community.name)) return false
@@ -115,7 +120,7 @@ export default function FeedList({
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4">
         <FeedItemSkeleton />
         <FeedItemSkeleton />
         <FeedItemSkeleton />
@@ -125,14 +130,14 @@ export default function FeedList({
 
   if (displayItems.length === 0) {
     return (
-      <div className="rounded-3xl border border-[#e5e7eb] bg-white p-10 text-center">
-        <p className="text-[#4b4b4b]">No items found matching your filters.</p>
-      </div>
+      <Card className="p-12 text-center bg-zinc-50/50 border-dashed shadow-none">
+        <p className="text-surface-muted text-sm font-medium">No updates found matching your filters.</p>
+      </Card>
     )
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {displayItems.map(item => {
         if (item.type === 'announcement') return <AnnouncementCard key={`ann-${item.id}`} item={item} />
         if (item.type === 'discussion') return <DiscussionCard key={`disc-${item.id}`} item={item} />

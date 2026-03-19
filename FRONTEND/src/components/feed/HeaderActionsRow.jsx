@@ -1,49 +1,25 @@
 import { useNavigate } from 'react-router-dom'
-import { PenLine, MessageSquarePlus, PlusCircle } from 'lucide-react'
+import { PenLine, MessageSquarePlus } from 'lucide-react'
 
 export default function HeaderActionsRow() {
   const navigate = useNavigate()
 
-  const actions = [
-    {
-      label: 'Create Post',
-      description: 'Share updates with your community',
-      icon: <PenLine size={20} />,
-      onClick: () => navigate('/posts?create=true'),
-      color: 'text-[#75C043]',
-      bg: 'bg-[#75C043]/5'
-    },
-    {
-      label: 'Start Discussion',
-      description: 'Ask a question or start a topic',
-      icon: <MessageSquarePlus size={20} />,
-      onClick: () => navigate('/discussions/create'),
-      color: 'text-blue-500',
-      bg: 'bg-blue-500/5'
-    }
-  ]
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-      {actions.map((action, idx) => (
+    <div className="inline-flex p-1 bg-slate-100/50 border border-surface-border rounded-xl gap-1 mb-8">
+      {[
+        { label: 'Post', icon: <PenLine size={15} />, path: '/posts?create=true' },
+        { label: 'Discuss', icon: <MessageSquarePlus size={15} />, path: '/discussions/create' }
+      ].map((item) => (
         <button
-          key={idx}
-          onClick={action.onClick}
-          className="relative flex items-center gap-4 rounded-xl bg-gradient-to-br from-white to-gray-50 p-4 transition-shadow duration-200 hover:shadow-md"
+          key={item.label}
+          onClick={() => navigate(item.path)}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-transparent hover:bg-white hover:text-primary hover:shadow-sm border border-transparent hover:border-surface-border/50 text-surface-body transition-all duration-200"
         >
-          <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${action.bg} ${action.color} transition-transform duration-200 group-hover:scale-125`}>
-            {action.icon}
-          </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-bold text-gray-900">{action.label}</span>
-            <span className="text-xs text-gray-500">{action.description}</span>
-          </div>
-          <PlusCircle size={18} className="ml-auto text-gray-300 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+          <span className="opacity-70">{item.icon}</span>
+          <span className="text-[13px] font-bold uppercase tracking-wider">{item.label}</span>
         </button>
       ))}
     </div>
-
-
-
   )
 }

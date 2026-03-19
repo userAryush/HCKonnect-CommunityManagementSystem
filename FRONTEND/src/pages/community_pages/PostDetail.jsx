@@ -6,6 +6,8 @@ import Navbar from '../../components/Navbar';
 import ActionButtons from '../../components/shared/ActionButtons';
 import CommentSection from '../../components/shared/CommentSection';
 import { Skeleton } from '../../components/shared/Skeleton';
+import { formatTimeAgo } from '../../utils/timeFormatter';
+import { getInitials, getDisplayName, getRoleLabel, getProfileImage } from '../../utils/userUtils';
 
 export default function PostDetail() {
     const { id } = useParams();
@@ -165,17 +167,18 @@ export default function PostDetail() {
                 <article className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-8 overflow-hidden">
                     <div className="flex justify-between items-start mb-4">
                         <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
-                                {post.author_name ? post.author_name[0].toUpperCase() : 'U'}
+                            <div className="h-10 w-10 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-500 font-bold overflow-hidden border border-zinc-200 uppercase text-xs tracking-wider">
+                                {getProfileImage(post) ? (
+                                    <img src={getProfileImage(post)} alt={getDisplayName(post)} className="h-full w-full object-cover" />
+                                ) : (
+                                    <span>{getInitials(getDisplayName(post))}</span>
+                                )}
                             </div>
                             <div>
-                                <div className="flex items-center gap-2">
-                                    <p className="font-bold text-gray-900 leading-none">{post.author_name || 'User'}</p>
-                                    {post.is_pinned && (
-                                        <Pin size={14} className="text-blue-500 fill-blue-500" />
-                                    )}
-                                </div>
-                                <p className="text-xs text-gray-500 mt-1">{post.time_ago}</p>
+                                <p className="text-sm font-semibold text-surface-dark">{getDisplayName(post)}</p>
+                                <p className="text-metadata">
+                                    {getRoleLabel(post)} • {formatTimeAgo(post.created_at)}
+                                </p>
                             </div>
                         </div>
 
