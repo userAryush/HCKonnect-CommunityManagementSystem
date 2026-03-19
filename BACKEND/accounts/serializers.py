@@ -241,6 +241,16 @@ class ResetPasswordSerializer(Serializer):
         PasswordResetOTP.objects.filter(user=user).delete()
         return user
 
+class ChangePasswordSerializer(Serializer):
+    old_password = CharField(required=True)
+    new_password = CharField(required=True, min_length=8)
+
+    def validate_old_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise ValidationError("Old password is not correct")
+        return value
+
 class UserProfileSerializer(ModelSerializer):
     membership = serializers.SerializerMethodField()
     
