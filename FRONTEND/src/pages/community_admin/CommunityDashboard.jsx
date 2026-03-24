@@ -8,14 +8,14 @@ import apiClient from '../../services/apiClient'
 import { FeedItemSkeleton } from '../../components/feed/FeedItem'
 import {
   Calendar,
-  Megaphone,
-  Plus,
-  MessageSquarePlus,
-  FilePlus,
+  FileDown,
   Users,
-  Shield,
-  PenTool,
   ExternalLink,
+  Bell,
+  Eye,
+  TrendingUp,
+  PieChart
+
 } from 'lucide-react'
 
 
@@ -33,14 +33,10 @@ export default function CommunityDashboard() {
   const [stats, setStats] = useState(null)
 
   const quickActions = [
-    { label: 'View Events', path: `/community/${id}/manage/events`, icon: <Calendar size={20} /> },
-    { label: 'View Announcements', path: `/community/${id}/manage/announcements`, icon: <Megaphone size={20} /> },
-    { label: 'Create Announcement', path: `/community/${id}/manage/announcements/create`, icon: <PenTool size={20} /> },
-    { label: 'Create Event', path: `/community/${id}/manage/events/create`, icon: <Plus size={20} /> },
-    { label: 'Start Discussion', path: `/discussions/create`, icon: <MessageSquarePlus size={20} /> },
-    { label: 'Upload Resource', path: `/community/${id}?tab=Resources&action=upload`, icon: <FilePlus size={20} /> },
+    { label: 'Post Notice', path: `/community/${id}/manage/announcements/create`, icon: <Bell size={20} /> },
+    { label: 'Schedule Event', path: `/community/${id}/manage/events/create`, icon: <Calendar size={20} /> },
     { label: 'Manage Members', path: `/community/${id}/manage/members`, icon: <Users size={20} /> },
-    { label: 'Moderate Discussions', path: `/community/${id}/manage/moderation`, icon: <Shield size={20} /> },
+    { label: 'Export Engagement Report', path: `#`, icon: <FileDown size={20} /> },
   ]
 
   useEffect(() => {
@@ -104,10 +100,26 @@ export default function CommunityDashboard() {
   ].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 5)
 
   const statCards = [
-    { label: 'Total Members', value: stats?.members || 0, change: '+12% this month' },
-    { label: 'Announcements', value: stats?.announcements || 0, change: '+5% this month' },
-    { label: 'Upcoming Events', value: stats?.upcomingEvents || 0, change: '+2 new' },
-    { label: 'Total Events', value: stats?.events || 0, change: '+8% this month' }
+    {
+      label: 'Total Members',
+      value: stats?.members || 0,
+      meta: '+ 3 New Members'
+    },
+    {
+      label: 'Resource Utility',
+      value: stats?.downloads || 128,
+      meta: 'Materials accessed this week'
+    },
+    {
+      label: 'Upcoming Events',
+      value: stats?.upcomingEvents || 42,
+      meta: 'Committed to upcoming events'
+    },
+    {
+      label: 'Community Engagements',
+      value: (stats?.posts || 0) + (stats?.comments || 0) + (stats?.likes || 0),
+      meta: 'Total interactions this week' // Combines posts, likes, and comments into one engagement metric
+    }
   ]
 
   return (
@@ -162,79 +174,153 @@ export default function CommunityDashboard() {
                 )}
 
                 <div>
-                  <h1 className="text-4xl font-extrabold tracking-tight text-surface-dark">{community?.community_name} Dashboard</h1>
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-4xl font-extrabold tracking-tight text-surface-dark">{community?.community_name} Dashboard</h1>
+                    <span className="px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full border border-primary/20">Current Term: Spring 2026</span>
+                  </div>
                   <p className="mt-2 text-lg text-surface-body">Manage your community workspace</p>
                 </div>
               </div>
-              <Link to={`/community/${id}`} className="flex items-center gap-2 text-sm font-bold text-primary hover:underline">
-                View Public Page <ExternalLink size={14} />
+              <Link to={`/community/${id}`} className="btn-secondary flex items-center gap-2">
+                View Public Page <ExternalLink size={16} />
               </Link>
             </header>
 
 
 
-            {/* Stats Grid */}
+            {/* Metric Row */}
             <div className="mb-10 grid grid-cols-2 gap-4 md:grid-cols-4">
               {statCards.map((stat) => (
-                <div key={stat.label} className="rounded-3xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
-                  <p className="text-3xl font-bold text-[#0d1f14]">{stat.value}</p>
-                  <p className="text-sm font-medium text-[#4b4b4b]">{stat.label}</p>
-                  <p className="mt-2 text-xs font-semibold text-green-600">
-                    {stat.change}
+                <div key={stat.label} className="card-border">
+                  <p className="text-3xl font-bold text-surface-dark mb-1">{stat.value}</p>
+                  <p className="text-body font-medium">{stat.label}</p>
+                  <p className="mt-3 text-metadata font-semibold text-primary">
+                    {stat.meta}
                   </p>
                 </div>
               ))}
             </div>
 
-            {/* Analytics Section */}
-            <div className="mb-10 grid grid-cols-1 gap-8 lg:grid-cols-2">
-              {/* Member Growth Chart */}
-              <div className="rounded-3xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
-                <h3 className="mb-6 text-lg font-bold">Member Growth</h3>
-                <div className="flex h-48 items-center justify-center text-gray-400">Chart Placeholder</div>
+            {/* Analytics Section: Community Health - 60/40 Split */}
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-10">
+
+              {/* Community Interaction Leaderboard (60%) */}
+              <div className="lg:col-span-3 card-border">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-title">Community Leaderboard</h3>
+                    <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Trending</span>
+                  </div>
+                  <span className="text-metadata px-2 py-1 bg-secondary rounded-md border border-surface-border">
+                    Last 30 Days
+                  </span>
+                </div>
+
+                <div className="flex flex-col items-center justify-center text-center text-surface-muted bg-secondary/50 rounded-xl border border-dashed border-surface-border p-8 h-64">
+                  <TrendingUp className="text-primary mb-2" size={32} />
+                  <p className="font-semibold text-surface-dark">Interaction Overlap</p>
+                  <p className="text-xs max-w-[280px] mt-1">
+                    Engagement volume of AI Learners vs. other Herald societies.
+                  </p>
+                </div>
               </div>
 
-              {/* Event Participation Chart */}
-              <div className="rounded-3xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
-                <h3 className="mb-6 text-lg font-bold">Event Participation</h3>
-                <div className="flex h-48 items-center justify-center text-gray-400">Chart Placeholder</div>
+              {/* Login Frequency (40%) */}
+              <div className="lg:col-span-2 card-border">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-title">Member Login Frequency</h3>
+                  <Users size={16} className="text-surface-muted" />
+                </div>
+
+                {/* Placeholder for Donut Chart */}
+                <div className="flex flex-col items-center justify-center text-center text-surface-muted bg-secondary/50 rounded-xl border border-dashed border-surface-border p-8 h-64">
+                  <PieChart className="text-surface-dark mb-2" size={32} />
+                  <p className="font-semibold text-surface-dark">Retention Mix</p>
+                  <div className="flex flex-col gap-1 mt-2">
+                    <p className="text-xs text-primary font-medium">● 65% Daily Hubbers</p>
+                    <p className="text-xs text-surface-muted">● 25% Weekly Visitors</p>
+                    <p className="text-xs text-surface-muted/60">● 10% Rare</p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-              {/* Quick Actions */}
-              <div className="lg:col-span-2">
-                <h2 className="mb-6 text-xl font-bold">Quick Actions</h2>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {quickActions.map((action) => (
-                    <Link
-                      key={action.label}
-                      to={action.path}
-                      className="flex items-center gap-4 rounded-2xl border border-[#e5e7eb] bg-white p-6 transition hover:border-[#75C043] hover:shadow-md"
-                    >
-                      <span className="text-primary">{action.icon}</span>
-                      <span className="font-bold text-surface-dark group-hover:text-primary transition-colors">{action.label}</span>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-
-              {/* Recent Activity */}
-              <aside>
-                <h2 className="mb-6 text-xl font-bold">Recent Activity</h2>
-                <div className="rounded-3xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
-                  <div className="space-y-6">
-                    {combinedActivity.length > 0 ? combinedActivity.map((activity) => (
-                      <div key={activity.id} className="relative pl-6 before:absolute before:left-0 before:top-2 before:h-2 before:w-2 before:rounded-full before:bg-[#75C043]">
-                        <p className="text-sm font-medium text-[#0d1f14]">{activity.content}</p>
-                        <p className="text-xs text-[#4b4b4b] mt-1">{activity.time}</p>
+            {/* Action & Feed Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+              {/* Left Column - Action & Schedule */}
+              <div className="lg:col-span-3 space-y-8">
+                {/* Upcoming Schedule (Moved here to fill space appropriately) */}
+                <div>
+                  <h3 className="text-title mb-4">Upcoming Schedule</h3>
+                  <div className="space-y-4">
+                    {dashboardEvents.slice(0, 3).map(event => (
+                      <div key={event.id} className="card-border flex flex-col sm:flex-row sm:items-center justify-between !p-4 gap-4">
+                        <div className="flex items-center gap-4">
+                          <div className="bg-primary/10 text-primary rounded-xl p-3 text-center min-w-[60px]">
+                            <p className="text-xs font-bold uppercase">{event.date ? new Date(event.date).toLocaleDateString('en-US', { month: 'short' }) : 'TBD'}</p>
+                            <p className="text-lg font-black leading-none">{event.date ? new Date(event.date).getDate() : '--'}</p>
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-surface-dark line-clamp-1">{event.title}</h4>
+                            <p className="text-metadata text-surface-muted flex items-center gap-1 mt-1">
+                              <Calendar size={12} /> {event.start_time || 'TBD'} • {event.location || 'Online'}
+                            </p>
+                          </div>
+                        </div>
+                        <Link to={`/community/${id}/manage/events`} className="btn-secondary !px-4 !py-1.5 !text-xs whitespace-nowrap text-center">
+                          Manage
+                        </Link>
                       </div>
-                    )) : (
-                      <p className="text-sm text-gray-500">No recent activity.</p>
+                    ))}
+                    {dashboardEvents.length === 0 && (
+                      <div className="card-border text-center text-surface-muted !py-8">No upcoming events scheduled.</div>
                     )}
                   </div>
                 </div>
-              </aside>
+
+                {/* Quick Actions */}
+                <div>
+                  <h3 className="text-title mb-4">Quick Actions</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {quickActions.map((action) => (
+                      <Link
+                        key={action.label}
+                        to={action.path}
+                        className="card-border flex flex-col items-center justify-center text-center gap-3 hover:border-primary hover:bg-primary/5 group !p-5"
+                      >
+                        <div className="bg-secondary rounded-full p-3 group-hover:bg-primary group-hover:text-white transition-colors text-surface-body">
+                          {action.icon}
+                        </div>
+                        <span className="text-sm font-semibold text-surface-dark">{action.label}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column - Recent Activity */}
+              <div className="lg:col-span-2">
+                <h3 className="text-title mb-4">Recent Activity</h3>
+                <div className="card-border !p-6">
+                  <div className="space-y-6">
+                    {combinedActivity.length > 0 ? combinedActivity.map((activity) => (
+                      <div key={activity.id} className="relative pl-6 before:absolute before:left-0 before:top-2 before:h-2 before:w-2 before:rounded-full before:bg-primary">
+                        <p className="text-body font-medium flex items-center justify-between">
+                          <span className="line-clamp-1 pr-2">{activity.content}</span>
+                          {activity.type === 'announcement' && (
+                            <span className="flex items-center gap-1 text-xs text-primary font-bold bg-primary/10 px-2 py-0.5 rounded-full whitespace-nowrap">
+                              <Eye size={12} /> {Math.floor(Math.random() * 50) + 100} views
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-metadata mt-1">{activity.time}</p>
+                      </div>
+                    )) : (
+                      <p className="text-body">No recent activity.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}

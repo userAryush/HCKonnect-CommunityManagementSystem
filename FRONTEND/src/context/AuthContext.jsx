@@ -52,11 +52,14 @@ export const AuthProvider = ({ children }) => {
     const googleLogin = async (idToken) => {
         try {
             const responseData = await authService.googleLogin(idToken);
-            // backend returns: { access, refresh, user: { id, email, username, role } }
-            const userData = responseData.user;
-            setUser(userData);
-            localStorage.setItem('user', JSON.stringify(userData));
-            return userData;
+            // Verify token was set before fetching profile
+            if (!authService.isAuthenticated()) {
+                throw new Error("Login failed: No token received");
+            }
+            const fullUserData = await authService.getCurrentUser();
+            setUser(fullUserData);
+            localStorage.setItem('user', JSON.stringify(fullUserData));
+            return fullUserData;
         } catch (error) {
             console.error("Google Login failed in Context", error);
             logout();

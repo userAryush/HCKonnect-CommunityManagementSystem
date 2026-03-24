@@ -29,9 +29,9 @@ function Register() {
 
   const [errors, setErrors] = useState({})
   const [apiErrors, setApiErrors] = useState({})
-  const { login } = useAuth()
-  const { showToast } = useToast()
-  const [loading, setLoading] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
+  const [isNativeLoading, setIsNativeLoading] = useState(false)
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const navigate = useNavigate()
   const { googleLogin } = useAuth()
 
@@ -131,7 +131,7 @@ function Register() {
     if (!validate()) return
 
     try {
-      setLoading(true)
+      setIsNativeLoading(true)
 
       const payload = {
         username: formData.username,
@@ -167,13 +167,13 @@ function Register() {
         showToast(error.response?.data?.detail || "Registration failed", 'error')
       }
     } finally {
-      setLoading(false)
+      setIsNativeLoading(false)
     }
   }
 
   const handleGoogleSuccess = async (credentialResponse) => {
     setApiErrors({});
-    setLoading(true);
+    setIsGoogleLoading(true);
     try {
       const userData = await googleLogin(credentialResponse.credential);
       handleLoginRedirect(userData);
@@ -183,7 +183,7 @@ function Register() {
       setApiErrors({ google: backendError });
       showToast("Registration successful, but login failed.", 'error')
     } finally {
-      setLoading(false);
+      setIsGoogleLoading(false);
     }
   };
 
@@ -253,7 +253,7 @@ function Register() {
               <Button
                 type="submit"
                 className="w-full shadow-md mt-4"
-                isLoading={loading}
+                isLoading={isNativeLoading}
                 loadingText="Creating Account..."
               >
                 Create Account
@@ -262,7 +262,7 @@ function Register() {
               <Divider />
 
               <div className="w-full relative">
-                {loading && (
+                {isGoogleLoading && (
                     <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 rounded-md">
                         <svg className="h-6 w-6 animate-spin text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -280,6 +280,8 @@ function Register() {
                   size="large"
                   shape="rectangular"
                   width="100%"
+                  text="signup_with"
+                  context="signup"
                 />
                 <FieldError message={apiErrors.google} />
               </div>

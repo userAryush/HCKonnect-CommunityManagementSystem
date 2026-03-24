@@ -1,6 +1,4 @@
 import { useEffect } from 'react'
-
-import { useEffect } from 'react'
 import { Info, CheckCircle2, AlertCircle } from 'lucide-react'
 
 export default function Toast({ message, type = 'success', onClose, duration = 4000 }) {
