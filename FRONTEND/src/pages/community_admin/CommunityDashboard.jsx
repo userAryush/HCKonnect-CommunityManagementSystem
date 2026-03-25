@@ -14,9 +14,30 @@ import {
   Bell,
   Eye,
   TrendingUp,
-  PieChart
+  PieChart as LucidePieChart,
+  BarChart3,
+  Activity,
+  AlertCircle,
+  Loader2
 
 } from 'lucide-react'
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  AreaChart,
+  Area
+} from 'recharts'
+import analyticsService from '../../services/analyticsService'
 
 
 export default function CommunityDashboard() {
@@ -31,6 +52,9 @@ export default function CommunityDashboard() {
   const [dashboardEvents, setDashboardEvents] = useState([])
   const [dashboardAnnouncements, setDashboardAnnouncements] = useState([])
   const [stats, setStats] = useState(null)
+  const [analytics, setAnalytics] = useState(null)
+  const [analyticsLoading, setAnalyticsLoading] = useState(true)
+  const [analyticsError, setAnalyticsError] = useState(null)
 
   const quickActions = [
     { label: 'Post Notice', path: `/community/${id}/manage/announcements/create`, icon: <Bell size={20} /> },
@@ -79,7 +103,21 @@ export default function CommunityDashboard() {
       }
     }
 
+    const fetchAnalyticsData = async () => {
+      setAnalyticsLoading(true)
+      setAnalyticsError(null)
+      try {
+        const data = await analyticsService.getCommunityAnalytics(id)
+        if (mounted) setAnalytics(data)
+      } catch (err) {
+        if (mounted) setAnalyticsError('Failed to load analytics data.')
+      } finally {
+        if (mounted) setAnalyticsLoading(false)
+      }
+    }
+
     fetchCommunity()
+    fetchAnalyticsData()
     return () => { mounted = false }
   }, [id])
 
@@ -103,22 +141,26 @@ export default function CommunityDashboard() {
     {
       label: 'Total Members',
       value: stats?.members || 0,
-      meta: '+ 3 New Members'
+      meta: 'Across all cohorts',
+      icon: <Users className="text-blue-500" size={20} />
     },
     {
-      label: 'Resource Utility',
-      value: stats?.downloads || 128,
-      meta: 'Materials accessed this week'
+      label: 'Posts Per Day',
+      value: analytics?.posts_last_7_days?.[analytics.posts_last_7_days.length - 1]?.count || 0,
+      meta: 'Last 24 hours activity',
+      icon: <TrendingUp className="text-emerald-500" size={20} />
     },
     {
       label: 'Upcoming Events',
-      value: stats?.upcomingEvents || 42,
-      meta: 'Committed to upcoming events'
+      value: stats?.upcomingEvents || 0,
+      meta: 'Scheduled this term',
+      icon: <Calendar className="text-amber-500" size={20} />
     },
     {
       label: 'Community Engagements',
-      value: (stats?.posts || 0) + (stats?.comments || 0) + (stats?.likes || 0),
-      meta: 'Total interactions this week' // Combines posts, likes, and comments into one engagement metric
+      value: analytics?.total_engagements || 0,
+      meta: 'Combined activity this week',
+      icon: <Activity className="text-rose-500" size={20} />
     }
   ]
 
@@ -190,13 +232,26 @@ export default function CommunityDashboard() {
 
             {/* Metric Row */}
             <div className="mb-10 grid grid-cols-2 gap-4 md:grid-cols-4">
-              {statCards.map((stat) => (
-                <div key={stat.label} className="card-border">
-                  <p className="text-3xl font-bold text-surface-dark mb-1">{stat.value}</p>
-                  <p className="text-body font-medium">{stat.label}</p>
-                  <p className="mt-3 text-metadata font-semibold text-primary">
-                    {stat.meta}
-                  </p>
+              {statCards.map((stat, idx) => (
+                <div key={stat.label} className="card-border relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    {stat.icon}
+                  </div>
+                  {analyticsLoading && idx % 2 === 1 ? (
+                    <div className="space-y-2">
+                      <div className="h-8 w-16 bg-zinc-200 animate-pulse rounded-lg"></div>
+                      <div className="h-4 w-24 bg-zinc-100 animate-pulse rounded-md"></div>
+                      <div className="h-3 w-32 bg-zinc-50 animate-pulse rounded-sm mt-4"></div>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-3xl font-bold text-surface-dark mb-1">{stat.value}</p>
+                      <p className="text-body font-medium">{stat.label}</p>
+                      <p className="mt-3 text-metadata font-semibold text-primary">
+                        {stat.meta}
+                      </p>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
@@ -204,45 +259,218 @@ export default function CommunityDashboard() {
             {/* Analytics Section: Community Health - 60/40 Split */}
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-10">
 
-              {/* Community Interaction Leaderboard (60%) */}
-              <div className="lg:col-span-3 card-border">
-                <div className="flex items-center justify-between mb-6">
+              {/* Community Engagement Comparison (60%) */}
+              <div className="lg:col-span-3 card-border !p-0 overflow-hidden min-h-[400px]">
+                <div className="flex items-center justify-between p-6 border-b border-surface-border">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-title">Community Leaderboard</h3>
-                    <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Trending</span>
+                    <h3 className="text-title">Engagement Comparison</h3>
+                    <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Historical</span>
                   </div>
-                  <span className="text-metadata px-2 py-1 bg-secondary rounded-md border border-surface-border">
-                    Last 30 Days
-                  </span>
+                  <BarChart3 size={18} className="text-surface-muted" />
                 </div>
 
-                <div className="flex flex-col items-center justify-center text-center text-surface-muted bg-secondary/50 rounded-xl border border-dashed border-surface-border p-8 h-64">
-                  <TrendingUp className="text-primary mb-2" size={32} />
-                  <p className="font-semibold text-surface-dark">Interaction Overlap</p>
-                  <p className="text-xs max-w-[280px] mt-1">
-                    Engagement volume of AI Learners vs. other Herald societies.
-                  </p>
+                <div className="p-6 h-[320px]">
+                  {analyticsLoading ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center space-y-4">
+                      <Loader2 className="animate-spin text-primary" size={32} />
+                      <p className="text-sm text-surface-muted">Analyzing engagement metrics...</p>
+                    </div>
+                  ) : analyticsError ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-center p-8 space-y-2">
+                      <AlertCircle className="text-red-400" size={32} />
+                      <p className="text-sm font-medium text-surface-dark">{analyticsError}</p>
+                      <button onClick={() => window.location.reload()} className="text-xs text-primary font-bold hover:underline">Retry Loading</button>
+                    </div>
+                  ) : Object.values(analytics?.engagement || {}).every(v => v === 0) ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-center p-8 opacity-40">
+                      <Activity size={48} className="mb-4 text-surface-muted" />
+                      <p className="font-semibold text-surface-dark">No Engagement Data Yet</p>
+                      <p className="text-xs max-w-[240px] mt-1">Start posting announcements or events to see your community stats grow.</p>
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={[
+                          { name: 'Notices', value: analytics.engagement.announcements },
+                          { name: 'Events', value: analytics.engagement.events },
+                          { name: 'Posts', value: analytics.engagement.posts },
+                          { name: 'Threads', value: analytics.engagement.discussions },
+                        ]}
+                        margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                        <XAxis
+                          dataKey="name"
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 10, fontWeight: 600, fill: '#666' }}
+                        />
+                        <YAxis hide />
+                        <Tooltip
+                          contentStyle={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #eee', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
+                          cursor={{ fill: 'rgba(0,0,0,0.02)' }}
+                        />
+                        <Bar
+                          dataKey="value"
+                          radius={[6, 6, 0, 0]}
+                          barSize={40}
+                        >
+                          {
+                            [
+                              { name: 'Notices', value: analytics.engagement.announcements },
+                              { name: 'Events', value: analytics.engagement.events },
+                              { name: 'Posts', value: analytics.engagement.posts },
+                              { name: 'Threads', value: analytics.engagement.discussions },
+                            ].map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={['#3b82f6', '#10b981', '#f59e0b', '#ef4444'][index % 4]} fillOpacity={0.8} />
+                            ))
+                          }
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
                 </div>
               </div>
 
               {/* Login Frequency (40%) */}
-              <div className="lg:col-span-2 card-border">
-                <div className="flex items-center justify-between mb-6">
+              <div className="lg:col-span-2 card-border !p-0 overflow-hidden">
+                <div className="flex items-center justify-between p-6 border-b border-surface-border">
                   <h3 className="text-title">Member Login Frequency</h3>
-                  <Users size={16} className="text-surface-muted" />
+                  <Users size={18} className="text-surface-muted" />
                 </div>
 
-                {/* Placeholder for Donut Chart */}
-                <div className="flex flex-col items-center justify-center text-center text-surface-muted bg-secondary/50 rounded-xl border border-dashed border-surface-border p-8 h-64">
-                  <PieChart className="text-surface-dark mb-2" size={32} />
-                  <p className="font-semibold text-surface-dark">Retention Mix</p>
-                  <div className="flex flex-col gap-1 mt-2">
-                    <p className="text-xs text-primary font-medium">● 65% Daily Hubbers</p>
-                    <p className="text-xs text-surface-muted">● 25% Weekly Visitors</p>
-                    <p className="text-xs text-surface-muted/60">● 10% Rare</p>
-                  </div>
+                <div className="p-6 h-[320px]">
+                  {analyticsLoading ? (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <div className="relative w-40 h-40">
+                        <div className="absolute inset-0 rounded-full border-4 border-zinc-100"></div>
+                        <div className="absolute inset-0 rounded-full border-4 border-t-primary animate-spin"></div>
+                      </div>
+                    </div>
+                  ) : !analytics || (analytics.member_activity.daily === 0 && analytics.member_activity.weekly === 0 && analytics.member_activity.rare === 0) ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-center p-8 opacity-40">
+                      <LucidePieChart size={40} className="mb-4 text-surface-muted" />
+                      <p className="font-semibold text-surface-dark">No Activity Yet</p>
+                      <p className="text-xs mt-1">Member activity will appear as users log in.</p>
+                    </div>
+                  ) : (
+                    <div className="w-full h-full flex flex-col">
+                      <div className="flex-1 min-h-0">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={[
+                                { name: 'Daily Hubbers', value: analytics.member_activity.daily, color: '#0d1f14' },
+                                { name: 'Weekly Visitors', value: analytics.member_activity.weekly, color: '#32CD32' },
+                                { name: 'Rare', value: analytics.member_activity.rare, color: '#e5e7eb' },
+                              ]}
+                              innerRadius="65%"
+                              outerRadius="90%"
+                              paddingAngle={5}
+                              dataKey="value"
+                            >
+                              <Cell fill="#0d1f14" />
+                              <Cell fill="#32CD32" />
+                              <Cell fill="#f1f5f9" />
+                            </Pie>
+                            <Tooltip
+                              contentStyle={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #eee' }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="flex flex-col gap-2 mt-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-[#0d1f14]"></span>
+                            <span className="text-xs font-semibold text-surface-dark">Daily Hubbers</span>
+                          </div>
+                          <span className="text-xs font-bold text-surface-dark">{Math.round((analytics.member_activity.daily / (stats?.members || 1)) * 100)}%</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-[#32CD32]"></span>
+                            <span className="text-xs font-semibold text-surface-muted">Weekly Visitors</span>
+                          </div>
+                          <span className="text-xs font-bold text-surface-muted">{Math.round((analytics.member_activity.weekly / (stats?.members || 1)) * 100)}%</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-slate-200"></span>
+                            <span className="text-xs font-semibold text-surface-muted">Rare</span>
+                          </div>
+                          <span className="text-xs font-bold text-surface-muted">{Math.round((analytics.member_activity.rare / (stats?.members || 1)) * 100)}%</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
+            </div>
+
+            {/* Community Leaderboard (Global Comparison) */}
+            <div className="card-border mb-10 overflow-hidden !p-0">
+               <div className="flex items-center justify-between p-6 border-b border-surface-border">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-title">Engagement Leaderboard</h3>
+                    <span className="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Global Rankings</span>
+                  </div>
+                  <BarChart3 size={18} className="text-surface-muted" />
+                </div>
+                <div className="p-6 h-[260px]">
+                   {analyticsLoading ? (
+                      <div className="w-full h-full flex flex-col justify-end gap-2">
+                        <div className="flex items-end justify-between px-4 gap-4 h-full">
+                           {[1,2,3,4,5].map(i => (
+                             <div key={i} className="flex-1 bg-zinc-100 animate-pulse rounded-t-lg" style={{ height: `${20 + Math.random() * 60}%` }}></div>
+                           ))}
+                        </div>
+                        <div className="flex justify-between px-4 h-4 bg-zinc-50 rounded animate-pulse"></div>
+                      </div>
+                   ) : !analytics?.comparison || analytics.comparison.length === 0 ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-center p-8 opacity-40">
+                         <Activity size={32} className="mb-2 text-surface-muted" />
+                         <p className="font-semibold text-surface-dark">Ranking unavailable</p>
+                      </div>
+                   ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart 
+                        data={analytics?.comparison || []} 
+                        layout="vertical"
+                        margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                      >
+                        <XAxis type="number" hide />
+                        <YAxis 
+                          dataKey="name" 
+                          type="category" 
+                          width={120}
+                          axisLine={false}
+                          tickLine={false}
+                          style={{ fontSize: '12px', fontWeight: '600' }}
+                          tick={{ fill: '#0d1f14' }}
+                        />
+                        <Tooltip 
+                          cursor={{ fill: 'transparent' }}
+                          contentStyle={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #eee' }}
+                        />
+                        <Bar 
+                          dataKey="score" 
+                          radius={[0, 12, 12, 0]} 
+                          barSize={24}
+                        >
+                          {
+                            analytics.comparison.map((entry, index) => (
+                              <Cell 
+                                key={`cell-${index}`} 
+                                fill={entry.isCurrent ? '#32CD32' : '#f1f5f9'} 
+                              />
+                            ))
+                          }
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                   )}
+                </div>
             </div>
 
             {/* Action & Feed Section */}

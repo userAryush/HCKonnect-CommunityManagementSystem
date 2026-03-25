@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import discussionService from '../../services/discussionService';
 import { useToast } from '../../context/ToastContext';
 import Button from '../../components/shared/Button';
+import Navbar from '../../components/Navbar';
 
 export default function CreateDiscussion() {
     const navigate = useNavigate();

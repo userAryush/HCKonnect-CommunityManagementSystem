@@ -59,7 +59,7 @@ export default function DiscussionCard({ item, onDelete }) {
                     <div>
                         <p className="text-sm font-semibold text-surface-dark">{getDisplayName(item)}</p>
                         <p className="text-metadata">
-                            {getRoleLabel(item)} • in <span className="text-primary font-medium">{item.community_name || "General"}</span> • {formatTimeAgo(item.created_at || itemState.created_at)}
+                            {getRoleLabel(item)}  • {formatTimeAgo(item.created_at || itemState.created_at)}
                         </p>
                     </div>
                 </header>
@@ -67,7 +67,7 @@ export default function DiscussionCard({ item, onDelete }) {
                 <div className="flex items-center gap-2">
                     <Badge variant="gray">Discussion</Badge>
                     {itemState.visibility && <Badge variant={itemState.visibility === 'public' ? 'success' : 'gray'}>{itemState.visibility}</Badge>}
-                    
+
                     {canDelete && (
                         <button
                             onClick={(e) => {

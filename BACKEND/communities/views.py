@@ -7,9 +7,14 @@ from django.contrib.auth import get_user_model
 from contents.permissions import CanCreateCommunityContent
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.db.models import Q
+from django.db.models import Q, Count, Sum, F
 from .permissions import IsCommunityAccount
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from datetime import timedelta
+from contents.models import Announcement, Post, PostComment, PostReaction
+from events.models import Event
+from discussion.models import DiscussionPanel, DiscussionReply, Reaction as DiscussionReaction
 
 User = get_user_model()
 
@@ -181,6 +186,122 @@ class CommunityDashboardView(RetrieveAPIView):
             
             raise NotFound("Community not found.")
         return user
+
+
+class CommunityAnalyticsView(APIView):
+    """
+    Optimized API to fetch analytics for the community dashboard.
+    Returns engagement metrics, member activity, and activity trends.
+    """
+    permission_classes = [IsCommunityAccount]
+
+    def get(self, request, pk):
+        community = get_object_or_404(User, id=pk, role="community")
+        now = timezone.now()
+        start_date = (now - timedelta(days=6)).date()
+        last_7_days = [start_date + timedelta(days=i) for i in range(7)]
+
+        # 1. Engagement counts (Announcements, Events, Discussions)
+        # Using a single query with subqueries or simple counts
+        community_id = community.id
+        
+        announcements_count = Announcement.objects.filter(community_id=community_id).count()
+        events_count = Event.objects.filter(community_id=community_id).count()
+        discussions_count = DiscussionPanel.objects.filter(community_id=community_id).count()
+
+        # Member IDs for this community
+        member_ids = list(CommunityMembership.objects.filter(community_id=community_id).values_list('user_id', flat=True))
+        all_eligible_authors = member_ids + [community_id]
+
+        # Total Posts
+        posts_count = Post.objects.filter(author_id__in=all_eligible_authors).count()
+
+        # 1.5 Member Interactions (Comments and Reactions)
+        # Using separate queries for cleanliness and adding to trend later
+        
+        # 2. Member activity (Mutually Exclusive) - Now including the community owner
+        daily_limit = now - timedelta(hours=24)
+        weekly_limit = now - timedelta(days=7)
+
+        # Include both members and the community account itself
+        active_users = User.objects.filter(Q(membership__community_id=community_id) | Q(id=community_id))
+
+        member_activity = active_users.aggregate(
+            daily=Count('id', filter=Q(last_login__gte=daily_limit)),
+            weekly=Count('id', filter=Q(last_login__lt=daily_limit, last_login__gte=weekly_limit)),
+            rare=Count('id', filter=Q(last_login__lt=weekly_limit) | Q(last_login__isnull=True))
+        )
+
+        # 3. Comprehensive Performance Trend (Last 7 Days)
+        # Includes: Announcements, Events, Posts, Discussions, Comments, Reactions
+        
+        # Fetching all activity by date
+        daily_posts = Post.objects.filter(author_id__in=all_eligible_authors, created_at__date__gte=start_date).values('created_at__date').annotate(count=Count('id'))
+        daily_discussions = DiscussionPanel.objects.filter(community_id=community_id, created_at__date__gte=start_date).values('created_at__date').annotate(count=Count('id'))
+        daily_announcements = Announcement.objects.filter(community_id=community_id, created_at__date__gte=start_date).values('created_at__date').annotate(count=Count('id'))
+        daily_events = Event.objects.filter(community_id=community_id, created_at__date__gte=start_date).values('created_at__date').annotate(count=Count('id'))
+        
+        # Comments across all content
+        daily_p_comments = PostComment.objects.filter(author_id__in=all_eligible_authors, created_at__date__gte=start_date).values('created_at__date').annotate(count=Count('id'))
+        daily_d_replies = DiscussionReply.objects.filter(created_by_id__in=all_eligible_authors, created_at__date__gte=start_date).values('created_at__date').annotate(count=Count('id'))
+        
+        # Reactions across all content
+        daily_p_reactions = PostReaction.objects.filter(user_id__in=all_eligible_authors, created_at__date__gte=start_date).values('created_at__date').annotate(count=Count('id'))
+        daily_d_reactions = DiscussionReaction.objects.filter(user_id__in=all_eligible_authors, created_at__date__gte=start_date).values('created_at__date').annotate(count=Count('id'))
+
+        # Merge counts into trend array
+        trend_map = {date: 0 for date in last_7_days}
+        for qs in [daily_posts, daily_discussions, daily_announcements, daily_events, 
+                   daily_p_comments, daily_d_replies, daily_p_reactions, daily_d_reactions]:
+            for entry in qs:
+                trend_map[entry['created_at__date']] += entry['count']
+
+        posts_last_7_days = [
+            {"date": d.strftime("%Y-%m-%d"), "count": trend_map[d]} 
+            for d in last_7_days
+        ]
+
+        # 4. Total Engagements (Sync with Trend Chart - Last 7 Days)
+        total_engagements = sum(trend_map.values())
+
+        # 5. Global Community Comparison (Top 5 + Current)
+        # Aggregating base activity: Announcements + Events + Discussions
+        comparison = User.objects.filter(role='community', status='active').annotate(
+            a_count=Count('community_announcements', distinct=True),
+            e_count=Count('events', distinct=True),
+            d_count=Count('community_discussions', distinct=True)
+        ).annotate(
+            score=F('a_count') + F('e_count') + F('d_count')
+        ).order_by('-score')[:5]
+
+        comparison_data = [
+            {"name": c.community_name or c.username, "score": c.score, "isCurrent": c.id == community.id}
+            for c in comparison
+        ]
+        
+        # Ensure current community is in the list if not in top 5
+        if not any(c['isCurrent'] for c in comparison_data):
+            current_score = announcements_count + events_count + discussions_count
+            comparison_data.append({
+                "name": community.community_name or community.username,
+                "score": current_score,
+                "isCurrent": True
+            })
+            # Re-sort to keep it looking nice
+            comparison_data = sorted(comparison_data, key=lambda x: x['score'], reverse=True)
+
+        return Response({
+            "engagement": {
+                "announcements": announcements_count,
+                "events": events_count,
+                "posts": posts_count,
+                "discussions": discussions_count
+            },
+            "member_activity": member_activity,
+            "posts_last_7_days": posts_last_7_days,
+            "total_engagements": total_engagements,
+            "comparison": comparison_data
+        })
 
 
 

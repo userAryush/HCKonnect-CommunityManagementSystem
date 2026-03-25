@@ -13,6 +13,7 @@ from rest_framework.generics import RetrieveUpdateAPIView, RetrieveAPIView
 from .models import User
 from .services import GoogleAuthService
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth.models import update_last_login
 
 
 """
@@ -45,6 +46,7 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
+            update_last_login(None, user) # Update the last_login timestamp
             token_data = serializer.get_jwt_token(user)
             return Response(token_data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -177,6 +179,7 @@ class GoogleAuthView(APIView):
 
             # 3. Generate JWT Tokens
             refresh = RefreshToken.for_user(user)
+            update_last_login(None, user) # Update for Google Auth as well
             
             return Response({
                 'access': str(refresh.access_token),
