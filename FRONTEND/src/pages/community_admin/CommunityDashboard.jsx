@@ -32,10 +32,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  LineChart,
-  Line,
-  AreaChart,
-  Area
 } from 'recharts'
 import analyticsService from '../../services/analyticsService'
 
@@ -410,67 +406,67 @@ export default function CommunityDashboard() {
 
             {/* Community Leaderboard (Global Comparison) */}
             <div className="card-border mb-10 overflow-hidden !p-0">
-               <div className="flex items-center justify-between p-6 border-b border-surface-border">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-title">Engagement Leaderboard</h3>
-                    <span className="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Global Rankings</span>
+              <div className="flex items-center justify-between p-6 border-b border-surface-border">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-title">Engagement Leaderboard</h3>
+                  <span className="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Global Rankings</span>
+                </div>
+                <BarChart3 size={18} className="text-surface-muted" />
+              </div>
+              <div className="p-6 h-[260px]">
+                {analyticsLoading ? (
+                  <div className="w-full h-full flex flex-col justify-end gap-2">
+                    <div className="flex items-end justify-between px-4 gap-4 h-full">
+                      {[1, 2, 3, 4, 5].map(i => (
+                        <div key={i} className="flex-1 bg-zinc-100 animate-pulse rounded-t-lg" style={{ height: `${20 + Math.random() * 60}%` }}></div>
+                      ))}
+                    </div>
+                    <div className="flex justify-between px-4 h-4 bg-zinc-50 rounded animate-pulse"></div>
                   </div>
-                  <BarChart3 size={18} className="text-surface-muted" />
-                </div>
-                <div className="p-6 h-[260px]">
-                   {analyticsLoading ? (
-                      <div className="w-full h-full flex flex-col justify-end gap-2">
-                        <div className="flex items-end justify-between px-4 gap-4 h-full">
-                           {[1,2,3,4,5].map(i => (
-                             <div key={i} className="flex-1 bg-zinc-100 animate-pulse rounded-t-lg" style={{ height: `${20 + Math.random() * 60}%` }}></div>
-                           ))}
-                        </div>
-                        <div className="flex justify-between px-4 h-4 bg-zinc-50 rounded animate-pulse"></div>
-                      </div>
-                   ) : !analytics?.comparison || analytics.comparison.length === 0 ? (
-                      <div className="w-full h-full flex flex-col items-center justify-center text-center p-8 opacity-40">
-                         <Activity size={32} className="mb-2 text-surface-muted" />
-                         <p className="font-semibold text-surface-dark">Ranking unavailable</p>
-                      </div>
-                   ) : (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart 
-                        data={analytics?.comparison || []} 
-                        layout="vertical"
-                        margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                ) : !analytics?.comparison || analytics.comparison.length === 0 ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-center p-8 opacity-40">
+                    <Activity size={32} className="mb-2 text-surface-muted" />
+                    <p className="font-semibold text-surface-dark">Ranking unavailable</p>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={analytics?.comparison || []}
+                      layout="vertical"
+                      margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                    >
+                      <XAxis type="number" hide />
+                      <YAxis
+                        dataKey="name"
+                        type="category"
+                        width={120}
+                        axisLine={false}
+                        tickLine={false}
+                        style={{ fontSize: '12px', fontWeight: '600' }}
+                        tick={{ fill: '#0d1f14' }}
+                      />
+                      <Tooltip
+                        cursor={{ fill: 'transparent' }}
+                        contentStyle={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #eee' }}
+                      />
+                      <Bar
+                        dataKey="score"
+                        radius={[0, 12, 12, 0]}
+                        barSize={24}
                       >
-                        <XAxis type="number" hide />
-                        <YAxis 
-                          dataKey="name" 
-                          type="category" 
-                          width={120}
-                          axisLine={false}
-                          tickLine={false}
-                          style={{ fontSize: '12px', fontWeight: '600' }}
-                          tick={{ fill: '#0d1f14' }}
-                        />
-                        <Tooltip 
-                          cursor={{ fill: 'transparent' }}
-                          contentStyle={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #eee' }}
-                        />
-                        <Bar 
-                          dataKey="score" 
-                          radius={[0, 12, 12, 0]} 
-                          barSize={24}
-                        >
-                          {
-                            analytics.comparison.map((entry, index) => (
-                              <Cell 
-                                key={`cell-${index}`} 
-                                fill={entry.isCurrent ? '#32CD32' : '#f1f5f9'} 
-                              />
-                            ))
-                          }
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                   )}
-                </div>
+                        {
+                          analytics.comparison.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={entry.isCurrent ? '#32CD32' : '#f1f5f9'}
+                            />
+                          ))
+                        }
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
             </div>
 
             {/* Action & Feed Section */}
@@ -535,11 +531,11 @@ export default function CommunityDashboard() {
                       <div key={activity.id} className="relative pl-6 before:absolute before:left-0 before:top-2 before:h-2 before:w-2 before:rounded-full before:bg-primary">
                         <p className="text-body font-medium flex items-center justify-between">
                           <span className="line-clamp-1 pr-2">{activity.content}</span>
-                          {activity.type === 'announcement' && (
+                          {/* {activity.type === 'announcement' && (
                             <span className="flex items-center gap-1 text-xs text-primary font-bold bg-primary/10 px-2 py-0.5 rounded-full whitespace-nowrap">
                               <Eye size={12} /> {Math.floor(Math.random() * 50) + 100} views
                             </span>
-                          )}
+                          )} */}
                         </p>
                         <p className="text-metadata mt-1">{activity.time}</p>
                       </div>

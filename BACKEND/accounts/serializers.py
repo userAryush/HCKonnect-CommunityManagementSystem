@@ -260,7 +260,8 @@ class UserProfileSerializer(ModelSerializer):
             "id", "username", "first_name", "last_name", "email", "role", 
             "profile_image", "course", "interests",
             "bio", "linkedin_link", "github_link", "university_id", "membership",
-            "community_name", "community_description", "community_logo", "community_tag"
+            "community_name", "community_description", "community_logo", "community_tag",
+            "must_change_password"
         ]
         read_only_fields = ["id", "email", "role"]
 

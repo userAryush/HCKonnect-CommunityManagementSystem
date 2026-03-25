@@ -23,6 +23,7 @@ import CreateDiscussion from './pages/community_pages/CreateDiscussion'
 import DiscussionDetail from './pages/community_pages/DiscussionDetail'
 import PostList from './pages/community_pages/PostList'
 import PostDetail from './pages/community_pages/PostDetail'
+import FirstLoginChangePassword from './pages/accounts/FirstLoginChangePassword'
 
 import { AuthProvider } from './context/AuthContext'
 import { ToastProvider } from './context/ToastContext'
@@ -45,6 +46,7 @@ function App() {
 
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
+              <Route path="/change-password" element={<FirstLoginChangePassword />} />
               <Route path="/feed" element={<Feed />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/profile/:id" element={<Profile />} />

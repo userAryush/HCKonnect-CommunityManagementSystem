@@ -1,7 +1,7 @@
 import React from 'react';
 import { User, Calendar, Megaphone, MessageSquare, FileText } from 'lucide-react';
 
-const NotificationItem = ({ notification, onMarkRead }) => {
+const NotificationItem = ({ notification, onMarkRead, onNavigate }) => {
     const { id, title, message, type, created_at, is_read, actor_name, actor_image } = notification;
 
     const getIcon = () => {
@@ -30,7 +30,10 @@ const NotificationItem = ({ notification, onMarkRead }) => {
 
     return (
         <div
-            onClick={() => !is_read && onMarkRead(id)}
+            onClick={() => {
+                if (!is_read) onMarkRead(id);
+                if (onNavigate) onNavigate(type, notification.metadata);
+            }}
             className={`group relative flex gap-4 p-4 transition-all duration-200 cursor-pointer border-b border-surface-border 
         ${!is_read ? 'bg-primary/[0.03]' : 'hover:bg-ink/[0.02]'}`}
         >

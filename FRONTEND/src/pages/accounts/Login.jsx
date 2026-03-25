@@ -60,6 +60,11 @@ function Login() {
         const role = userData?.role;
         console.log("Redirecting for role:", role);
 
+        if (userData?.must_change_password) {
+            navigate('/change-password');
+            return;
+        }
+
         try {
             const firstName = userData.first_name || userData.username || 'User';
             const msg = `hello ${firstName}, successfully logged in.`;

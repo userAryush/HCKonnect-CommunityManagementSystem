@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, BellOff, CheckCheck, Settings, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import NotificationItem from './NotificationItem';
 import notificationService from '../../services/notificationService';
 
@@ -8,6 +9,7 @@ const NotificationPopover = ({ isOpen, onClose }) => {
     const [loading, setLoading] = useState(true);
     const [unreadCount, setUnreadCount] = useState(0);
     const popoverRef = useRef(null);
+    const navigate = useNavigate();
 
     const fetchNotifications = async () => {
         try {
@@ -71,6 +73,40 @@ const NotificationPopover = ({ isOpen, onClose }) => {
         }
     };
 
+    const handleNavigate = (type, metadata) => {
+        onClose(); // Close the popover
+        if (!metadata) return;
+
+        switch (type) {
+            case 'event':
+                if (metadata.event_id) navigate(`/events/${metadata.event_id}`);
+                break;
+            case 'discussion':
+                if (metadata.discussion_id) navigate(`/discussions/${metadata.discussion_id}`);
+                break;
+            case 'post':
+                if (metadata.post_id) navigate(`/posts/${metadata.post_id}`);
+                break;
+            case 'membership':
+                if (metadata.community_id) navigate(`/community/${metadata.community_id}`);
+                break;
+            case 'role_change':
+                navigate(`/profile`);
+                break;
+            case 'announcement':
+                navigate(`/feed`);
+                break;
+            case 'vacancy':
+                navigate(`/communities`);
+                break;
+            case 'resource':
+                navigate(`/feed`);
+                break;
+            default:
+                break;
+        }
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -107,7 +143,7 @@ const NotificationPopover = ({ isOpen, onClose }) => {
                     </div>
                 ) : notifications.length > 0 ? (
                     notifications.map(n => (
-                        <NotificationItem key={n.id} notification={n} onMarkRead={handleMarkRead} onDelete={handleDelete} />
+                        <NotificationItem key={n.id} notification={n} onMarkRead={handleMarkRead} onDelete={handleDelete} onNavigate={handleNavigate} />
                     ))
                 ) : (
                     <div className="py-20 px-10 text-center">
