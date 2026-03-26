@@ -71,10 +71,10 @@ export default function AnnouncementsList() {
                 <div className="mx-auto w-full max-w-4xl px-4">
                     <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
                         <div>
-                            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[#75C043]">Updates</p>
+
                             <h1 className="mt-2 text-3xl font-bold">All Announcements</h1>
                             <div className="flex gap-4 mt-4 text-sm text-[#4b4b4b]">
-                                <span><strong>{stats.total_announcements}</strong> Total Announcements</span>
+                                <span>Be updated with every announcement.</span>
                             </div>
                         </div>
                         {canCreate && (
@@ -87,9 +87,9 @@ export default function AnnouncementsList() {
                                         alert("Could not determine community ID. Please go to your dashboard.");
                                     }
                                 }}
-                                className="rounded-xl bg-[#0d1f14] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#1a3b26]"
+                                className="rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white transition hover:bg-primary/80"
                             >
-                                + Create Announcement
+                                Create Announcement
                             </button>
                         )}
                     </header>
@@ -102,7 +102,7 @@ export default function AnnouncementsList() {
                         </div>
                     ) : (
                         <>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div className="flex flex-col gap-4">
                                 {announcements.map(item => (
                                     <AnnouncementCard key={item.id} item={item} className="w-full" />
                                 ))}

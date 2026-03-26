@@ -17,8 +17,10 @@ import {
   BarChart3,
   Activity,
   AlertCircle,
-  Loader2
-
+  Loader2,
+  MessageSquare,
+  Edit3,
+  User
 } from 'lucide-react'
 import {
   BarChart,
@@ -50,10 +52,48 @@ export default function CommunityDashboard() {
   const [analyticsError, setAnalyticsError] = useState(null)
 
   const quickActions = [
-    { label: 'Post Notice', path: `/community/${id}/manage/announcements/create`, icon: <Bell size={20} /> },
-    { label: 'Schedule Event', path: `/community/${id}/manage/events/create`, icon: <Calendar size={20} /> },
-    { label: 'Manage Members', path: `/community/${id}/manage/members`, icon: <Users size={20} /> },
-    { label: 'Export Engagement Report', path: `#`, icon: <FileDown size={20} /> },
+    {
+      label: 'Post Notice',
+      path: `/community/${id}/manage/announcements/create`,
+      icon: <Bell size={20} />,
+      colorIcon: 'text-blue-500',
+      hoverClass: 'hover:border-blue-500 hover:bg-blue-50/50 group-hover:bg-blue-500'
+    },
+    {
+      label: 'Schedule Event',
+      path: `/community/${id}/manage/events/create`,
+      icon: <Calendar size={20} />,
+      colorIcon: 'text-emerald-500',
+      hoverClass: 'hover:border-emerald-500 hover:bg-emerald-50/50 group-hover:bg-emerald-500'
+    },
+    {
+      label: 'Manage Members',
+      path: `/community/${id}/manage/members`,
+      icon: <Users size={20} />,
+      colorIcon: 'text-amber-500',
+      hoverClass: 'hover:border-amber-500 hover:bg-amber-50/50 group-hover:bg-amber-500'
+    },
+    {
+      label: 'Start Discussion',
+      path: `/community/${id}?tab=Discussions`,
+      icon: <MessageSquare size={20} />,
+      colorIcon: 'text-purple-500',
+      hoverClass: 'hover:border-purple-500 hover:bg-purple-50/50 group-hover:bg-purple-500'
+    },
+    {
+      label: 'Create Post',
+      path: `/feed`,
+      icon: <Edit3 size={20} />,
+      colorIcon: 'text-pink-500',
+      hoverClass: 'hover:border-pink-500 hover:bg-pink-50/50 group-hover:bg-pink-500'
+    },
+    {
+      label: 'View Profile',
+      path: `/community/${id}`,
+      icon: <User size={20} />,
+      colorIcon: 'text-indigo-500',
+      hoverClass: 'hover:border-indigo-500 hover:bg-indigo-50/50 group-hover:bg-indigo-500'
+    },
   ]
 
   useEffect(() => {
@@ -81,6 +121,7 @@ export default function CommunityDashboard() {
 
         setStats({
           members: communityRes.data.member_count,
+          newMembers: communityRes.data.new_members_this_month || 0,
           announcements: announcementStats.total_announcements,
           events: eventStats.total_events,
           upcomingEvents: eventStats.upcoming_events
@@ -134,13 +175,13 @@ export default function CommunityDashboard() {
     {
       label: 'Total Members',
       value: stats?.members || 0,
-      meta: 'Across all cohorts',
+      meta: `+ ${stats?.newMembers || 0} new members this month`,
       icon: <Users className="text-blue-500" size={20} />
     },
     {
-      label: 'Posts Per Day',
+      label: 'Weekly Engagement',
       value: analytics?.posts_last_7_days?.[analytics.posts_last_7_days.length - 1]?.count || 0,
-      meta: 'Last 24 hours activity',
+      meta: 'Last 7 days activity',
       icon: <TrendingUp className="text-emerald-500" size={20} />
     },
     {
@@ -227,7 +268,7 @@ export default function CommunityDashboard() {
             <div className="mb-10 grid grid-cols-2 gap-4 md:grid-cols-4">
               {statCards.map((stat, idx) => (
                 <div key={stat.label} className="card-border relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                  <div className="absolute top-0 right-0 p-4 opacity-70 group-hover:opacity-100 transition-opacity">
                     {stat.icon}
                   </div>
                   {analyticsLoading && idx % 2 === 1 ? (
@@ -249,10 +290,10 @@ export default function CommunityDashboard() {
               ))}
             </div>
 
-            {/* Analytics Section: Community Health - 60/40 Split */}
+            {/* Analytics Section */}
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-10">
 
-              {/* Community Engagement Comparison (60%) */}
+              {/* Community Engagement Comparison */}
               <div className="lg:col-span-3 card-border !p-0 overflow-hidden min-h-[400px]">
                 <div className="flex items-center justify-between p-6 border-b border-surface-border">
                   <div className="flex items-center gap-2">
@@ -337,11 +378,11 @@ export default function CommunityDashboard() {
                     <div className="p-6 space-y-4">
                       {[1, 2, 3, 4, 5].map(i => (
                         <div key={i} className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-zinc-200 animate-pulse"></div>
-                            <div className="space-y-2 flex-1">
-                                <div className="h-4 w-24 bg-zinc-200 rounded animate-pulse"></div>
-                                <div className="h-3 w-16 bg-zinc-100 rounded animate-pulse"></div>
-                            </div>
+                          <div className="h-10 w-10 rounded-full bg-zinc-200 animate-pulse"></div>
+                          <div className="space-y-2 flex-1">
+                            <div className="h-4 w-24 bg-zinc-200 rounded animate-pulse"></div>
+                            <div className="h-3 w-16 bg-zinc-100 rounded animate-pulse"></div>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -353,34 +394,34 @@ export default function CommunityDashboard() {
                     </div>
                   ) : (
                     <div className="divide-y divide-surface-border max-h-[320px] overflow-y-auto">
-                        {analytics.top_members.map((member, idx) => (
-                            <div key={member.id} className="flex items-center justify-between p-4 hover:bg-zinc-50 transition-colors">
-                                <div className="flex items-center gap-3">
-                                    <div className="relative">
-                                        <div className="h-10 w-10 rounded-full bg-zinc-100 border border-surface-border flex items-center justify-center overflow-hidden">
-                                            {member.profile_image ? (
-                                                <img src={member.profile_image} alt={member.username} className="h-full w-full object-cover" />
-                                            ) : (
-                                                <span className="text-sm font-bold text-zinc-500">{member.username.slice(0, 2).toUpperCase()}</span>
-                                            )}
-                                        </div>
-                                        {idx < 3 && (
-                                            <div className={`absolute -top-1 -right-1 h-4 w-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white border-2 border-white ${idx === 0 ? 'bg-amber-400' : idx === 1 ? 'bg-zinc-400' : 'bg-amber-600'}`}>
-                                                {idx + 1}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-bold text-surface-dark">{member.username}</p>
-                                        <p className="text-xs font-semibold text-surface-muted capitalize">{member.role}</p>
-                                    </div>
+                      {analytics.top_members.map((member, idx) => (
+                        <div key={member.id} className="flex items-center justify-between p-4 hover:bg-zinc-50 transition-colors">
+                          <div className="flex items-center gap-3">
+                            <div className="relative">
+                              <div className="h-10 w-10 rounded-full bg-zinc-100 border border-surface-border flex items-center justify-center overflow-hidden">
+                                {member.profile_image ? (
+                                  <img src={member.profile_image} alt={member.username} className="h-full w-full object-cover" />
+                                ) : (
+                                  <span className="text-sm font-bold text-zinc-500">{member.username.slice(0, 2).toUpperCase()}</span>
+                                )}
+                              </div>
+                              {idx < 3 && (
+                                <div className={`absolute -top-1 -right-1 h-4 w-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white border-2 border-white ${idx === 0 ? 'bg-amber-400' : idx === 1 ? 'bg-zinc-400' : 'bg-amber-600'}`}>
+                                  {idx + 1}
                                 </div>
-                                <div className="text-right">
-                                    <p className="text-sm font-black text-primary">{member.activity_score}</p>
-                                    <p className="text-[10px] font-bold text-surface-muted uppercase tracking-wider">Posts</p>
-                                </div>
+                              )}
                             </div>
-                        ))}
+                            <div>
+                              <p className="text-sm font-bold text-surface-dark">{member.username}</p>
+                              <p className="text-xs font-semibold text-surface-muted capitalize">{member.role}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-black text-primary">{member.activity_score}</p>
+                            <p className="text-[10px] font-bold text-surface-muted uppercase tracking-wider">Posts</p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -391,8 +432,8 @@ export default function CommunityDashboard() {
             <div className="card-border mb-10 overflow-hidden !p-0">
               <div className="flex items-center justify-between p-6 border-b border-surface-border">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-title">Engagement Leaderboard</h3>
-                  <span className="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Global Rankings</span>
+                  <h3 className="text-title">Communities Engagement Leaderboard</h3>
+                  <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Global Rankings</span>
                 </div>
                 <BarChart3 size={18} className="text-surface-muted" />
               </div>
@@ -488,14 +529,14 @@ export default function CommunityDashboard() {
                 {/* Quick Actions */}
                 <div>
                   <h3 className="text-title mb-4">Quick Actions</h3>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {quickActions.map((action) => (
                       <Link
                         key={action.label}
                         to={action.path}
-                        className="card-border flex flex-col items-center justify-center text-center gap-3 hover:border-primary hover:bg-primary/5 group !p-5"
+                        className={`card-border flex flex-col items-center justify-center text-center gap-3 group !p-5 transition-colors ${action.hoverClass.split(' ').slice(0, 2).join(' ')}`}
                       >
-                        <div className="bg-secondary rounded-full p-3 group-hover:bg-primary group-hover:text-white transition-colors text-surface-body">
+                        <div className={`bg-secondary rounded-full p-3 group-hover:text-white transition-colors ${action.colorIcon} ${action.hoverClass.split(' ')[2]}`}>
                           {action.icon}
                         </div>
                         <span className="text-sm font-semibold text-surface-dark">{action.label}</span>

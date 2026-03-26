@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Reply, Pin, Trash2 } from 'lucide-react';
+import { Reply } from 'lucide-react';
 import postService from '../../services/postService';
 import Navbar from '../../components/Navbar';
-import ActionButtons from '../../components/shared/ActionButtons';
+import PostCard from '../../components/cards/PostCard';
 import CommentSection from '../../components/shared/CommentSection';
 import { Skeleton } from '../../components/shared/Skeleton';
-import { formatTimeAgo } from '../../utils/timeFormatter';
-import { getInitials, getDisplayName, getRoleLabel, getProfileImage } from '../../utils/userUtils';
 
 export default function PostDetail() {
     const { id } = useParams();
@@ -164,49 +162,13 @@ export default function PostDetail() {
                     <Reply size={16} className="rotate-180" /> Back to Feed
                 </button>
 
-                <article className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-8 overflow-hidden">
-                    <div className="flex justify-between items-start mb-4">
-                        <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-500 font-bold overflow-hidden border border-zinc-200 uppercase text-xs tracking-wider">
-                                {getProfileImage(post) ? (
-                                    <img src={getProfileImage(post)} alt={getDisplayName(post)} className="h-full w-full object-cover" />
-                                ) : (
-                                    <span>{getInitials(getDisplayName(post))}</span>
-                                )}
-                            </div>
-                            <div>
-                                <p className="text-sm font-semibold text-surface-dark">{getDisplayName(post)}</p>
-                                <p className="text-metadata">
-                                    {getRoleLabel(post)} • {formatTimeAgo(post.created_at)}
-                                </p>
-                            </div>
-                        </div>
-
-                        {canDelete && (
-                            <button onClick={handleDeletePost} className="text-gray-300 hover:text-red-500 transition">
-                                <Trash2 size={20} />
-                            </button>
-                        )}
-                    </div>
-
-                    <div className="mt-4">
-                        <p className="text-gray-800 text-lg whitespace-pre-wrap leading-relaxed">
-                            {post.content}
-                        </p>
-                    </div>
-
-                    {post.image && (
-                        <div className="mt-6 rounded-xl overflow-hidden bg-gray-100 -mx-6">
-                            <img src={post.image} alt="Post content" className="w-full" />
-                        </div>
-                    )}
-
-                    <ActionButtons
-                        item={post}
-                        onReaction={() => handleReaction()}
-                        activeColor="green"
+                <div className="mb-8">
+                    <PostCard
+                        post={post}
+                        isDetailView={true}
+                        onDelete={() => navigate('/posts')}
                     />
-                </article>
+                </div>
 
                 <CommentSection
                     comments={comments}

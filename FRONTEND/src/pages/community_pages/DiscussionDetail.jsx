@@ -1,12 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MessageSquare, ThumbsUp, Trash2, Reply, CornerDownRight, ChevronDown, ChevronUp, Clock } from 'lucide-react';
-import { formatTimeAgo } from '../../utils/timeFormatter';
-import { getInitials, getDisplayName, getRoleLabel, getProfileImage } from '../../utils/userUtils';
+import { Reply } from 'lucide-react';
 import discussionService from '../../services/discussionService';
 import Navbar from '../../components/Navbar';
-import CommunityAvatar from '../../components/shared/CommunityAvatar';
-import ActionButtons from '../../components/shared/ActionButtons';
+import DiscussionCard from '../../components/cards/DiscussionCard';
 import CommentSection from '../../components/shared/CommentSection';
 
 export default function DiscussionDetail() {
@@ -178,71 +175,14 @@ export default function DiscussionDetail() {
                     <Reply size={16} className="rotate-180" /> Back to Feed
                 </button>
 
-                {/* Main Topic Header */}
-                <article className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-10 relative group">
-                    <div className="flex items-start gap-4">
-                        <div className="h-12 w-12 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-500 font-bold overflow-hidden border border-zinc-200 uppercase text-sm tracking-wider flex-shrink-0 mt-1">
-                            {getProfileImage(discussion) ? (
-                                <img src={getProfileImage(discussion)} alt={getDisplayName(discussion)} className="h-full w-full object-cover" />
-                            ) : (
-                                getInitials(getDisplayName(discussion))
-                            )}
-                        </div>
-
-                        <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                                {/* LEFT */}
-                                <div>
-                                    <p className="text-sm font-semibold text-surface-dark">{getDisplayName(discussion)}</p>
-                                    <p className="text-metadata">
-                                        {getRoleLabel(discussion)} • {discussion.time_ago || formatTimeAgo(discussion.created_at)}
-                                    </p>
-                                </div>
-
-                                {/* RIGHT (badges + delete) */}
-                                <div className="flex items-center gap-2">
-                                    <span className="rounded-full bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
-                                        Discussion
-                                    </span>
-
-                                    <span
-                                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide border ${discussion.visibility === "public"
-                                            ? "bg-green-100 text-green-700 border-green-200"
-                                            : "bg-gray-100 text-gray-600 border-gray-200"
-                                            }`}
-                                    >
-                                        {discussion.visibility || "Public"}
-                                    </span>
-
-                                    {isOwner && (
-                                        <button
-                                            onClick={handleDeleteDiscussion}
-                                            className="text-gray-400 hover:text-red-500 p-1"
-                                            title="Delete Discussion"
-                                        >
-                                            <Trash2 size={18} />
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-
-
-                            <h1 className="mt-3 text-2xl font-bold text-gray-900 leading-tight">
-                                {discussion.topic}
-                            </h1>
-
-                            <div className="mt-4 text-gray-700 text-[16px] leading-relaxed whitespace-pre-wrap">
-                                {discussion.content}
-                            </div>
-
-                            <ActionButtons
-                                item={discussion}
-                                onReaction={() => handleReaction()}
-                                showShare={false}
-                            />
-                        </div>
-                    </div>
-                </article>
+                {/* Unified Card Component */}
+                <div className="mb-10">
+                    <DiscussionCard
+                        item={discussion}
+                        isDetailView={true}
+                        onDelete={() => navigate('/discussions')}
+                    />
+                </div>
 
                 <CommentSection
                     comments={replies}

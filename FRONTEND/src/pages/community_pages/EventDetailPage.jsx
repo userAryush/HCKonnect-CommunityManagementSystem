@@ -4,6 +4,7 @@ import Navbar from "../../components/Navbar";
 import CommunityAvatar from "../../components/shared/CommunityAvatar";
 import eventService from "../../services/eventService";
 import Toast from "../../components/others/Toast";
+import { Share2 } from 'lucide-react';
 
 export default function EventDetailPage() {
     const { eventId } = useParams()
@@ -69,6 +70,18 @@ export default function EventDetailPage() {
                 setToast("Failed to delete event.");
             }
         }
+    }
+
+    const handleShare = () => {
+        const fullUrl = window.location.href;
+        navigator.clipboard.writeText(fullUrl)
+            .then(() => {
+                setToast("Link copied to clipboard!");
+            })
+            .catch(err => {
+                console.error('Failed to copy: ', err);
+                setToast("Failed to copy link.");
+            });
     }
 
     if (loading) return <div className="p-10 text-center">Loading event...</div>
@@ -236,7 +249,11 @@ export default function EventDetailPage() {
                                 Register Now
                             </Link>
 
-                            <button className="w-full rounded-xl border border-[#e5e7eb] bg-transparent py-3 font-semibold text-[#0d1f14] transition hover:bg-[#f4f5f2]">
+                            <button
+                                onClick={handleShare}
+                                className="w-full rounded-xl border border-[#e5e7eb] bg-transparent py-3 font-semibold text-[#0d1f14] transition hover:bg-[#f4f5f2] flex items-center justify-center gap-2"
+                            >
+                                <Share2 size={18} />
                                 Share Event
                             </button>
                         </div>

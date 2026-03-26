@@ -76,9 +76,9 @@ export default function FeedList({
           type: 'discussion',
           id: d.id,
           createdAt: d.created_at,
-          author_name: d.created_by_name || 'User',
-          author_image: d.created_by_image || null,
-          author_role: d.created_by_role || 'student',
+          author_name: d.author_name || 'User',
+          author_image: d.author_image || null,
+          author_role: d.author_role || 'student',
           community: {
             name: d.community_name || 'Community',
             logoText: (d.community_name || 'CO').substring(0, 2).toUpperCase()

@@ -45,15 +45,15 @@ export default function CommentSection({
                     <div className="flex justify-between items-start mb-3">
                         <div className="flex items-center gap-3">
                             <div className="h-8 w-8 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-500 font-bold overflow-hidden border border-zinc-200 uppercase text-[10px] tracking-wider">
-                                {reply.author_image || reply.created_by_image ? (
-                                    <img src={reply.author_image || reply.created_by_image} alt={reply.author_name || reply.created_by_name} className="h-full w-full object-cover" />
+                                {reply.author_image ? (
+                                    <img src={reply.author_image} alt={reply.author_name} className="h-full w-full object-cover" />
                                 ) : (
-                                    getInitials(reply.author_name || reply.created_by_name || 'User')
+                                    getInitials(reply.author_name || 'User')
                                 )}
                             </div>
                             <div>
                                 <p className="text-sm font-semibold text-surface-dark">
-                                    {reply.author_name || reply.created_by_name || 'User'}
+                                    {reply.author_name || 'User'}
                                 </p>
                                 <p className="text-metadata">
                                     {reply.author_role === 'community' 

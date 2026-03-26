@@ -1,13 +1,34 @@
 import React from 'react';
 import { ThumbsUp, MessageSquare, Share2 } from 'lucide-react';
 import Button from './Button';
+import { useToast } from '../../context/ToastContext';
+import { useLocation } from 'react-router-dom';
 
 export default function ActionButtons({
     item,
     onReaction,
     onCommentClick,
-    showShare = true
+    showShare = true,
+    type = 'post' // 'post' or 'discussion'
 }) {
+    const { showToast } = useToast();
+    const location = useLocation();
+
+    const handleShare = (e) => {
+        e.stopPropagation();
+        const baseUrl = window.location.origin;
+        const path = type === 'discussion' ? `/discussions/${item.id}` : `/posts/${item.id}`;
+        const fullUrl = `${baseUrl}${path}`;
+
+        navigator.clipboard.writeText(fullUrl)
+            .then(() => {
+                showToast('Link copied to clipboard!', 'success');
+            })
+            .catch(err => {
+                console.error('Failed to copy: ', err);
+                showToast('Failed to copy link', 'error');
+            });
+    };
     const isLiked = item.user_has_liked;
     const reactionCount = item.reaction_count || 0;
     const commentCount = item.comment_count || item.reply_count || 0;
@@ -44,9 +65,7 @@ export default function ActionButtons({
             {showShare && (
                 <Button
                     variant="secondary"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                    }}
+                    onClick={handleShare}
                     className="rounded-full px-4 py-1.5 !text-xs gap-2 ml-auto"
                 >
                     <Share2 size={14} className="text-zinc-400" />

@@ -31,9 +31,9 @@ class DiscussionCreateSerializer(serializers.ModelSerializer):
 # -----------------------
 class ReplyReadSerializer(serializers.ModelSerializer):
     time_ago = serializers.SerializerMethodField()
-    created_by_name = serializers.SerializerMethodField()
-    created_by_role = serializers.SerializerMethodField()
-    created_by_image = serializers.SerializerMethodField()
+    author_name = serializers.SerializerMethodField()
+    author_role = serializers.SerializerMethodField()
+    author_image = serializers.SerializerMethodField()
     author_community = serializers.SerializerMethodField()
     user_has_liked = serializers.SerializerMethodField()
 
@@ -47,7 +47,7 @@ class ReplyReadSerializer(serializers.ModelSerializer):
             return Reaction.objects.filter(user=user, reply=obj).exists()
         return False
 
-    def get_created_by_name(self, obj):
+    def get_author_name(self, obj):
         user = obj.created_by
         if not user: return "User"
         if getattr(user, 'role', '') == 'community':
@@ -55,16 +55,17 @@ class ReplyReadSerializer(serializers.ModelSerializer):
         full_name = f"{getattr(user, 'first_name', '')} {getattr(user, 'last_name', '')}".strip()
         return full_name if full_name else getattr(user, "username", str(user))
 
-    def get_created_by_role(self, obj):
+    def get_author_role(self, obj):
         return getattr(obj.created_by, 'role', 'student') if obj.created_by else 'student'
 
-    def get_created_by_image(self, obj):
+    def get_author_image(self, obj):
         user = obj.created_by
         if not user: return None
+        request = self.context.get('request')
         if getattr(user, 'role', '') == 'community' and getattr(user, 'community_logo', None):
-            return user.community_logo.url
+            return request.build_absolute_uri(user.community_logo.url) if request else user.community_logo.url
         if getattr(user, 'profile_image', None):
-            return user.profile_image.url
+            return request.build_absolute_uri(user.profile_image.url) if request else user.profile_image.url
         return None
 
     def get_author_community(self, obj):
@@ -87,9 +88,9 @@ class DiscussionReadSerializer(serializers.ModelSerializer):
     time_ago = serializers.SerializerMethodField()
     user_has_liked = serializers.SerializerMethodField()
     
-    created_by_name = serializers.SerializerMethodField()
-    created_by_role = serializers.SerializerMethodField()
-    created_by_image = serializers.SerializerMethodField()
+    author_name = serializers.SerializerMethodField()
+    author_role = serializers.SerializerMethodField()
+    author_image = serializers.SerializerMethodField()
     author_community = serializers.SerializerMethodField()
     community_name = serializers.CharField(source="community.community_name", read_only=True)
 
@@ -97,7 +98,7 @@ class DiscussionReadSerializer(serializers.ModelSerializer):
         model = DiscussionPanel
         fields = "__all__"
 
-    def get_created_by_name(self, obj):
+    def get_author_name(self, obj):
         user = obj.created_by
         if not user: return "User"
         if getattr(user, 'role', '') == 'community':
@@ -105,16 +106,17 @@ class DiscussionReadSerializer(serializers.ModelSerializer):
         full_name = f"{getattr(user, 'first_name', '')} {getattr(user, 'last_name', '')}".strip()
         return full_name if full_name else getattr(user, "username", str(user))
 
-    def get_created_by_role(self, obj):
+    def get_author_role(self, obj):
         return getattr(obj.created_by, 'role', 'student') if obj.created_by else 'student'
 
-    def get_created_by_image(self, obj):
+    def get_author_image(self, obj):
         user = obj.created_by
         if not user: return None
+        request = self.context.get('request')
         if getattr(user, 'role', '') == 'community' and getattr(user, 'community_logo', None):
-            return user.community_logo.url
+            return request.build_absolute_uri(user.community_logo.url) if request else user.community_logo.url
         if getattr(user, 'profile_image', None):
-            return user.profile_image.url
+            return request.build_absolute_uri(user.profile_image.url) if request else user.profile_image.url
         return None
 
     def get_author_community(self, obj):

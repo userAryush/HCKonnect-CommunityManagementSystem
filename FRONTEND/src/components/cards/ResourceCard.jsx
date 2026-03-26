@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { formatTimeAgo } from '../../utils/timeFormatter';
 import { getInitials, getDisplayName, getRoleLabel, getProfileImage } from '../../utils/userUtils';
+import Badge from '../shared/Badge';
+import Dropdown from '../shared/Dropdown';
 
 const getResourceIcon = (category) => {
     switch (category) {
@@ -63,22 +65,32 @@ export default function ResourceCard({ resource, onEdit, onDelete }) {
                         {getProfileImage(resource) ? (
                             <img src={getProfileImage(resource)} alt={getDisplayName(resource)} className="h-full w-full object-cover" />
                         ) : (
-                            getInitials(getDisplayName(resource))
+                            <span>{getInitials(getDisplayName(resource))}</span>
                         )}
                     </div>
                     <div>
-                        <p className="text-sm font-semibold text-surface-dark">{getDisplayName(resource)}</p>
+                        <p 
+                            className="text-sm font-semibold text-surface-dark cursor-pointer hover:underline underline-offset-2 transition-colors hover:text-primary"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/community/${resource.community}`); // Changed 'item' to 'resource'
+                            }}
+                        >
+                            {getDisplayName(resource)}
+                        </p>
                         <p className="text-metadata">
                             {getRoleLabel(resource)} • {formatTimeAgo(resource.created_at || new Date())}
                         </p>
                     </div>
                 </div>
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide border ${resource.visibility === 'public'
-                    ? 'bg-green-100 text-green-700 border-green-200'
-                    : 'bg-gray-100 text-gray-600 border-gray-200'
-                    }`}>
-                    {resource.visibility}
-                </span>
+                <div className="flex items-center gap-2">
+                    <Badge variant="orange">Resource</Badge>
+                    {resource.visibility && (
+                        <Badge variant={resource.visibility === 'public' ? 'success' : 'gray'}>
+                            {resource.visibility}
+                        </Badge>
+                    )}
+                </div>
             </header>
 
             <div className="flex items-start gap-4">
@@ -94,24 +106,23 @@ export default function ResourceCard({ resource, onEdit, onDelete }) {
                             {resource.title}
                         </h3>
 
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-1">
                             {canManage && (
-                                <>
-                                    <button
-                                        onClick={() => onEdit(resource)}
-                                        className="p-1 text-gray-400 hover:text-[#75C043] transition"
-                                        title="Edit Resource"
-                                    >
-                                        <Edit size={16} />
-                                    </button>
-                                    <button
-                                        onClick={() => onDelete(resource.id)}
-                                        className="p-1 text-gray-400 hover:text-red-500 transition"
-                                        title="Delete Resource"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
-                                </>
+                                <Dropdown 
+                                    actions={[
+                                        {
+                                            label: 'Edit',
+                                            icon: <Edit size={14} />,
+                                            onClick: () => onEdit(resource)
+                                        },
+                                        {
+                                            label: 'Delete',
+                                            icon: <Trash2 size={14} />,
+                                            onClick: () => onDelete(resource.id),
+                                            variant: 'danger'
+                                        }
+                                    ]}
+                                />
                             )}
                         </div>
                     </div>

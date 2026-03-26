@@ -116,7 +116,7 @@ const NotificationPopover = ({ isOpen, onClose }) => {
             className="absolute top-full right-0 mt-4 w-80 md:w-[400px] bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-surface-border overflow-hidden z-[60] animate-in slide-in-from-top-2 duration-300"
         >
             {/* Header */}
-            <div className="px-5 py-4 flex items-center justify-between border-b border-surface-border bg-[#FFFBF1]">
+            <div className="px-5 py-4 flex items-center justify-between border-b border-surface-border bg-secondary">
                 <div className="flex items-center gap-2">
                     <span className="text-xs font-bold uppercase tracking-[0.2em] text-surface-dark">Notifications</span>
                     {unreadCount > 0 && (

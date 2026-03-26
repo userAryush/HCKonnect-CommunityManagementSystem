@@ -171,11 +171,17 @@ class CommunityListSerializer(ModelSerializer):
 class CommunityDashboardSerializer(ModelSerializer):
     member_count = IntegerField(source="members.count", read_only=True)
     is_community_owner = SerializerMethodField()
+    new_members_this_month = SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ["id","community_name","community_description","community_logo","member_count","is_community_owner"]
+        fields = ["id","community_name","community_description","community_logo","member_count","is_community_owner", "new_members_this_month"]
 
     def get_is_community_owner(self, obj):
         return obj.role == "community"
+
+    def get_new_members_this_month(self, obj):
+        now = timezone.now()
+        start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        return obj.members.filter(created_at__gte=start_of_month).count()
 
