@@ -269,6 +269,7 @@ class UserProfileSerializer(ModelSerializer):
         if hasattr(obj, 'membership'):
             membership = obj.membership
             return {
+                "community_id": str(membership.community.id),
                 "community_name": membership.community.community_name,
                 "community_logo": membership.community.community_logo.url if membership.community.community_logo else None,
                 "role": membership.role
@@ -292,6 +293,7 @@ class UserProfileDetailSerializer(ModelSerializer):
         if hasattr(obj, 'membership'):
             membership = obj.membership
             return {
+                "community_id": str(membership.community.id),
                 "community_name": membership.community.community_name,
                 "community_logo": membership.community.community_logo.url if membership.community.community_logo else None,
                 "role": membership.role
@@ -303,69 +305,91 @@ class UserProfileDetailSerializer(ModelSerializer):
         from events.models import Event
         from discussion.models import DiscussionPanel
         
-        # We need to return data that matches what cards expect
+        request = self.context.get('request')
         content = []
         
+        # Helper for absolute image URLs
+        def get_abs_url(path):
+            if not path: return None
+            if request: return request.build_absolute_uri(path)
+            return path
+
+        def get_author_data(user):
+            if user.role == 'community':
+                return {
+                    "author_name": user.community_name or user.get_full_name() or user.username,
+                    "author_image": get_abs_url(user.community_logo.url) if user.community_logo else None,
+                    "author_role": 'community'
+                }
+            return {
+                "author_name": user.get_full_name() or user.username,
+                "author_image": get_abs_url(user.profile_image.url) if user.profile_image else None,
+                "author_role": user.role
+            }
+
         # Discussions
-        discussions = DiscussionPanel.objects.filter(created_by=obj).order_by('-created_at')
+        discussions = DiscussionPanel.objects.filter(created_by=obj).select_related('community', 'created_by').order_by('-created_at')
         for d in discussions:
+            author_data = get_author_data(d.created_by)
             content.append({
                 "id": str(d.id),
                 "type": "discussion",
                 "topic": d.topic,
                 "content": d.content,
                 "created_at": d.created_at,
-                "created_by": str(d.created_by.id),
-                "created_by_name": d.created_by.username,
+                **author_data,
                 "visibility": d.visibility,
                 "reply_count": d.replies.count(),
                 "reaction_count": d.reactions.count(),
                 "community": {
                     "id": str(d.community.id) if d.community else None,
-                    "name": d.community.community_name if d.community else "General"
+                    "name": d.community.community_name if d.community else "General",
+                    "logo": get_abs_url(d.community.community_logo.url) if d.community and d.community.community_logo else None
                 } if d.community else None
             })
 
         # Announcements
-        announcements = Announcement.objects.filter(created_by_user=obj).order_by('-created_at')
+        announcements = Announcement.objects.filter(created_by_user=obj).select_related('community', 'created_by_user').order_by('-created_at')
         for a in announcements:
+            author_data = get_author_data(a.created_by_user)
             content.append({
                 "id": str(a.id),
                 "type": "announcement",
                 "title": a.title,
                 "description": a.description,
                 "createdAt": a.created_at,
-                "visibility": a.visibility,
+                **author_data,
                 "community": {
                     "id": str(a.community.id),
-                    "name": a.community.community_name
-                },
-                "author": {
-                    "id": str(a.created_by_user.id),
-                    "name": a.created_by_user.username
+                    "name": a.community.community_name,
+                    "logo": get_abs_url(a.community.community_logo.url) if a.community.community_logo else None
                 }
             })
 
         # Events
-        events = Event.objects.filter(created_by=obj).order_by('-date')
+        events = Event.objects.filter(created_by=obj).select_related('community', 'created_by').order_by('-date')
         for e in events:
+            author_data = get_author_data(e.created_by)
             content.append({
                 "id": str(e.id),
                 "type": "event",
                 "title": e.title,
                 "description": e.description,
+                "image": get_abs_url(e.image.url) if e.image else None,
                 "eventMeta": {
                     "date": e.date,
                     "time": e.start_time,
                     "location": e.location
                 },
+                **author_data,
                 "community": {
                     "id": str(e.community.id),
-                    "name": e.community.community_name
+                    "name": e.community.community_name,
+                    "logo": get_abs_url(e.community.community_logo.url) if e.community.community_logo else None
                 },
                 "stats": {
                     "registrations": {
-                        "current": 0, # Should ideally fetch actual counts
+                        "current": 0,
                         "capacity": 100
                     }
                 }

@@ -51,6 +51,7 @@ function App() {
               <Route path="/profile" element={<Profile />} />
               <Route path="/profile/:id" element={<Profile />} />
               <Route path="/profile/edit" element={<EditProfile />} />
+              <Route path="/profile/edit/:id" element={<EditProfile />} />
               <Route path="/events" element={<EventsList />} />
               <Route path="/announcements" element={<AnnouncementsList />} />
               <Route path="/discussions" element={<DiscussionList />} />

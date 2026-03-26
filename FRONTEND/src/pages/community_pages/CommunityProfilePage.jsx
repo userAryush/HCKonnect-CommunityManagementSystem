@@ -9,7 +9,8 @@ import eventService from '../../services/eventService'
 import announcementService from '../../services/announcementService'
 import discussionService from '../../services/discussionService'
 import ResourceList from './ResourceList';
-import { Calendar, Users } from 'lucide-react';
+import ResourceCard from '../../components/cards/ResourceCard'
+import { Calendar, Users, Edit2 } from 'lucide-react';
 
 // Reusable Soft Container Component
 const SoftContainer = ({ children, className = '' }) => (
@@ -181,7 +182,16 @@ export default function CommunityProfilePage() {
               </div>
 
               {/* Actions */}
-              <div className="flex justify-center sm:justify-end">
+              <div className="flex flex-wrap justify-center sm:justify-end gap-3">
+                {communityData.is_community_owner && (
+                  <Link
+                    to={`/profile/edit/${id}`}
+                    className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-bold text-surface-dark transition hover:bg-zinc-50 hover:border-zinc-300"
+                  >
+                    <Edit2 size={16} className="text-primary" />
+                    <span>Edit Profile</span>
+                  </Link>
+                )}
                 {communityData.vacanciesOpen && (
                   <button
                     onClick={handleJoinRequest}
@@ -228,84 +238,79 @@ export default function CommunityProfilePage() {
                     </p>
                   </SoftContainer>
 
-                  {/* Announcements Section */}
+                  {/* Recent Activity Section (Replaces Upcoming Events in Main) */}
                   <SoftContainer>
-                    <div className="flex items-center justify-between mb-2 border-b border-gray-100 pb-3">
-                      <h2 className="text-lg font-semibold text-surface-dark">Recent Announcements</h2>
-                      <button 
-                        onClick={() => handleTabChange('Announcements')} 
-                        className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-                      >
-                        View more
-                      </button>
+                    <div className="flex items-center justify-between mb-6 border-b border-gray-100 pb-3">
+                      <h2 className="text-lg font-semibold text-surface-dark">Recent Activity</h2>
                     </div>
                     
-                    <div className="flex flex-col">
+                    <div className="flex flex-col gap-8">
                       {loadingTab ? (
-                         <div className="py-4 text-center text-sm text-surface-muted">Loading...</div>
-                      ) : tabData.announcements.length === 0 ? (
-                         <div className="py-4 text-sm text-surface-body">No announcements yet.</div>
-                      ) : tabData.announcements.slice(0, 3).map((ann, index, arr) => (
-                        <div 
-                          key={ann.id} 
-                          className={`group cursor-pointer py-4 transition-colors hover:bg-gray-50 px-3 rounded-md -mx-3 ${
-                            index !== arr.length - 1 ? 'border-b border-gray-100' : ''
-                          }`}
-                        >
-                          <div className="mb-2 flex items-center gap-2">
-                            <span className="rounded border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-surface-muted">
-                              Announcement
-                            </span>
-                            <span className="text-xs text-surface-muted">
-                              {new Date(ann.createdAt).toLocaleDateString()}
-                            </span>
-                          </div>
-                          <h3 className="text-sm font-medium text-surface-dark transition-colors group-hover:text-primary">
-                            {ann.title}
-                          </h3>
-                          <p className="mt-1 text-sm text-surface-muted line-clamp-2">
-                            {ann.content}
-                          </p>
+                         <div className="py-10 text-center text-sm text-surface-muted">Loading activity...</div>
+                      ) : (communityData.recent_activity || []).length === 0 ? (
+                         <div className="py-12 text-center">
+                           <Calendar className="mx-auto h-10 w-10 text-gray-200 mb-3" />
+                           <p className="text-sm text-surface-muted font-medium">No recent activity found.</p>
+                         </div>
+                      ) : (
+                        <div className="space-y-6">
+                          {communityData.recent_activity.map((item) => (
+                            <div key={`${item.type}-${item.id}`} className="transition-transform duration-200">
+                              {item.type === 'announcement' && <AnnouncementCard item={item} />}
+                              {item.type === 'event' && <EventCard item={item} />}
+                              {item.type === 'discussion' && <DiscussionCard item={item} />}
+                              {item.type === 'resource' && <ResourceCard resource={item} />}
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      )}
                     </div>
                   </SoftContainer>
                 </div>
 
                 {/* RIGHT: Sidebar (30%) */}
-                <aside className="space-y-6">
-                  {/* Upcoming Events */}
+                <aside className="space-y-6 sticky top-28">
+                  {/* Recent Announcements */}
                   <SoftContainer>
                     <h3 className="text-sm font-semibold uppercase tracking-wider text-surface-muted mb-4">
-                      Upcoming Events
+                      Recent Announcements
                     </h3>
                     <div className="flex flex-col space-y-4">
                       {loadingTab ? (
                          <div className="text-center text-sm text-surface-muted py-2">Loading...</div>
+                      ) : tabData.announcements.length === 0 ? (
+                        <div className="py-4 text-sm text-surface-body text-center">No announcements yet.</div>
                       ) : (
-                         <>
-                           {tabData.events.slice(0, 2).map((item) => (
-                             <div key={item.id} className="rounded-xl border border-gray-200 bg-white hover:border-gray-300 transition-colors">
-                               <EventCard item={item} compact={true} />
-                             </div>
-                           ))}
-                           
-                           {tabData.events.length === 0 && (
-                             <div className="py-6 text-center">
-                               <Calendar className="mx-auto h-8 w-8 text-gray-300 mb-2" />
-                               <p className="text-sm text-surface-muted font-medium">No events yet</p>
-                             </div>
-                           )}
-
-                           {tabData.events.length > 2 && (
-                             <button 
-                               onClick={() => handleTabChange('Events')} 
-                               className="mt-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors inline-block w-full text-center"
-                             >
-                               View all events
-                             </button>
-                           )}
-                         </>
+                        <>
+                          {tabData.announcements.slice(0, 3).map((ann, index) => (
+                            <div 
+                              key={ann.id} 
+                              className="group cursor-pointer pb-3 border-b border-gray-100 last:border-0"
+                              onClick={() => handleTabChange('Announcements')}
+                            >
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-[10px] text-surface-muted">
+                                  {new Date(ann.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <h4 className="text-sm font-semibold text-surface-dark group-hover:text-primary transition-colors line-clamp-1">
+                                {ann.title}
+                              </h4>
+                              <p className="text-xs text-surface-muted line-clamp-2 mt-1">
+                                {ann.content}
+                              </p>
+                            </div>
+                          ))}
+                          
+                          {tabData.announcements.length > 3 && (
+                            <button 
+                              onClick={() => handleTabChange('Announcements')} 
+                              className="text-xs font-bold text-primary hover:text-primary/80 transition-colors inline-block w-full text-center mt-2"
+                            >
+                              View all announcements
+                            </button>
+                          )}
+                        </>
                       )}
                     </div>
                   </SoftContainer>

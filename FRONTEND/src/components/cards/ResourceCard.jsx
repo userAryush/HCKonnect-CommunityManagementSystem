@@ -14,6 +14,7 @@ import { formatTimeAgo } from '../../utils/timeFormatter';
 import { getInitials, getDisplayName, getRoleLabel, getProfileImage } from '../../utils/userUtils';
 import Badge from '../shared/Badge';
 import Dropdown from '../shared/Dropdown';
+import { useNavigate } from 'react-router-dom';
 
 const getResourceIcon = (category) => {
     switch (category) {
@@ -39,11 +40,12 @@ const formatFileSize = (bytes) => {
 };
 
 export default function ResourceCard({ resource, onEdit, onDelete }) {
+    const navigate = useNavigate();
     const user = JSON.parse(localStorage.getItem('user') || 'null');
 
     const canManage = user && (
-        (user.role === 'community' && String(user.id) === String(resource.community)) ||
-        (user.membership && user.membership.role === 'representative' && String(user.membership.community) === String(resource.community))
+        (user.role === 'community' && String(user.id) === String(resource.community?.id || resource.community)) ||
+        (user.membership && user.membership.role === 'representative' && String(user.membership.community) === String(resource.community?.id || resource.community))
     );
 
     const handleShare = () => {
@@ -73,7 +75,7 @@ export default function ResourceCard({ resource, onEdit, onDelete }) {
                             className="text-sm font-semibold text-surface-dark cursor-pointer hover:underline underline-offset-2 transition-colors hover:text-primary"
                             onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/community/${resource.community}`); // Changed 'item' to 'resource'
+                                navigate(`/community/${resource.community?.id || resource.community}`);
                             }}
                         >
                             {getDisplayName(resource)}

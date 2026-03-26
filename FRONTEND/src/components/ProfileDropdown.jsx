@@ -55,7 +55,7 @@ export default function ProfileDropdown() {
             </div>
 
             <Link
-              to="/profile"
+              to={user?.role === 'community' ? `/community/${user.id}` : (user?.membership?.role === 'representative' ? `/community/${user.membership.community_id}` : "/profile")}
               className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50 hover:text-primary transition-colors font-semibold"
               onClick={() => setIsOpen(false)}
             >
@@ -63,7 +63,7 @@ export default function ProfileDropdown() {
               View Profile
             </Link>
             <Link
-              to="/profile/edit"
+              to={user?.role === 'community' ? `/profile/edit` : (user?.membership?.role === 'representative' ? `/profile/edit/${user.membership.community_id}` : "/profile/edit")}
               className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50 hover:text-primary transition-colors font-semibold"
               onClick={() => setIsOpen(false)}
             >

@@ -8,8 +8,8 @@ export default function HeaderActionsRow() {
   return (
     <div className="inline-flex p-1 bg-slate-100/50 border border-surface-border rounded-xl gap-1 mb-8">
       {[
-        { label: 'Post', icon: <PenLine size={15} />, path: '/posts?create=true' },
-        { label: 'Discuss', icon: <MessageSquarePlus size={15} />, path: '/discussions/create' }
+        { label: 'Create Post', icon: <PenLine size={15} />, path: '/posts?create=true' },
+        { label: 'Start Discussion', icon: <MessageSquarePlus size={15} />, path: '/discussions/create' }
       ].map((item) => (
         <button
           key={item.label}

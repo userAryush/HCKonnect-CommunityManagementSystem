@@ -172,16 +172,158 @@ class CommunityDashboardSerializer(ModelSerializer):
     member_count = IntegerField(source="members.count", read_only=True)
     is_community_owner = SerializerMethodField()
     new_members_this_month = SerializerMethodField()
+    recent_activity = SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ["id","community_name","community_description","community_logo","member_count","is_community_owner", "new_members_this_month"]
+        fields = [
+            "id", "community_name", "community_description", "community_logo", 
+            "member_count", "is_community_owner", "new_members_this_month", "recent_activity"
+        ]
 
     def get_is_community_owner(self, obj):
-        return obj.role == "community"
+        request = self.context.get('request')
+        if not (request and request.user.is_authenticated):
+            return False
+            
+        # 1. Direct owner (it's the community account itself)
+        if str(request.user.id) == str(obj.id):
+            return True
+            
+        # 2. Designated representative
+        from .models import CommunityMembership
+        return CommunityMembership.objects.filter(
+            user=request.user, 
+            community=obj, 
+            role='representative'
+        ).exists()
 
     def get_new_members_this_month(self, obj):
         now = timezone.now()
         start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         return obj.members.filter(created_at__gte=start_of_month).count()
+
+    def get_recent_activity(self, obj):
+        from contents.models import Announcement, Resource
+        from events.models import Event
+        from discussion.models import DiscussionPanel
+        
+        request = self.context.get('request')
+        content = []
+        
+        def get_abs_url(path):
+            if not path: return None
+            if request: return request.build_absolute_uri(path)
+            return path
+
+        def get_author_data(user):
+            if not user: return {
+                "author_name": obj.community_name or obj.username,
+                "author_image": get_abs_url(obj.community_logo.url) if obj.community_logo else None,
+                "author_role": 'community'
+            }
+            if user.role == 'community':
+                return {
+                    "author_name": user.community_name or user.username,
+                    "author_image": get_abs_url(user.community_logo.url) if user.community_logo else None,
+                    "author_role": 'community'
+                }
+            return {
+                "author_name": f"{user.first_name} {user.last_name}".strip() or user.username,
+                "author_image": get_abs_url(user.profile_image.url) if user.profile_image else None,
+                "author_role": user.role
+            }
+
+        # Announcements
+        announcements = Announcement.objects.filter(community=obj).select_related('community', 'created_by_user').order_by('-created_at')[:5]
+        for a in announcements:
+            author_data = get_author_data(a.created_by_user or obj)
+            content.append({
+                "id": str(a.id),
+                "type": "announcement",
+                "title": a.title,
+                "description": a.description,
+                "createdAt": a.created_at,
+                **author_data,
+                "community": {
+                    "id": str(a.community.id),
+                    "name": a.community.community_name,
+                    "logo": get_abs_url(a.community.community_logo.url) if a.community.community_logo else None
+                }
+            })
+
+        # Events
+        events = Event.objects.filter(community=obj).select_related('community', 'created_by').order_by('-date', '-start_time')[:5]
+        for e in events:
+            author_data = get_author_data(e.created_by or obj)
+            content.append({
+                "id": str(e.id),
+                "type": "event",
+                "title": e.title,
+                "description": e.description,
+                "image": get_abs_url(e.image.url) if e.image else None,
+                "createdAt": e.created_at,
+                "eventMeta": {
+                    "date": e.date,
+                    "time": e.start_time,
+                    "location": e.location
+                },
+                **author_data,
+                "community": {
+                    "id": str(e.community.id),
+                    "name": e.community.community_name,
+                    "logo": get_abs_url(e.community.community_logo.url) if e.community.community_logo else None
+                },
+                "stats": {"registrations": {"current": 0, "capacity": 100}}
+            })
+
+        # Discussions
+        discussions = DiscussionPanel.objects.filter(community=obj).select_related('community', 'created_by').order_by('-created_at')[:5]
+        for d in discussions:
+            author_data = get_author_data(d.created_by)
+            content.append({
+                "id": str(d.id),
+                "type": "discussion",
+                "topic": d.topic,
+                "content": d.content,
+                "created_at": d.created_at,
+                "author_name": author_data["author_name"],
+                "author_role": author_data["author_role"],
+                "author_image": author_data["author_image"],
+                "visibility": d.visibility,
+                "reply_count": d.replies.count(),
+                "reaction_count": d.reactions.count(),
+                "community": {
+                    "id": str(d.community.id) if d.community else None,
+                    "name": d.community.community_name if d.community else "General",
+                    "logo": get_abs_url(d.community.community_logo.url) if d.community and d.community.community_logo else None
+                }
+            })
+
+        # Resources
+        resources = Resource.objects.filter(community=obj).select_related('community', 'created_by_user').order_by('-created_at')[:5]
+        for r in resources:
+            author_data = get_author_data(r.created_by_user or obj)
+            content.append({
+                "id": str(r.id),
+                "type": "resource",
+                "title": r.title,
+                "description": r.description,
+                "file": get_abs_url(r.file.url) if r.file else None,
+                "video_url": r.video_url,
+                "category": r.category,
+                "createdAt": r.created_at,
+                **author_data,
+                "community": {
+                    "id": str(r.community.id),
+                    "name": r.community.community_name,
+                    "logo": get_abs_url(r.community.community_logo.url) if r.community.community_logo else None
+                }
+            })
+
+        # Sort combined list by created_at (handling different key names if necessary, 
+        # but I've tried to be semi-consistent with createdAt vs created_at)
+        # Actually Event uses date/start_time, I'll use created_at for sorting where possible.
+        content.sort(key=lambda x: x.get('created_at') or x.get('createdAt'), reverse=True)
+        return content[:10]
 

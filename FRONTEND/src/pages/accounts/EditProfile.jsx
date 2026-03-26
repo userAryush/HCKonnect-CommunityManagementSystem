@@ -10,7 +10,8 @@ import Button from '../../components/shared/Button'
 export default function EditProfile() {
     const navigate = useNavigate()
     const location = useLocation()
-    const { refreshUser } = useAuth()
+    const { id } = useParams() // Optional ID for community editing
+    const { refreshUser, user: currentUser } = useAuth()
     const { showToast } = useToast()
     const [formData, setFormData] = useState({
         username: '',
@@ -24,9 +25,12 @@ export default function EditProfile() {
         university_id: '',
         first_name: '',
         last_name: '',
-        community_name: ''
+        community_name: '',
+        community_description: '',
+        community_tag: ''
     })
     const [profileImage, setProfileImage] = useState(null)
+    const [communityLogo, setCommunityLogo] = useState(null)
     const [previewUrl, setPreviewUrl] = useState('')
 
     const [loading, setLoading] = useState(true)
@@ -38,7 +42,7 @@ export default function EditProfile() {
 
     useEffect(() => {
         fetchProfile()
-    }, [])
+    }, [id])
 
     useEffect(() => {
         if (!loading && location.hash === '#change-password') {
@@ -47,8 +51,10 @@ export default function EditProfile() {
     }, [location.hash, loading])
 
     const fetchProfile = async () => {
+        setLoading(true)
         try {
-            const res = await api.get('/accounts/profile/')
+            const endpoint = id ? `/accounts/profile/${id}/` : '/accounts/profile/'
+            const res = await api.get(endpoint)
             const data = res.data
             setFormData({
                 username: data.username || '',
@@ -62,13 +68,18 @@ export default function EditProfile() {
                 first_name: data.first_name || '',
                 last_name: data.last_name || '',
                 community_name: data.community_name || '',
+                community_description: data.community_description || '',
+                community_tag: data.community_tag || '',
                 interests: Array.isArray(data.interests) ? data.interests.join(', ') : (data.interests || '')
             })
-            if (data.profile_image) {
+            if (data.role === 'community' && data.community_logo) {
+                setPreviewUrl(data.community_logo)
+            } else if (data.profile_image) {
                 setPreviewUrl(data.profile_image)
             }
         } catch (error) {
             console.error("Failed to load profile", error)
+            showToast("Failed to load profile data.", "error")
         } finally {
             setLoading(false)
         }
@@ -103,7 +114,11 @@ export default function EditProfile() {
     const handleFileChange = (e) => {
         const file = e.target.files[0]
         if (file) {
-            setProfileImage(file)
+            if (formData.role === 'community') {
+                setCommunityLogo(file)
+            } else {
+                setProfileImage(file)
+            }
             setPreviewUrl(URL.createObjectURL(file))
         }
     }
@@ -113,43 +128,45 @@ export default function EditProfile() {
         setSubmitLoading(true)
         try {
             const data = new FormData()
-            // Removed data.append('username', formData.username) as it's read-only
-            data.append('course', formData.course)
-            data.append('bio', formData.bio)
-            data.append('university_id', formData.university_id)
-            if (formData.role !== 'community') {
+            
+            if (formData.role === 'community') {
+                data.append('community_name', formData.community_name)
+                data.append('community_description', formData.community_description)
+                data.append('community_tag', formData.community_tag)
+                if (communityLogo) data.append('community_logo', communityLogo)
+            } else {
                 data.append('first_name', formData.first_name)
                 data.append('last_name', formData.last_name)
-            } else {
-                data.append('community_name', formData.community_name)
+                data.append('course', formData.course)
+                data.append('university_id', formData.university_id)
+                if (profileImage) data.append('profile_image', profileImage)
             }
             
+            data.append('bio', formData.bio)
             if (formData.linkedin_link) data.append('linkedin_link', formData.linkedin_link)
             if (formData.github_link) data.append('github_link', formData.github_link)
             
             const interestsArray = formData.interests.split(',').map(s => s.trim()).filter(Boolean)
-            // For JSONField in multipart/form-data, we send a JSON string
             data.append('interests', JSON.stringify(interestsArray))
 
-            if (profileImage) {
-                data.append('profile_image', profileImage)
-            }
-
-            await api.patch('/accounts/profile/', data, {
+            const endpoint = id ? `/accounts/profile/${id}/` : '/accounts/profile/'
+            await api.patch(endpoint, data, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
             })
             
-            // Refresh global user state to update Navbar etc.
-            await refreshUser()
+            // Refresh global user state if we are editing our own profile
+            if (!id || id === currentUser?.id) {
+                await refreshUser()
+            }
             
             showToast('Profile updated successfully!', 'success')
-            setTimeout(() => navigate('/profile'), 1500)
+            setTimeout(() => navigate(id ? `/community/${id}` : '/profile'), 1500)
         } catch (error) {
             console.error("Update failed", error.response?.data || error)
             const errorMsg = error.response?.data 
-                ? Object.entries(error.response.data).map(([field, msgs]) => `${field}: ${msgs.join(', ')}`).join(' | ')
+                ? Object.entries(error.response.data).map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`).join(' | ')
                 : 'Failed to update profile.'
             showToast(errorMsg, 'error')
         } finally {
@@ -176,7 +193,7 @@ export default function EditProfile() {
                             <p className="text-[#4b4b4b]">Update your personal information</p>
                         </div>
                         <button
-                            onClick={() => navigate('/profile')}
+                            onClick={() => navigate(id ? `/community/${id}` : '/profile')}
                             className="text-sm font-semibold text-gray-500 hover:text-gray-700"
                         >
                             Cancel
@@ -203,16 +220,29 @@ export default function EditProfile() {
                             </div>
                             {/* Read Only Fields */}
                                 {formData.role === 'community' ? (
-                                    <div className="sm:col-span-2">
-                                        <label className="mb-2 block text-sm font-bold">Community Name</label>
-                                        <input
-                                            type="text"
-                                            name="community_name"
-                                            value={formData.community_name}
-                                            onChange={handleChange}
-                                            className="w-full rounded-xl border border-[#e5e7eb] bg-[#f4f5f2] px-4 py-3 outline-none focus:border-[#75C043]"
-                                        />
-                                    </div>
+                                    <>
+                                        <div className="sm:col-span-2">
+                                            <label className="mb-2 block text-sm font-bold">Community Name</label>
+                                            <input
+                                                type="text"
+                                                name="community_name"
+                                                value={formData.community_name}
+                                                onChange={handleChange}
+                                                className="w-full rounded-xl border border-[#e5e7eb] bg-[#f4f5f2] px-4 py-3 outline-none focus:border-[#75C043]"
+                                            />
+                                        </div>
+                                        <div className="sm:col-span-2">
+                                            <label className="mb-2 block text-sm font-bold">Community Tagline</label>
+                                            <input
+                                                type="text"
+                                                name="community_tag"
+                                                value={formData.community_tag}
+                                                onChange={handleChange}
+                                                placeholder="e.g. Empowering students through technology"
+                                                className="w-full rounded-xl border border-[#e5e7eb] bg-[#f4f5f2] px-4 py-3 outline-none focus:border-[#75C043]"
+                                            />
+                                        </div>
+                                    </>
                                 ) : (
                                     <>
                                         <div>
@@ -279,11 +309,11 @@ export default function EditProfile() {
                             )}
 
                             <div>
-                                <label className="mb-2 block text-sm font-bold">Bio</label>
+                                <label className="mb-2 block text-sm font-bold">{formData.role === 'community' ? 'Community Description' : 'Bio'}</label>
                                 <textarea
-                                    rows="3"
-                                    name="bio"
-                                    value={formData.bio}
+                                    rows="4"
+                                    name={formData.role === 'community' ? "community_description" : "bio"}
+                                    value={formData.role === 'community' ? formData.community_description : formData.bio}
                                     onChange={handleChange}
                                     className="w-full rounded-xl border border-[#e5e7eb] bg-[#f4f5f2] px-4 py-3 outline-none focus:border-[#75C043] resize-none"
                                 />
@@ -327,7 +357,7 @@ export default function EditProfile() {
                             <div className="flex justify-end gap-4">
                                 <button
                                     type="button"
-                                    onClick={() => navigate('/profile')}
+                                    onClick={() => navigate(id ? `/community/${id}` : '/profile')}
                                     className="rounded-xl border border-gray-200 px-8 py-3 text-sm font-bold text-gray-600 transition hover:bg-gray-50"
                                 >
                                     Cancel

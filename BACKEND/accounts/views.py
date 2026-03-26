@@ -107,10 +107,21 @@ class UserProfileView(RetrieveUpdateAPIView):
     def get_object(self):
         return self.request.user
 
-class UserProfileDetailView(RetrieveAPIView):
+class UserProfileDetailView(RetrieveUpdateAPIView):
     queryset = User.objects.all()
     serializer_class = UserProfileDetailSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.request.method in ['PATCH', 'PUT']:
+            return UserProfileSerializer
+        return UserProfileDetailSerializer
+
+    def get_permissions(self):
+        if self.request.method in ['PATCH', 'PUT']:
+            from communities.permissions import IsCommunityManager
+            return [IsCommunityManager()]
+        return [IsAuthenticated()]
 
 class GlobalSearchView(APIView):
     permission_classes = [IsAuthenticated]

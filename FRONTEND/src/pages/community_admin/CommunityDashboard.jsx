@@ -20,7 +20,8 @@ import {
   Loader2,
   MessageSquare,
   Edit3,
-  User
+  User,
+  Settings
 } from 'lucide-react'
 import {
   BarChart,
@@ -81,11 +82,11 @@ export default function CommunityDashboard() {
       hoverClass: 'hover:border-purple-500 hover:bg-purple-50/50 group-hover:bg-purple-500'
     },
     {
-      label: 'Create Post',
-      path: `/feed`,
-      icon: <Edit3 size={20} />,
-      colorIcon: 'text-pink-500',
-      hoverClass: 'hover:border-pink-500 hover:bg-pink-50/50 group-hover:bg-pink-500'
+      label: 'Edit Profile',
+      path: `/profile/edit/${id}`,
+      icon: <Settings size={20} />,
+      colorIcon: 'text-rose-500',
+      hoverClass: 'hover:border-rose-500 hover:bg-rose-50/50 group-hover:bg-rose-500'
     },
     {
       label: 'View Profile',
