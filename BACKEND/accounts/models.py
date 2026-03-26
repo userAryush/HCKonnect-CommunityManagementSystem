@@ -79,7 +79,7 @@ class User(AbstractUser, BaseModel):
     REQUIRED_FIELDS = ['username', 'role']
 
     def __str__(self):
-        return f"{self.username} ({self.role})"
+        return f"{self.username} ({self.role})   - {self.email}"
 
 
 class CommunityUser(User):

@@ -14,7 +14,6 @@ import {
   Bell,
   Eye,
   TrendingUp,
-  PieChart as LucidePieChart,
   BarChart3,
   Activity,
   AlertCircle,
@@ -29,8 +28,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
   Cell,
 } from 'recharts'
 import analyticsService from '../../services/analyticsService'
@@ -328,76 +325,62 @@ export default function CommunityDashboard() {
                 </div>
               </div>
 
-              {/* Login Frequency (40%) */}
+              {/* Top 5 Active Members (40%) */}
               <div className="lg:col-span-2 card-border !p-0 overflow-hidden">
                 <div className="flex items-center justify-between p-6 border-b border-surface-border">
-                  <h3 className="text-title">Member Login Frequency</h3>
+                  <h3 className="text-title">Top Active Members</h3>
                   <Users size={18} className="text-surface-muted" />
                 </div>
 
-                <div className="p-6 h-[320px]">
+                <div className="p-0">
                   {analyticsLoading ? (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <div className="relative w-40 h-40">
-                        <div className="absolute inset-0 rounded-full border-4 border-zinc-100"></div>
-                        <div className="absolute inset-0 rounded-full border-4 border-t-primary animate-spin"></div>
-                      </div>
+                    <div className="p-6 space-y-4">
+                      {[1, 2, 3, 4, 5].map(i => (
+                        <div key={i} className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-full bg-zinc-200 animate-pulse"></div>
+                            <div className="space-y-2 flex-1">
+                                <div className="h-4 w-24 bg-zinc-200 rounded animate-pulse"></div>
+                                <div className="h-3 w-16 bg-zinc-100 rounded animate-pulse"></div>
+                            </div>
+                        </div>
+                      ))}
                     </div>
-                  ) : !analytics || (analytics.member_activity.daily === 0 && analytics.member_activity.weekly === 0 && analytics.member_activity.rare === 0) ? (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-center p-8 opacity-40">
-                      <LucidePieChart size={40} className="mb-4 text-surface-muted" />
-                      <p className="font-semibold text-surface-dark">No Activity Yet</p>
-                      <p className="text-xs mt-1">Member activity will appear as users log in.</p>
+                  ) : !analytics?.top_members || analytics.top_members.length === 0 ? (
+                    <div className="w-full h-[320px] flex flex-col items-center justify-center text-center p-8 opacity-40">
+                      <Users size={40} className="mb-4 text-surface-muted" />
+                      <p className="font-semibold text-surface-dark">No Active Members</p>
+                      <p className="text-xs mt-1">Community members will appear here once they start engaging.</p>
                     </div>
                   ) : (
-                    <div className="w-full h-full flex flex-col">
-                      <div className="flex-1 min-h-0">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={[
-                                { name: 'Daily Hubbers', value: analytics.member_activity.daily, color: '#0d1f14' },
-                                { name: 'Weekly Visitors', value: analytics.member_activity.weekly, color: '#32CD32' },
-                                { name: 'Rare', value: analytics.member_activity.rare, color: '#e5e7eb' },
-                              ]}
-                              innerRadius="65%"
-                              outerRadius="90%"
-                              paddingAngle={5}
-                              dataKey="value"
-                            >
-                              <Cell fill="#0d1f14" />
-                              <Cell fill="#32CD32" />
-                              <Cell fill="#f1f5f9" />
-                            </Pie>
-                            <Tooltip
-                              contentStyle={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #eee' }}
-                            />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </div>
-                      <div className="flex flex-col gap-2 mt-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-[#0d1f14]"></span>
-                            <span className="text-xs font-semibold text-surface-dark">Daily Hubbers</span>
-                          </div>
-                          <span className="text-xs font-bold text-surface-dark">{Math.round((analytics.member_activity.daily / (stats?.members || 1)) * 100)}%</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-[#32CD32]"></span>
-                            <span className="text-xs font-semibold text-surface-muted">Weekly Visitors</span>
-                          </div>
-                          <span className="text-xs font-bold text-surface-muted">{Math.round((analytics.member_activity.weekly / (stats?.members || 1)) * 100)}%</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-slate-200"></span>
-                            <span className="text-xs font-semibold text-surface-muted">Rare</span>
-                          </div>
-                          <span className="text-xs font-bold text-surface-muted">{Math.round((analytics.member_activity.rare / (stats?.members || 1)) * 100)}%</span>
-                        </div>
-                      </div>
+                    <div className="divide-y divide-surface-border max-h-[320px] overflow-y-auto">
+                        {analytics.top_members.map((member, idx) => (
+                            <div key={member.id} className="flex items-center justify-between p-4 hover:bg-zinc-50 transition-colors">
+                                <div className="flex items-center gap-3">
+                                    <div className="relative">
+                                        <div className="h-10 w-10 rounded-full bg-zinc-100 border border-surface-border flex items-center justify-center overflow-hidden">
+                                            {member.profile_image ? (
+                                                <img src={member.profile_image} alt={member.username} className="h-full w-full object-cover" />
+                                            ) : (
+                                                <span className="text-sm font-bold text-zinc-500">{member.username.slice(0, 2).toUpperCase()}</span>
+                                            )}
+                                        </div>
+                                        {idx < 3 && (
+                                            <div className={`absolute -top-1 -right-1 h-4 w-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white border-2 border-white ${idx === 0 ? 'bg-amber-400' : idx === 1 ? 'bg-zinc-400' : 'bg-amber-600'}`}>
+                                                {idx + 1}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-surface-dark">{member.username}</p>
+                                        <p className="text-xs font-semibold text-surface-muted capitalize">{member.role}</p>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-sm font-black text-primary">{member.activity_score}</p>
+                                    <p className="text-[10px] font-bold text-surface-muted uppercase tracking-wider">Posts</p>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                   )}
                 </div>

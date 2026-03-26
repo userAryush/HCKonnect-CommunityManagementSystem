@@ -137,6 +137,7 @@ class CommunityMemberListSerializer(ModelSerializer):
     #                              RELATIONAL MAPPING
     # These fields 'reach into' the related User model to grab profile info.
     # This saves the frontend from having to make two API calls (one for membership, one for user info).
+    user_id = UUIDField(source="user.id", read_only=True)
     username = CharField(source="user.username", read_only=True)
     first_name = CharField(source="user.first_name", read_only=True)
     last_name = CharField(source="user.last_name", read_only=True)
@@ -146,7 +147,7 @@ class CommunityMemberListSerializer(ModelSerializer):
 
     class Meta:
         model = CommunityMembership
-        fields = ["membership_id", "id", "username","first_name", "last_name",  "email", "profile_image", "role", "created_at", "join_date"]
+        fields = ["membership_id", "id", "user_id", "username","first_name", "last_name",  "email", "profile_image", "role", "created_at", "join_date"]
 
     def get_join_date(self, obj):
         """

@@ -290,6 +290,23 @@ class CommunityAnalyticsView(APIView):
             # Re-sort to keep it looking nice
             comparison_data = sorted(comparison_data, key=lambda x: x['score'], reverse=True)
 
+        # 6. Top 5 Active Members
+        top_memberships = CommunityMembership.objects.filter(
+            community_id=community_id
+        ).select_related('user').annotate(
+            activity_score=Count('user__posts', distinct=True)
+        ).order_by('-activity_score', '-user__last_login')[:5]
+
+        top_members_data = [
+            {
+                "id": m.user.id,
+                "username": m.user.username,
+                "profile_image": request.build_absolute_uri(m.user.profile_image.url) if m.user.profile_image else None,
+                "role": m.role,
+                "activity_score": m.activity_score
+            } for m in top_memberships
+        ]
+
         return Response({
             "engagement": {
                 "announcements": announcements_count,
@@ -298,6 +315,7 @@ class CommunityAnalyticsView(APIView):
                 "discussions": discussions_count
             },
             "member_activity": member_activity,
+            "top_members": top_members_data,
             "posts_last_7_days": posts_last_7_days,
             "total_engagements": total_engagements,
             "comparison": comparison_data
