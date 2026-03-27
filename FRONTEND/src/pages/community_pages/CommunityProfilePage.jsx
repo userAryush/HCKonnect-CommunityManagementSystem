@@ -238,30 +238,49 @@ export default function CommunityProfilePage() {
                     </p>
                   </SoftContainer>
 
-                  {/* Recent Activity Section (Replaces Upcoming Events in Main) */}
+                  {/* Upcoming Schedule Section */}
                   <SoftContainer>
                     <div className="flex items-center justify-between mb-6 border-b border-gray-100 pb-3">
-                      <h2 className="text-lg font-semibold text-surface-dark">Recent Activity</h2>
+                      <h2 className="text-lg font-semibold text-surface-dark">Upcoming Schedule</h2>
                     </div>
                     
-                    <div className="flex flex-col gap-8">
+                    <div className="space-y-4">
                       {loadingTab ? (
-                         <div className="py-10 text-center text-sm text-surface-muted">Loading activity...</div>
-                      ) : (communityData.recent_activity || []).length === 0 ? (
-                         <div className="py-12 text-center">
-                           <Calendar className="mx-auto h-10 w-10 text-gray-200 mb-3" />
-                           <p className="text-sm text-surface-muted font-medium">No recent activity found.</p>
-                         </div>
+                         <div className="py-10 text-center text-sm text-surface-muted">Loading schedule...</div>
+                      ) : tabData.events.length === 0 ? (
+                         <div className="card-border text-center text-surface-muted !py-8">No upcoming events scheduled.</div>
                       ) : (
-                        <div className="space-y-6">
-                          {communityData.recent_activity.map((item) => (
-                            <div key={`${item.type}-${item.id}`} className="transition-transform duration-200">
-                              {item.type === 'announcement' && <AnnouncementCard item={item} />}
-                              {item.type === 'event' && <EventCard item={item} />}
-                              {item.type === 'discussion' && <DiscussionCard item={item} />}
-                              {item.type === 'resource' && <ResourceCard resource={item} />}
+                        <div className="space-y-4">
+                          {tabData.events.slice(0, 3).map(event => (
+                            <div key={event.id} className="card-border flex flex-col sm:flex-row sm:items-center justify-between !p-4 gap-4 transition-all hover:bg-zinc-50/50">
+                              <div className="flex items-center gap-4">
+                                <div className="bg-primary/10 text-primary rounded-xl p-3 text-center min-w-[60px]">
+                                  <p className="text-xs font-bold uppercase">{event.date ? new Date(event.date).toLocaleDateString('en-US', { month: 'short' }) : 'TBD'}</p>
+                                  <p className="text-lg font-black leading-none">{event.date ? new Date(event.date).getDate() : '--'}</p>
+                                </div>
+                                <div className="flex-1">
+                                  <h4 className="font-bold text-sm text-surface-dark line-clamp-1">{event.title}</h4>
+                                  <p className="text-[10px] text-surface-muted flex items-center gap-1 mt-1 font-medium">
+                                    <Calendar size={12} /> {event.start_time || 'TBD'} • {event.location || 'Online'}
+                                  </p>
+                                </div>
+                              </div>
+                              {communityData.is_community_owner && (
+                                <Link to={`/community/${id}/manage/events`} className="btn-secondary !px-4 !py-1.5 !text-[11px] font-bold whitespace-nowrap text-center transition-all">
+                                  Manage
+                                </Link>
+                              )}
                             </div>
                           ))}
+                          
+                          {tabData.events.length > 3 && (
+                            <button 
+                              onClick={() => handleTabChange('Events')} 
+                              className="text-xs font-bold text-primary hover:text-primary/80 transition-colors inline-block w-full text-center mt-2"
+                            >
+                              View all events
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>

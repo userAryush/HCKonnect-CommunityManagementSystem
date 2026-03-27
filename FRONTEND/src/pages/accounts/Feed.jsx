@@ -26,7 +26,7 @@ export default function Feed() {
       <main className="pt-24 pb-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
-            
+
             {/* Main Feed Column */}
             <div className="lg:col-span-8 flex flex-col gap-6">
               <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
@@ -35,23 +35,23 @@ export default function Feed() {
                   <p className="text-sm text-surface-muted">Central hub for all community updates and discussions.</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Button 
-                    variant="secondary" 
+                  <Button
+                    variant="secondary"
                     className="gap-2 !py-2 !px-4 text-xs font-bold"
-                    onClick={() => navigate('/discussions/create')}
-                  >
-                    <MessageSquare size={16} />
-                    <span className="hidden xs:inline">Start Discussion</span>
-                    <span className="xs:hidden">Discuss</span>
-                  </Button>
-                  <Button 
-                    variant="primary" 
-                    className="gap-2 !py-2 !px-4 text-xs font-bold shadow-lg shadow-primary/20"
                     onClick={() => navigate('/posts?create=true')}
                   >
                     <Plus size={16} />
                     <span className="hidden xs:inline">Create Post</span>
                     <span className="xs:hidden">Post</span>
+                  </Button>
+                  <Button
+                    variant="primary"
+                    className="gap-2 !py-2 !px-4 text-xs font-bold shadow-lg shadow-primary/20"
+                    onClick={() => navigate('/discussions/create')}
+                  >
+                    <MessageSquare size={16} />
+                    <span className="hidden xs:inline">Start Discussion</span>
+                    <span className="xs:hidden">Discuss</span>
                   </Button>
                 </div>
               </header>
