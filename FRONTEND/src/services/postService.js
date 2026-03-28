@@ -112,6 +112,16 @@ const postService = {
         } catch (error) {
             throw error;
         }
+    },
+
+    // Get posts for a specific community (authored by community user)
+    getPostsForCommunity: async (communityId, page = 1) => {
+        try {
+            const response = await apiClient.get(`/contents/post-list/?user_id=${communityId}&page=${page}`);
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
     }
 };
 

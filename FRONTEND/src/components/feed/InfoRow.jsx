@@ -39,7 +39,7 @@ export default function InfoRow() {
         </div>
         <div className="space-y-1">
           {announcements.length > 0 ? announcements.map(ann => (
-            <div key={ann.id} className="group p-3 rounded-xl hover:bg-white border border-transparent hover:border-zinc-200 hover:shadow-sm transition-all cursor-pointer">
+            <div key={ann.id} className="group p-3 rounded-xl hover:bg-white border border-transparent hover:border-zinc-200 hover:shadow-sm transition-all">
               <h4 className="text-body font-semibold line-clamp-1 group-hover:text-primary transition-colors">{ann.title}</h4>
               <div className="flex items-center gap-2 mt-1">
                 <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-tight">{ann.community_name}</p>
