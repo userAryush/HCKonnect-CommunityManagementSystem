@@ -177,7 +177,7 @@ class CommunityDashboardSerializer(ModelSerializer):
     class Meta:
         model = User
         fields = [
-            "id", "community_name", "community_description", "community_logo", 
+            "id", "community_name", "community_description", "community_logo", "email",
             "member_count", "is_community_owner", "new_members_this_month", "recent_activity"
         ]
 

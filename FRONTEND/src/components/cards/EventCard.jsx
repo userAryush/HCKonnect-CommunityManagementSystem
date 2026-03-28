@@ -52,13 +52,14 @@ export default function EventCard({ item }) {
           </div>
           <div>
             <p
-                className="text-sm font-semibold text-surface-dark cursor-pointer hover:underline underline-offset-2 transition-colors hover:text-primary"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/community/${item.community}`);
-                }}
+              className="text-sm font-semibold text-surface-dark cursor-pointer transition-all duration-200 ease-out hover:font-bold"
+
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/community/${item.community}`);
+              }}
             >
-                {getDisplayName(item)}
+              {getDisplayName(item)}
             </p>
             <p className="text-metadata">
               {getRoleLabel(item)}
@@ -98,27 +99,27 @@ export default function EventCard({ item }) {
           <Badge variant="amber">Event</Badge>
         </div>
         <div className="space-y-4">
-        {item.image && (
-          <div className="rounded-xl overflow-hidden bg-zinc-50 border border-surface-border/50 aspect-video">
-            <img
-              src={item.image}
-              alt={item.title}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        )}
+          {item.image && (
+            <div className="rounded-xl overflow-hidden bg-zinc-50 border border-surface-border/50 aspect-video">
+              <img
+                src={item.image}
+                alt={item.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
 
-        <div className="space-y-1">
-          <h3 className="text-title group-hover:text-primary transition-colors">
-            {item.title}
-          </h3>
-          <p className="text-metadata font-medium">
-            📍 {eventMeta?.location} • {eventMeta?.time}
-          </p>
-          <p className="text-body line-clamp-2">
-            {item.description}
-          </p>
-        </div>
+          <div className="space-y-1">
+            <h3 className="text-title transition-transform duration-200 ease-out group-hover:-translate-y-0.5">
+              {item.title}
+            </h3>
+            <p className="text-metadata font-medium">
+              📍 {eventMeta?.location} • {eventMeta?.time}
+            </p>
+            <p className="text-body line-clamp-2">
+              {item.description}
+            </p>
+          </div>
         </div>
       </div>
 

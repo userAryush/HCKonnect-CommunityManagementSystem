@@ -44,13 +44,13 @@ export default function AnnouncementCard({ item, onDelete }) {
           </div>
           <div>
             <p
-                className="text-sm font-semibold text-surface-dark cursor-pointer hover:underline underline-offset-2 transition-colors hover:text-primary"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/community/${item.community?.id || item.community}`);
-                }}
+              className="text-sm font-semibold text-surface-dark cursor-pointer transition-all duration-200 ease-out hover:font-bold"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/community/${item.community?.id || item.community}`);
+              }}
             >
-                {getDisplayName(item)}
+              {getDisplayName(item)}
             </p>
             <p className="text-metadata">
               {getRoleLabel(item)} • {formatTimeAgo(item.createdAt || item.created_at)}
@@ -90,7 +90,7 @@ export default function AnnouncementCard({ item, onDelete }) {
       </div>
 
       <div className="space-y-2">
-        <h3 className="text-title group-hover:text-primary transition-colors">
+        <h3 className="text-title transition-transform duration-200 ease-out group-hover:-translate-y-0.5">
           {item.title}
         </h3>
         <p className="text-body leading-relaxed">

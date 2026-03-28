@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CommunityListView, CreateCommunityVacancyView, ApplyVacancyView,AddCommunityMemberView, CommunityDashboardView,RemoveCommunityMemberView, StudentListView, ListCommunityMembersView, ListCommunityVacanciesView, ListVacancyApplicationsView, UpdateCommunityMemberRoleView, CommunityAnalyticsView
+from .views import CommunityListView, CreateCommunityVacancyView, ApplyVacancyView,AddCommunityMemberView, CommunityDashboardView,RemoveCommunityMemberView, StudentListView, ListCommunityMembersView, ListCommunityVacanciesView, ListVacancyApplicationsView, UpdateCommunityMemberRoleView, CommunityAnalyticsView, SendCommunityMessageView
 
 
 
@@ -54,7 +54,8 @@ urlpatterns = [
     # URL: /5/members/ (where 5 is the Community User ID)
     path('<uuid:community_id>/members/', ListCommunityMembersView.as_view(), name='community-members'),
     
-    path("students/", StudentListView.as_view(), name="students-list")
+    path("students/", StudentListView.as_view(), name="students-list"),
+    path("send-message/", SendCommunityMessageView.as_view(), name="send-community-message")
 
 
 ]

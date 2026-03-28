@@ -60,12 +60,12 @@ export default function DiscussionCard({ item, onDelete, isDetailView = false })
                         )}
                     </div>
                     <div>
-                        <p 
-                            className="text-sm font-semibold text-surface-dark cursor-pointer hover:underline underline-offset-2 transition-colors hover:text-primary"
+                        <p
+                            className="text-sm font-semibold text-surface-dark cursor-pointer transition-all duration-200 ease-out hover:font-bold"
                             onClick={(e) => {
                                 e.stopPropagation();
-                                const route = itemState.author_role === 'community' 
-                                    ? `/community/${itemState.community}` 
+                                const route = itemState.author_role === 'community'
+                                    ? `/community/${itemState.community}`
                                     : `/profile/${itemState.created_by}`;
                                 navigate(route);
                             }}
@@ -105,7 +105,8 @@ export default function DiscussionCard({ item, onDelete, isDetailView = false })
             </div>
 
             <div className="space-y-2">
-                <h3 className={`text-title transition-colors ${isDetailView ? 'text-2xl' : 'group-hover:text-primary'}`}>
+
+                <h3 className={`text-title transition-transform duration-200 ease-out ${isDetailView ? 'text-2xl' : 'group-hover:-translate-y-0.5'}`}>
                     {itemState.topic}
                 </h3>
                 <p className={`text-body leading-relaxed ${isDetailView ? '' : 'line-clamp-2'}`}>

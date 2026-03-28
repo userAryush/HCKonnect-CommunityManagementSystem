@@ -12,6 +12,7 @@ class Notification(BaseModel):
         ('discussion', 'Discussion'),
         ('post', 'Post'),
         ('resource', 'Resource'),
+        ('message', 'Message'),
     ]
 
     recipient = models.ForeignKey(

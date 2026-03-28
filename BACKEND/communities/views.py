@@ -15,6 +15,9 @@ from datetime import timedelta
 from contents.models import Announcement, Post, PostComment, PostReaction
 from events.models import Event
 from discussion.models import DiscussionPanel, DiscussionReply, Reaction as DiscussionReaction
+from utils.email_utils import send_branded_email
+from notifications.models import Notification
+from django.conf import settings
 
 User = get_user_model()
 
@@ -323,3 +326,46 @@ class CommunityAnalyticsView(APIView):
 
 
 
+class SendCommunityMessageView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        community_id = request.data.get("community_id")
+        subject = request.data.get("subject")
+        message = request.data.get("message")
+
+        if not all([community_id, subject, message]):
+            return Response({"error": "Missing required fields."}, status=400)
+
+        community = get_object_or_404(User, id=community_id, role="community")
+        
+        # Send email to the community
+        context = {
+            "user_name": community.community_name or community.username,
+            "message": f"You have received a new message from {request.user.first_name} {request.user.last_name} ({request.user.email}):\n\n{message}",
+            "button_text": "View Community Dashboard",
+            "button_url": f"{settings.FRONTEND_URL}/community/{community.id}/dashboard"
+        }
+        
+        success = send_branded_email(
+            subject=f"[HCKonnect] {subject}",
+            to_email=community.email,
+            context=context
+        )
+
+        if success:
+            # Create a system notification for the community
+            Notification.objects.create(
+                recipient=community,
+                actor=request.user,
+                type='message',
+                title='New Email Received',
+                message=f"{request.user.first_name} {request.user.last_name} has sent you an email regarding: '{subject}'. Please check your email.",
+                metadata={
+                    "sender_id": str(request.user.id),
+                    "sender_email": request.user.email,
+                    "subject": subject
+                }
+            )
+            return Response({"message": "Message sent successfully."}, status=200)
+        return Response({"error": "Failed to send message."}, status=500)

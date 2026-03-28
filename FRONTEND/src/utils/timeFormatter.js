@@ -29,16 +29,17 @@ export const formatTimeAgo = (dateValue) => {
         return `${days}d ago`;
     }
 
-    const weeks = Math.floor(days / 7);
-    if (weeks < 4) {
-        return `${weeks}w ago`;
-    }
-
+    // Calculate months first to handle the edge case
     const months = Math.floor(days / 30);
-    if (months < 12) {
-        return `${months}mo ago`;
+    if (months >= 1) {
+        if (months < 12) {
+            return `${months}mo ago`;
+        }
+        const years = Math.floor(days / 365);
+        return `${years}y ago`;
     }
 
-    const years = Math.floor(days / 365);
-    return `${years}y ago`;
+    // Fallback to weeks if less than a month
+    const weeks = Math.floor(days / 7);
+    return `${weeks}w ago`;
 };

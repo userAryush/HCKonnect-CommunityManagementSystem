@@ -113,7 +113,7 @@ const NotificationPopover = ({ isOpen, onClose }) => {
 
         <div
             ref={popoverRef}
-            className="absolute top-full right-0 mt-4 w-80 md:w-[400px] bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-surface-border overflow-hidden z-[60] animate-in slide-in-from-top-2 duration-300"
+            className="absolute top-full right-0 mt-4 w-[400px] md:w-[520px] bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-surface-border overflow-hidden z-[60] animate-in slide-in-from-top-2 duration-300"
         >
             {/* Header */}
             <div className="px-5 py-4 flex items-center justify-between border-b border-surface-border bg-secondary">
@@ -135,7 +135,7 @@ const NotificationPopover = ({ isOpen, onClose }) => {
             </div>
 
             {/* Content */}
-            <div className="max-h-[480px] overflow-y-auto overflow-x-hidden">
+            <div className="max-h-[420px] overflow-y-auto overflow-x-hidden">
                 {loading ? (
                     <div className="py-20 flex flex-col items-center gap-3">
                         <Loader2 size={20} className="animate-spin text-primary" />

@@ -71,12 +71,13 @@ export default function PostCard({ post, onDelete, isDetailView = false }) {
                         )}
                     </div>
                     <div>
-                        <p 
-                            className="text-sm font-semibold text-surface-dark cursor-pointer hover:underline underline-offset-2 transition-colors hover:text-primary"
+                        <p
+                            className="text-sm font-semibold text-surface-dark cursor-pointer transition-all duration-200 ease-out hover:font-bold"
+
                             onClick={(e) => {
                                 e.stopPropagation();
-                                const route = itemState.author_role === 'community' 
-                                    ? `/community/${itemState.author}` 
+                                const route = itemState.author_role === 'community'
+                                    ? `/community/${itemState.author}`
                                     : `/profile/${itemState.author}`;
                                 navigate(route);
                             }}

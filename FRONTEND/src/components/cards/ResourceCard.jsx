@@ -71,8 +71,9 @@ export default function ResourceCard({ resource, onEdit, onDelete }) {
                         )}
                     </div>
                     <div>
-                        <p 
-                            className="text-sm font-semibold text-surface-dark cursor-pointer hover:underline underline-offset-2 transition-colors hover:text-primary"
+                        <p
+                            className="text-sm font-semibold text-surface-dark cursor-pointer transition-all duration-200 ease-out hover:font-bold"
+
                             onClick={(e) => {
                                 e.stopPropagation();
                                 navigate(`/community/${resource.community?.id || resource.community}`);
@@ -104,13 +105,13 @@ export default function ResourceCard({ resource, onEdit, onDelete }) {
                 {/* Info */}
                 <div className="flex-1 min-w-0 overflow-hidden">
                     <div className="flex items-center justify-between gap-2">
-                        <h3 className="text-lg font-bold text-[#0d1f14] truncate group-hover:text-primary transition-colors" title={resource.title}>
+                        <h3 className="text-title transition-transform duration-200 ease-out group-hover:-translate-y-0.5" title={resource.title}>
                             {resource.title}
                         </h3>
 
                         <div className="flex items-center gap-1">
                             {canManage && (
-                                <Dropdown 
+                                <Dropdown
                                     actions={[
                                         {
                                             label: 'Edit',

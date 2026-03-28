@@ -1,5 +1,6 @@
 import React from 'react';
-import { User, Calendar, Megaphone, MessageSquare, FileText } from 'lucide-react';
+import { User, Calendar, Megaphone, MessageSquare, FileText, Mail } from 'lucide-react';
+import { formatTimeAgo } from '../../utils/timeFormatter';
 
 const NotificationItem = ({ notification, onMarkRead, onNavigate }) => {
     const { id, title, message, type, created_at, is_read, actor_name, actor_image } = notification;
@@ -11,21 +12,11 @@ const NotificationItem = ({ notification, onMarkRead, onNavigate }) => {
             case 'discussion':
             case 'post': return <MessageSquare className="text-green-400" size={18} />;
             case 'resource': return <FileText className="text-purple-400" size={18} />;
+            case 'message': return <Mail className="text-pink-400" size={18} />;
             case 'membership':
             case 'role_change': return <User className="text-orange-400" size={18} />;
             default: return <Megaphone className="text-gray-400" size={18} />;
         }
-    };
-
-    const formatTime = (dateStr) => {
-        const date = new Date(dateStr);
-        const now = new Date();
-        const diffInSeconds = Math.floor((now - date) / 1000);
-
-        if (diffInSeconds < 60) return 'just now';
-        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-        return date.toLocaleDateString();
     };
 
     return (
@@ -34,8 +25,8 @@ const NotificationItem = ({ notification, onMarkRead, onNavigate }) => {
                 if (!is_read) onMarkRead(id);
                 if (onNavigate) onNavigate(type, notification.metadata);
             }}
-            className={`group relative flex gap-4 p-4 transition-all duration-200 cursor-pointer border-b border-surface-border 
-        ${!is_read ? 'bg-primary/[0.03]' : 'hover:bg-ink/[0.02]'}`}
+            className={`group relative flex gap-4 p-5 transition-all duration-200 cursor-pointer border-b border-surface-border 
+        ${!is_read ? 'bg-primary/[0.03]' : 'hover:bg-secondary'}`}
         >
             {/* Unread Accent Line */}
             {!is_read && <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />}
@@ -57,9 +48,8 @@ const NotificationItem = ({ notification, onMarkRead, onNavigate }) => {
                     <h4 className={`text-sm tracking-tight leading-none ${!is_read ? 'font-bold text-surface-dark' : 'font-medium text-surface-dark/70'}`}>
                         {title}
                     </h4>
-                    <span className="text-[10px] font-medium text-surface-body/60 uppercase tracking-wider">
-                        {/* Logic for time omitted for brevity, use your existing formatTime */}
-                        2h ago
+                    <span className="text-[10px] font-medium text-surface-body/60 tracking-wider">
+                        {formatTimeAgo(created_at)}
                     </span>
                 </div>
                 <p className="text-xs text-surface-body leading-relaxed line-clamp-2">{message}</p>
