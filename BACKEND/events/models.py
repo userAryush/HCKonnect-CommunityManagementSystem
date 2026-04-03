@@ -26,6 +26,10 @@ class Event(BaseModel):
 
     what_to_expect = models.JSONField(null=True,blank=True,help_text='Example: ["Hands-on workshop", "Networking session", "Live demo"]')
 
+    # New fields for registration logic
+    registration_deadline = models.DateTimeField(null=True, blank=True)
+    max_participants = models.PositiveIntegerField(null=True, blank=True)
+
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.SET_NULL,null=True,blank=True,related_name="created_events",)
     
     class Meta:
@@ -38,6 +42,13 @@ class EventRegistration(BaseModel):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="registrations")
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="event_registrations")
     registered_at = models.DateTimeField(auto_now_add=True)
+    
+    ATTENDANCE_CHOICES = [
+        ("NA", "Not Marked"),
+        ("P", "Present"),
+        ("A", "Absent"),
+    ]
+    attendance = models.CharField(max_length=2, choices=ATTENDANCE_CHOICES, default="NA")
 
     class Meta:
         unique_together = ('event', 'user')

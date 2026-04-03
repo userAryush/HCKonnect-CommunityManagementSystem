@@ -11,7 +11,7 @@ import eventService from '../../services/eventService'
 
 export default function EventCard({ item }) {
   const navigate = useNavigate()
-  const { eventMeta, stats, id } = item
+  const { eventMeta, id } = item
   const user = JSON.parse(localStorage.getItem('user') || 'null');
   const canManage = user && (
     (user.role === 'community' && String(user.id) === String(item.community?.id || item.community)) ||
@@ -29,8 +29,10 @@ export default function EventCard({ item }) {
     }
   };
 
-  const progress = stats?.registrations
-    ? Math.round((stats.registrations.current / stats.registrations.capacity) * 100)
+  const registeredCount = item.registered_count || 0
+  const maxParticipants = item.max_participants
+  const progress = maxParticipants
+    ? Math.round((registeredCount / maxParticipants) * 100)
     : 0
   const dateObj = new Date(eventMeta?.date || Date.now());
   const month = dateObj.toLocaleString('default', { month: 'short' });
@@ -126,7 +128,7 @@ export default function EventCard({ item }) {
       <div className="mt-6 pt-6 border-t border-surface-border/50">
         <div className="mb-2.5 flex items-center justify-between">
           <span className="text-[10px] font-bold uppercase tracking-wider text-surface-muted">Registration Progress</span>
-          <span className="text-xs font-semibold text-surface-dark">{stats?.registrations?.current || 0} / {stats?.registrations?.capacity || 100}</span>
+          <span className="text-xs font-semibold text-surface-dark">{registeredCount} / {maxParticipants || '∞'}</span>
         </div>
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-100">
           <div

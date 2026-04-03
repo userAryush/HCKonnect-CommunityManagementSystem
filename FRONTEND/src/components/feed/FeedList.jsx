@@ -47,9 +47,8 @@ export default function FeedList({
             time: e.start_time,
             location: e.location
           },
-          stats: {
-            registrations: { current: e.registrations_count || 0, capacity: e.capacity || 100 }
-          },
+          registered_count: e.registered_count || 0,
+          max_participants: e.max_participants,
           community: {
             name: e.community_name || 'Community',
             logoText: (e.community_name || 'CO').substring(0, 2).toUpperCase()

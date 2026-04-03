@@ -24,6 +24,7 @@ import DiscussionDetail from './pages/community_pages/DiscussionDetail'
 import PostList from './pages/community_pages/PostList'
 import PostDetail from './pages/community_pages/PostDetail'
 import FirstLoginChangePassword from './pages/accounts/FirstLoginChangePassword'
+import EventParticipantsPage from './pages/community_admin/EventParticipantsPage'
 
 import { AuthProvider } from './context/AuthContext'
 import { ToastProvider } from './context/ToastContext'
@@ -68,6 +69,7 @@ function App() {
               <Route path="/community/:id/manage/vacancies/create" element={<CreateVacancy />} />
               <Route path="/community/:id/manage/events/create" element={<CreateEvent />} />
               <Route path="/community/:id/manage/events/:eventId/edit" element={<CreateEvent />} />
+              <Route path="/community/:id/manage/events/:eventId/participants" element={<EventParticipantsPage />} />
               <Route path="/community/:id/manage/events" element={<EventsList />} />
               <Route path="/community/:id/manage/announcements" element={<AnnouncementsList />} />
             </Route>

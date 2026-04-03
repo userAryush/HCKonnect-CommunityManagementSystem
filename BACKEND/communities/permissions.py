@@ -1,3 +1,4 @@
+from rest_framework import permissions
 from rest_framework.permissions import BasePermission
 
 class IsCommunityAccount(BasePermission):
@@ -27,6 +28,50 @@ class IsCommunityManager(BasePermission):
             community=obj, 
             role='representative'
         ).exists()
+
+class IsCommunityOwnerOrReadOnly(permissions.BasePermission):
+    """
+    Custom permission to only allow owners of a community to edit it.
+    """
+    def has_object_permission(self, request, view, obj):
+        # Read permissions are allowed to any request,
+        # so we'll always allow GET, HEAD or OPTIONS requests.
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+        # Write permissions are only allowed to the owner of the community.
+        return obj.id == request.user.id
+
+class IsCommunityRepresentativeOrReadOnly(permissions.BasePermission):
+    """
+    Custom permission to only allow community representatives to perform write actions.
+    Read-only access for everyone else.
+    """
+    def has_permission(self, request, view):
+        # Allow read-only access for any request (authenticated or not).
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        
+        # For write methods (POST, PUT, DELETE), user must be authenticated
+        # and a representative of a community.
+        return request.user and request.user.is_authenticated and hasattr(request.user, 'membership') and request.user.membership.role == 'representative'
+
+    def has_object_permission(self, request, view, obj):
+        # Read permissions are allowed to any request.
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+        # Write permissions are only allowed to the representative of the specific community
+        # that owns the event.
+        if not (request.user and request.user.is_authenticated and hasattr(request.user, 'membership')):
+            return False
+            
+        # Check if the user is a representative of the community associated with the event.
+        # The 'obj' here is the Event instance.
+        return (
+            request.user.membership.role == 'representative' and
+            str(request.user.membership.community.id) == str(obj.community.id)
+        )
 
 
 

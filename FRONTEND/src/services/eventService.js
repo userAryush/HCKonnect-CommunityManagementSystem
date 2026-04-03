@@ -69,6 +69,52 @@ const eventService = {
         } catch (error) {
             throw error;
         }
+    },
+
+    // New Registration and Participant Management Methods
+    registerForEvent: async (id) => {
+        try {
+            const response = await apiClient.post(`/events/${id}/register/`);
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    unregisterFromEvent: async (id) => {
+        try {
+            const response = await apiClient.delete(`/events/${id}/register/`);
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    getParticipants: async (eventId, page = 1) => {
+        try {
+            const response = await apiClient.get(`/events/${eventId}/participants/?page=${page}`);
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    updateAttendance: async (registrationId, attendance) => {
+        try {
+            const response = await apiClient.patch(`/events/registrations/${registrationId}/attendance/`, { attendance });
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    manualAddParticipant: async (eventId, email) => {
+        try {
+            const response = await apiClient.post(`/events/${eventId}/add-participant/`, { email });
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
     }
 };
 
