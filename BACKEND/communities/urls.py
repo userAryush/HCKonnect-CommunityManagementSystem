@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CommunityListView, CreateCommunityVacancyView, ApplyVacancyView,AddCommunityMemberView, CommunityDashboardView,RemoveCommunityMemberView, StudentListView, ListCommunityMembersView, ListCommunityVacanciesView, ListVacancyApplicationsView, UpdateCommunityMemberRoleView, CommunityAnalyticsView, SendCommunityMessageView
+from .views import CommunityListView, CreateCommunityVacancyView, ManageCommunityVacancyView, ApplyVacancyView,AddCommunityMemberView, CommunityDashboardView,RemoveCommunityMemberView, StudentListView, ListCommunityMembersView, ListCommunityVacanciesView, ListVacancyApplicationsView, UpdateCommunityMemberRoleView, CommunityAnalyticsView, SendCommunityMessageView
 
 
 
@@ -19,9 +19,10 @@ urlpatterns = [
     #  use this to see ONE community: /../vacancies/?community_id=5
     path('vacancies/', ListCommunityVacanciesView.as_view(), name='vacancy-list'),
 
-    # 2. Creation
+    # 2. Creation & Management
     # Only Community/Reps can hit this: /../vacancies/create/
     path('vacancies/create/', CreateCommunityVacancyView.as_view(), name='vacancy-create'),
+    path('vacancies/<uuid:pk>/', ManageCommunityVacancyView.as_view(), name='vacancy-manage'),
 
     
     # 3. Applying

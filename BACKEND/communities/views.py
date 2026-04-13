@@ -1,4 +1,4 @@
-from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView
+from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import CommunityMembership,CommunityVacancy,VacancyApplication
 from .serializers import CommunityMembershipCreateSerializer, CommunityMemberListSerializer, CommunityListSerializer,CommunityVacancySerializer,CommunityDashboardSerializer, StudentListSerializer,VacancyApplicationSerializer
@@ -8,7 +8,7 @@ from contents.permissions import CanCreateCommunityContent
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db.models import Q, Count, Sum, F
-from .permissions import IsCommunityAccount
+from .permissions import IsCommunityAccount, CanManageVacancy
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from datetime import timedelta
@@ -30,6 +30,11 @@ class CreateCommunityVacancyView(CreateAPIView):
     queryset = CommunityVacancy.objects.all()
     serializer_class = CommunityVacancySerializer
     permission_classes = [CanCreateCommunityContent]
+
+class ManageCommunityVacancyView(RetrieveUpdateDestroyAPIView):
+    queryset = CommunityVacancy.objects.all()
+    serializer_class = CommunityVacancySerializer
+    permission_classes = [CanManageVacancy]
 
 class ListCommunityVacanciesView(ListAPIView):
     serializer_class = CommunityVacancySerializer
@@ -75,10 +80,11 @@ class ListVacancyApplicationsView(ListAPIView):
         vacancy_id = self.request.query_params.get('vacancy_id')
         
         # Determine which community's data to look at
+        membership = getattr(user, 'membership', None)
         if user.role == "community":
             target_community = user
-        elif user.memberships.filter(role="representative").exists():
-            target_community = user.memberships.get(role="representative").community
+        elif membership and membership.role == "representative":
+            target_community = membership.community
         else:
             return VacancyApplication.objects.none()
 

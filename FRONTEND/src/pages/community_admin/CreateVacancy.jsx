@@ -1,12 +1,11 @@
 import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import axios from 'axios'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
-
-const API_BASE_URL = 'http://localhost:8000'
+import vacancyService from '../../services/vacancyService'
 
 export default function CreateVacancy() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -19,6 +18,7 @@ export default function CreateVacancy() {
     e.preventDefault()
     setError('')
     setSuccess('')
+    
     if (!title.trim()) {
       setError('Title is required.')
       return
@@ -27,10 +27,10 @@ export default function CreateVacancy() {
       setError('Description is required.')
       return
     }
+
     try {
       setLoading(true)
-      await axios.post(`${API_BASE_URL}/communities/community-vacancy/`, {
-        community: id,
+      await vacancyService.createVacancy({
         title,
         description,
         is_open: isOpen,
@@ -39,8 +39,13 @@ export default function CreateVacancy() {
       setTitle('')
       setDescription('')
       setIsOpen(true)
-    } catch {
-      setError('Failed to create vacancy.')
+      // Optional: redirect back to dashboard after success
+      setTimeout(() => {
+        navigate(`/community/${id}/dashboard`)
+      }, 2000)
+    } catch (err) {
+      console.error(err)
+      setError(err.response?.data?.detail || err.response?.data?.error || 'Failed to create vacancy. Ensure you have proper permissions.')
     } finally {
       setLoading(false)
     }

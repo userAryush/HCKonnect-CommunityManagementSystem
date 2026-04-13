@@ -4,6 +4,7 @@ import DiscussionCard from '../cards/DiscussionCard';
 import PostCard from '../cards/PostCard'; // Import PostCard
 import { Skeleton, CardSkeleton } from '../shared/Skeleton';
 import ResourceCard from '../cards/ResourceCard'; // Import ResourceCard
+import VacancyCard from '../cards/VacancyCard';
 
 // Reusable Soft Container Component
 const SoftContainer = ({ children, className = '' }) => (
@@ -12,7 +13,7 @@ const SoftContainer = ({ children, className = '' }) => (
     </div>
 );
 
-export default function ContentGrid({ tab, data, loading }) {
+export default function ContentGrid({ tab, data, loading, onApply }) {
     if (loading) {
         const gridClasses = {
             Announcements: "grid-cols-1 md:grid-cols-2",
@@ -20,6 +21,7 @@ export default function ContentGrid({ tab, data, loading }) {
             Discussions: "space-y-4",
             Posts: "grid-cols-1",
             Resources: "grid-cols-1 md:grid-cols-2",
+            Vacancies: "grid-cols-1 md:grid-cols-2",
         }[tab];
 
         const isGrid = gridClasses.startsWith('grid');
@@ -49,6 +51,7 @@ export default function ContentGrid({ tab, data, loading }) {
         Discussions: "space-y-4",
         Posts: "grid-cols-1", // Posts are typically full-width
         Resources: "grid-cols-1 md:grid-cols-2", // Set to 2 per row
+        Vacancies: "grid-cols-1 md:grid-cols-2",
     };
 
     const CardComponent = {
@@ -57,6 +60,7 @@ export default function ContentGrid({ tab, data, loading }) {
         Discussions: DiscussionCard,
         Posts: PostCard, // Add PostCard
         Resources: ResourceCard, // Add ResourceCard
+        Vacancies: VacancyCard,
     }[tab];
 
     const itemProp = {
@@ -65,6 +69,7 @@ export default function ContentGrid({ tab, data, loading }) {
         Discussions: 'item',
         Posts: 'post', // Match PostCard prop name
         Resources: 'resource', // ResourceCard expects a 'resource' prop
+        Vacancies: 'vacancy',
     }[tab];
 
     return (
@@ -74,7 +79,11 @@ export default function ContentGrid({ tab, data, loading }) {
             ) : (
                 <div className={gridClasses[tab].startsWith('grid') ? `grid ${gridClasses[tab]} gap-6` : gridClasses[tab]}>
                     {data.map((item) => (
-                        <CardComponent key={item.id} {...{ [itemProp]: item }} />
+                        <CardComponent 
+                            key={item.id} 
+                            {...{ [itemProp]: item }} 
+                            onApply={onApply}
+                        />
                     ))}
                 </div>
             )}

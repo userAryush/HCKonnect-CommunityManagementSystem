@@ -73,8 +73,23 @@ class IsCommunityRepresentativeOrReadOnly(permissions.BasePermission):
             str(request.user.membership.community.id) == str(obj.community.id)
         )
 
+class CanManageVacancy(BasePermission):
+    """
+    Permission to manage a specific vacancy.
+    Only the community that owns it or its representative can manage it.
+    """
+    def has_object_permission(self, request, view, obj):
+        user = request.user
+        if not user.is_authenticated:
+            return False
 
+        # Community owner
+        if user.role == "community" and obj.community == user:
+            return True
 
+        # Representative
+        membership = getattr(user, "membership", None)
+        if membership and membership.role == "representative" and membership.community == obj.community:
+            return True
 
-
-
+        return False

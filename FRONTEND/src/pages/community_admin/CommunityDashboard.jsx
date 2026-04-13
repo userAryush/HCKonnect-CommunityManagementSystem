@@ -21,8 +21,12 @@ import {
   MessageSquare,
   Edit3,
   User,
-  Settings
+  Settings,
+  Briefcase,
+  CheckCircle,
+  XCircle
 } from 'lucide-react'
+import vacancyService from '../../services/vacancyService'
 import {
   BarChart,
   Bar,
@@ -51,6 +55,8 @@ export default function CommunityDashboard() {
   const [analytics, setAnalytics] = useState(null)
   const [analyticsLoading, setAnalyticsLoading] = useState(true)
   const [analyticsError, setAnalyticsError] = useState(null)
+  const [vacancies, setVacancies] = useState([])
+  const [vacanciesLoading, setVacanciesLoading] = useState(false)
 
   const quickActions = [
     {
@@ -94,6 +100,13 @@ export default function CommunityDashboard() {
       icon: <User size={20} />,
       colorIcon: 'text-indigo-500',
       hoverClass: 'hover:border-indigo-500 hover:bg-indigo-50/50 group-hover:bg-indigo-500'
+    },
+    {
+      label: 'Create Vacancy',
+      path: `/community/${id}/manage/vacancies/create`,
+      icon: <Briefcase size={20} />,
+      colorIcon: 'text-orange-500',
+      hoverClass: 'hover:border-orange-500 hover:bg-orange-50/50 group-hover:bg-orange-500'
     },
   ]
 
@@ -151,8 +164,21 @@ export default function CommunityDashboard() {
       }
     }
 
+    const fetchVacancies = async () => {
+      setVacanciesLoading(true)
+      try {
+        const data = await vacancyService.getVacancies(id)
+        if (mounted) setVacancies(data)
+      } catch (err) {
+        console.error('Failed to load vacancies', err)
+      } finally {
+        if (mounted) setVacanciesLoading(false)
+      }
+    }
+
     fetchCommunity()
     fetchAnalyticsData()
+    fetchVacancies()
     return () => { mounted = false }
   }, [id])
 
@@ -523,6 +549,76 @@ export default function CommunityDashboard() {
                     ))}
                     {dashboardEvents.length === 0 && (
                       <div className="card-border text-center text-surface-muted !py-8">No upcoming events scheduled.</div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Active Vacancies */}
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-title">Active Vacancies</h3>
+                    <Link 
+                      to={`/community/${id}/manage/vacancies/create`}
+                      className="text-xs font-bold text-[#75C043] hover:underline"
+                    >
+                      + New Vacancy
+                    </Link>
+                  </div>
+                  <div className="space-y-4">
+                    {vacanciesLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="animate-spin text-primary" size={24} />
+                      </div>
+                    ) : vacancies.length > 0 ? (
+                      vacancies.slice(0, 3).map(v => (
+                        <div key={v.id} className="card-border flex items-center justify-between !p-4">
+                          <div className="flex items-center gap-4">
+                            <div className={`p-3 rounded-xl ${v.is_open ? 'bg-[#75C043]/10 text-[#75C043]' : 'bg-red-50 text-red-500'}`}>
+                              <Briefcase size={20} />
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-surface-dark">{v.title}</h4>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className={`text-[10px] font-bold uppercase ${v.is_open ? 'text-[#75C043]' : 'text-red-500'}`}>
+                                  {v.is_open ? 'Open' : 'Closed'}
+                                </span>
+                                <span className="text-gray-300">•</span>
+                                <span className="text-xs text-surface-muted">
+                                  {v.applications?.length || 0} applicants
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Link 
+                              to={`/community/${id}/vacancies/${v.id}/applicants`}
+                              className="btn-secondary !px-3 !py-1.5 !text-xs"
+                            >
+                              Applicants
+                            </Link>
+                            {v.is_open && (
+                              <button 
+                                onClick={async () => {
+                                  if (window.confirm('Are you sure you want to close this vacancy?')) {
+                                    try {
+                                      await vacancyService.updateVacancy(v.id, { is_open: false });
+                                      const updated = await vacancyService.getVacancies(id);
+                                      setVacancies(updated);
+                                    } catch (err) {
+                                      alert('Failed to close vacancy');
+                                    }
+                                  }
+                                }}
+                                className="rounded-lg border border-red-200 text-red-500 hover:bg-red-50 !px-3 !py-1.5 text-xs font-bold transition-all"
+                              >
+                                Close
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="card-border text-center text-surface-muted !py-8">No vacancies created.</div>
                     )}
                   </div>
                 </div>

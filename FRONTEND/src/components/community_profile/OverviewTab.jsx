@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Calendar, Users, FolderKanban } from 'lucide-react';
+import { Calendar, Users, FolderKanban, Briefcase } from 'lucide-react';
 import { formatTimeAgo } from '../../utils/timeFormatter';
 import Button from '../shared/Button';
 import { Skeleton } from '../shared/Skeleton';
@@ -81,6 +81,56 @@ export default function OverviewTab({ communityData, tabData, loadingTab, canMan
                         )}
                     </div>
                 </SoftContainer>
+
+                {/* Open Vacancies Section */}
+                <SoftContainer>
+                    <div className="flex items-center justify-between mb-6 border-b border-gray-100 pb-3">
+                        <h2 className="text-lg font-semibold text-surface-dark">Open Vacancies</h2>
+                        <button
+                            onClick={() => handleTabChange('Vacancies')}
+                            className="text-xs font-bold text-primary hover:text-primary/80 transition-colors"
+                        >
+                            VIEW ALL
+                        </button>
+                    </div>
+
+                    <div className="space-y-4">
+                        {loadingTab ? (
+                            <div className="space-y-4">
+                                {[1, 2].map(i => (
+                                    <div key={i} className="card-border h-24 bg-zinc-50/50 animate-pulse rounded-2xl" />
+                                ))}
+                            </div>
+                        ) : tabData.vacancies.length === 0 ? (
+                            <div className="card-border text-center text-surface-muted !py-8">No open vacancies at the moment.</div>
+                        ) : (
+                            <div className="space-y-3">
+                                {tabData.vacancies.slice(0, 2).map(vacancy => (
+                                    <div 
+                                        key={vacancy.id} 
+                                        onClick={() => handleTabChange('Vacancies')}
+                                        className="card-border flex items-center justify-between !p-4 cursor-pointer transition-all hover:bg-zinc-50/50"
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#75C043]/10 text-[#75C043]">
+                                                <Briefcase size={24} />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-sm text-surface-dark">{vacancy.title}</h4>
+                                                <p className="text-[10px] text-surface-muted mt-0.5 line-clamp-1">
+                                                    {vacancy.description.slice(0, 60)}...
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="rounded-full bg-[#75C043]/10 px-3 py-1 text-[10px] font-bold text-[#75C043] uppercase">
+                                            Apply
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </SoftContainer>
             </div>
 
             {/* RIGHT: Sidebar (30%) */}
@@ -147,6 +197,14 @@ export default function OverviewTab({ communityData, tabData, loadingTab, canMan
                         >
                             <FolderKanban size={16} className="mr-3 text-primary" />
                             Access Resources
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => handleTabChange('Vacancies')}
+                            className="w-full !justify-start !py-2.5 !px-4"
+                        >
+                            <Briefcase size={16} className="mr-3 text-[#75C043]" />
+                            Explore Vacancies
                         </Button>
                     </div>
                 </SoftContainer>

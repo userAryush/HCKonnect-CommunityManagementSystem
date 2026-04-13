@@ -39,11 +39,7 @@ export default function CommunityHeader({
                             <span className="text-xs font-medium text-surface-muted">
                                 {Number(communityData.member_count || 0).toLocaleString()} members
                             </span>
-                            {!communityData.vacanciesOpen && (
-                                <span className="rounded bg-gray-100 px-2 py-0.5 text-xs font-semibold text-surface-muted border border-gray-200 ml-2">
-                                    Applications Closed
-                                </span>
-                            )}
+
                         </div>
                     </div>
                 </div>

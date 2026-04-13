@@ -6,12 +6,19 @@ from django.utils import timezone
 User = get_user_model()
 
 class CommunityVacancySerializer(ModelSerializer):
-    community_id = IntegerField(source="community.id", read_only=True)
+    community_id = UUIDField(source="community.id", read_only=True)
+    has_applied = SerializerMethodField()
 
     class Meta:
         model = CommunityVacancy
-        fields = ["id", "title", "description", "is_open", "community_id"]
-        read_only_fields = ["id", "community_id"]
+        fields = ["id", "title", "description", "is_open", "community_id", "has_applied"]
+        read_only_fields = ["id", "community_id", "has_applied"]
+
+    def get_has_applied(self, obj):
+        request = self.context.get('request')
+        if not (request and request.user.is_authenticated):
+            return False
+        return obj.applications.filter(user=request.user).exists()
 
     def validate(self, data):
         user = self.context["request"].user
@@ -22,7 +29,8 @@ class CommunityVacancySerializer(ModelSerializer):
         if user.role == "community":
             return data
 
-        if user.role == "student" and user.memberships.filter(role="representative").exists():
+        membership = getattr(user, "membership", None)
+        if user.role == "student" and membership and membership.role == "representative":
             return data
 
         raise ValidationError("You do not have permission to manage vacancies.")
@@ -34,7 +42,11 @@ class CommunityVacancySerializer(ModelSerializer):
             community = user
         else:
             # SAFE because of one-community-per-representative rule
-            community = user.memberships.get(role="representative").community
+            membership = getattr(user, "membership", None)
+            if membership and membership.role == "representative":
+                community = membership.community
+            else:
+                raise ValidationError("You do not have permission to create vacancies for this community.")
 
         return CommunityVacancy.objects.create(
             community=community,
@@ -43,12 +55,18 @@ class CommunityVacancySerializer(ModelSerializer):
 
 class VacancyApplicationSerializer(ModelSerializer):
     username = CharField(source="user.username", read_only=True)
+    full_name = SerializerMethodField()
+    email = EmailField(source="user.email", read_only=True)
     community_name = CharField(source="vacancy.community.community_name", read_only=True)
+    vacancy_title = CharField(source="vacancy.title", read_only=True)
 
     class Meta:
         model = VacancyApplication
-        fields = ["id", "user", "username", "vacancy", "community_name", "resume", "message", "applied_at"]
-        read_only_fields = ["id", "username", "community_name", "applied_at"]
+        fields = ["id", "user", "username", "full_name", "email", "vacancy", "vacancy_title", "community_name", "resume", "message", "applied_at"]
+        read_only_fields = ["id", "user", "username", "full_name", "email", "community_name", "vacancy_title", "applied_at"]
+
+    def get_full_name(self, obj):
+        return f"{obj.user.first_name} {obj.user.last_name}"
 
     def validate(self, data):
         user = self.context["request"].user
@@ -76,9 +94,6 @@ class VacancyApplicationSerializer(ModelSerializer):
 
         return data
 
-    def create(self, validated_data):
-        user = self.context["request"].user
-        return VacancyApplication.objects.create(user=user, **validated_data)
 
 
 class CommunityMembershipCreateSerializer(ModelSerializer):

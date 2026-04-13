@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import AnnouncementCard from '../cards/AnnouncementCard'
 import EventCard from '../cards/EventCard'
 import { FeedItemSkeleton } from './FeedItem'
@@ -8,7 +9,9 @@ import discussionService from '../../services/discussionService'
 import postService from '../../services/postService'
 import DiscussionCard from '../cards/DiscussionCard'
 import PostCard from '../cards/PostCard'
+import VacancyCard from '../cards/VacancyCard'
 import Card from '../shared/Card'
+import vacancyService from '../../services/vacancyService'
 
 const EMPTY_ARRAY = [];
 
@@ -19,16 +22,18 @@ export default function FeedList({
 }) {
   const [displayItems, setDisplayItems] = useState([])
   const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
       try {
-        const [eventsData, announcementsData, discussionsData, postsData] = await Promise.all([
+        const [eventsData, announcementsData, discussionsData, postsData, vacanciesData] = await Promise.all([
           eventService.getEvents().catch(err => { console.error("Events fetch error", err); return { results: [] }; }),
           announcementService.getAnnouncements().catch(err => { console.error("Announcements fetch error", err); return { results: [] }; }),
           discussionService.getDiscussions().catch(err => { console.error("Discussions fetch error", err); return { results: [] }; }),
-          postService.getPosts().catch(err => { console.error("Posts fetch error", err); return { results: [] }; })
+          postService.getPosts().catch(err => { console.error("Posts fetch error", err); return { results: [] }; }),
+          vacancyService.getVacancies().catch(err => { console.error("Vacancies fetch error", err); return []; })
         ]);
 
         const events = eventsData.results || [];
@@ -95,7 +100,19 @@ export default function FeedList({
           author_role: p.author_role || 'student'
         })) : [];
 
-        const allItems = [...mappedEvents, ...mappedAnnouncements, ...mappedDiscussions, ...mappedPosts]
+        const vacancies = vacanciesData || [];
+        const mappedVacancies = Array.isArray(vacancies) ? vacancies.map(v => ({
+          ...v,
+          type: 'vacancy',
+          id: v.id,
+          createdAt: v.created_at || new Date().toISOString(),
+          community: {
+            name: v.community_name || 'Community',
+            logoText: (v.community_name || 'CO').substring(0, 2).toUpperCase()
+          }
+        })) : [];
+
+        const allItems = [...mappedEvents, ...mappedAnnouncements, ...mappedDiscussions, ...mappedPosts, ...mappedVacancies]
           .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
         const finalFiltered = allItems.filter((item) => {
@@ -141,6 +158,13 @@ export default function FeedList({
         if (item.type === 'announcement') return <AnnouncementCard key={`ann-${item.id}`} item={item} />
         if (item.type === 'discussion') return <DiscussionCard key={`disc-${item.id}`} item={item} />
         if (item.type === 'post') return <PostCard key={`post-${item.id}`} post={item} />
+        if (item.type === 'vacancy') return (
+          <VacancyCard 
+            key={`vac-${item.id}`} 
+            vacancy={item} 
+            onApply={() => navigate(`/community/${item.community_id}?tab=Vacancies`)}
+          />
+        )
         return <EventCard key={`evt-${item.id}`} item={item} />
       })}
     </div>
