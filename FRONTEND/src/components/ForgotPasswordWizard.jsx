@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import axios from 'axios'
+import { createPortal } from 'react-dom'
 
 // Reuse styles from Login page for consistency
 const inputBase =
@@ -165,7 +166,7 @@ export default function ForgotPasswordWizard({ onClose }) {
 
 
   // Modal Backdrop
-  return (
+  const modalContent = (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
       <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
         {/* Header */}
@@ -303,4 +304,10 @@ export default function ForgotPasswordWizard({ onClose }) {
       </div>
     </div>
   )
+
+  if (typeof document === 'undefined') {
+    return null
+  }
+
+  return createPortal(modalContent, document.body)
 }

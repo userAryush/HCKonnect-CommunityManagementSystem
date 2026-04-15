@@ -48,10 +48,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'rest_framework',
-    'rest_framework_simplejwt',
+    'rest_framework.authtoken',
+    'corsheaders',  # Add this
     'accounts',
-    'Base',
-    'corsheaders',
     'communities',
     'events',
     'discussion',
@@ -78,9 +77,8 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # Add this right after SecurityMiddleware
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -90,7 +88,24 @@ MIDDLEWARE = [
     'allauth.account.middleware.AccountMiddleware',
 ]
 
+
+# Fix for Google Auth COOP errors
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
 ROOT_URLCONF = 'hckonnect.urls'
+
+# --- CORS settings ---
+# This list now includes all necessary origins for development and production previews.
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  # Vite dev server
+    "http://127.0.0.1:5173",  # Vite dev server (alternative)
+    "http://localhost:4173",  # Vite production build preview
+    "http://127.0.0.1:4173",  # Vite production build preview (alternative)
+]
+
+# To allow credentials (like cookies or tokens) to be sent
+CORS_ALLOW_CREDENTIALS = True
+# --- End of CORS settings ---
+
 
 TEMPLATES = [
     {
@@ -132,15 +147,6 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
 }
-
-CORS_ALLOWED_ORIGINS =[
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000"
-]
-
-CORS_ALLOW_CREDENTIALS = True
 
 FRONTEND_URL = os.getenv('FRONTEND_URL')
 

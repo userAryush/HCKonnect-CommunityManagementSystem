@@ -180,16 +180,17 @@ class GoogleAuthView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        id_token = serializer.validated_data['id_token']
+        id_token = serializer.validated_data.get('id_token')
+        access_token = serializer.validated_data.get('access_token')
 
         try:
-            # 1. Verify token and domain
-            id_info = GoogleAuthService.verify_google_id_token(id_token)
+            if id_token:
+                id_info = GoogleAuthService.verify_google_id_token(id_token)
+            else:
+                id_info = GoogleAuthService.verify_google_access_token(access_token)
             
-            # 2. Get or Create user
             user = GoogleAuthService.get_or_create_user(id_info)
 
-            # 3. Generate JWT Tokens
             refresh = RefreshToken.for_user(user)
             update_last_login(None, user) # Update for Google Auth as well
             

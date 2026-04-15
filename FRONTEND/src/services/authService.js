@@ -1,6 +1,15 @@
 import apiClient from './apiClient';
 
 const authService = {
+    register: async (payload) => {
+        try {
+            const response = await apiClient.post('/accounts/register/', payload);
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    },
+
     login: async (email, password) => {
         try {
             // Backend returns: { msg: "...", data: { token: { access: "...", refresh: "..." } } }
@@ -21,9 +30,13 @@ const authService = {
         }
     },
 
-    googleLogin: async (id_token) => {
+    googleLogin: async (token, tokenType = 'access_token') => {
         try {
-            const response = await apiClient.post('/accounts/google/', { id_token });
+            const payload = tokenType === 'id_token'
+                ? { id_token: token }
+                : { access_token: token };
+
+            const response = await apiClient.post('/accounts/google/', payload);
             const data = response.data;
 
             if (data?.access) {

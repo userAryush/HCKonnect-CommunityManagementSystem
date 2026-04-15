@@ -82,7 +82,6 @@ export default function CommunityHeader({
                 </div>
             </div>
 
-            {/* Send Message Modal Integration */}
             <SendMessageModal
                 isOpen={isMessageModalOpen}
                 onClose={() => setIsMessageModalOpen(false)}

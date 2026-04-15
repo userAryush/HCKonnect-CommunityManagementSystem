@@ -13,7 +13,7 @@ export const AuthProvider = ({ children }) => {
                 try {
                     const userData = await authService.getCurrentUser();
                     setUser(userData);
-                    localStorage.setItem('user', JSON.stringify(userData)); // Sync to local storage
+                    localStorage.setItem('user', JSON.stringify(userData));
                 } catch (error) {
                     console.error("Failed to fetch user profile", error);
                     if (error.response && error.response.status === 401) {
@@ -21,7 +21,6 @@ export const AuthProvider = ({ children }) => {
                     }
                 }
             } else {
-                // Determine if we should clear user if token is missing
                 localStorage.removeItem('user');
             }
             setLoading(false);
@@ -30,29 +29,50 @@ export const AuthProvider = ({ children }) => {
         initAuth();
     }, []);
 
-    const login = async (email, password) => {
+    const register = async (payload) => {
         try {
-            const loginResp = await authService.login(email, password);
-            // Verify token was set before fetching profile
-            if (!authService.isAuthenticated()) {
-                throw new Error("Login failed: No token received");
-            }
-
-            const userData = await authService.getCurrentUser();
-            setUser(userData);
-            localStorage.setItem('user', JSON.stringify(userData)); // Sync to local storage
-            return userData;
+            return await authService.register(payload);
         } catch (error) {
-            console.error("Login failed in Context", error);
-            logout();
             throw error;
         }
     };
 
-    const googleLogin = async (idToken) => {
+    // const login = async (email, password) => {
+    //     try {
+    //         await authService.login(email, password);
+    //         if (!authService.isAuthenticated()) {
+    //             throw new Error("Login failed: No token received");
+    //         }
+    //         const userData = await authService.getCurrentUser();
+    //         setUser(userData);
+    //         localStorage.setItem('user', JSON.stringify(userData));
+    //         return userData;
+    //     } catch (error) {
+    //         console.error("Login failed in Context", error);
+    //         logout();
+    //         throw error;
+    //     }
+    // };
+
+    const login = async (email, password) => {
         try {
-            const responseData = await authService.googleLogin(idToken);
-            // Verify token was set before fetching profile
+            await authService.login(email, password);
+
+            const userData = await authService.getCurrentUser();
+
+            setUser(userData);
+            localStorage.setItem('user', JSON.stringify(userData));
+
+            return userData;
+
+        } catch (error) {
+            console.log("Login failed:", error.response?.status);
+            throw error;
+        }
+    };
+    const googleLogin = async (token, tokenType = 'access_token') => {
+        try {
+            await authService.googleLogin(token, tokenType);
             if (!authService.isAuthenticated()) {
                 throw new Error("Login failed: No token received");
             }
@@ -70,7 +90,7 @@ export const AuthProvider = ({ children }) => {
     const logout = () => {
         authService.logout();
         setUser(null);
-        localStorage.removeItem('user'); // Clear from local storage
+        localStorage.removeItem('user');
     };
 
     const refreshUser = async () => {
@@ -85,7 +105,16 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, login, logout, googleLogin, refreshUser, isAuthenticated: !!user }}>
+        <AuthContext.Provider value={{
+            user,
+            loading,
+            register,
+            login,
+            logout,
+            googleLogin,
+            refreshUser,
+            isAuthenticated: !!user
+        }}>
             {children}
         </AuthContext.Provider>
     );

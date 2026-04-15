@@ -8,6 +8,7 @@ from datetime import timedelta
 from rest_framework.serializers import ModelSerializer, ValidationError, Serializer, EmailField, CharField, ChoiceField
 from utils.email_utils import send_branded_email
 from rest_framework import serializers
+from django.db import IntegrityError
 
 
 class RegisterSerializer(ModelSerializer):
@@ -22,11 +23,8 @@ class RegisterSerializer(ModelSerializer):
         # only these fields can be received from the frontend
         fields = ['first_name', 'last_name', 'username', 'email', 'course','interests', 'linkedin_link', 'github_link','bio', 'profile_image']
 
-    # validating if email belongs to herald college or not, validating existance
+    # validating if email belongs to herald college or not
     def validate_email(self, value):
-        if User.objects.filter(email=value).exists():
-            raise ValidationError("Email already exists")
-        
         # endswith returns true if the value ends with passed value
         if not value.lower().endswith('@heraldcollege.edu.np'):
             raise ValidationError("Email must be a Herald College email")
@@ -35,14 +33,25 @@ class RegisterSerializer(ModelSerializer):
 
 
     def validate_username(self, value):
-        if User.objects.filter(username=value).exists():
-            raise ValidationError("Username already exists")
         return value
 
     def validate(self, data):
+        errors = {}
+        email = data.get('email')
+        username = data.get('username')
         role = data.get('role', 'student')
+
+        if email and User.objects.filter(email__iexact=email).exists():
+            errors['email'] = "Email with this address already exists."
+
+        if username and User.objects.filter(username__iexact=username).exists():
+            errors['username'] = "Username already exists."
+
         if role == 'student' and not data.get('course'):
-            raise ValidationError("Students must select a course")
+            errors['course'] = "Students must select a course"
+
+        if errors:
+            raise ValidationError(errors)
 
         return data
 
@@ -60,9 +69,24 @@ class RegisterSerializer(ModelSerializer):
         auto_password = generate_auto_password(user.email, user.username)
 
         user.set_password(auto_password)#hashing the password
-        user.save()#creating user obj, user is actually created
-        
-        
+
+        try:
+            user.save()#creating user obj, user is actually created
+        except IntegrityError:
+            duplicate_errors = {}
+
+            if User.objects.filter(email__iexact=user.email).exists():
+                duplicate_errors['email'] = "Email with this address already exists."
+
+            if User.objects.filter(username__iexact=user.username).exists():
+                duplicate_errors['username'] = "Username already exists."
+
+            if duplicate_errors:
+                raise ValidationError(duplicate_errors)
+
+            raise
+
+
         subject = "Welcome to HCKonnect - Your Account Details"
         branding_context = {
             "name": user.first_name,
@@ -406,4 +430,10 @@ class GlobalSearchSerializer(Serializer):
 
 
 class GoogleAuthSerializer(Serializer):
-    id_token = CharField()
+    id_token = CharField(required=False, allow_blank=False)
+    access_token = CharField(required=False, allow_blank=False)
+
+    def validate(self, attrs):
+        if not attrs.get('id_token') and not attrs.get('access_token'):
+            raise ValidationError("Either id_token or access_token is required")
+        return attrs

@@ -1,35 +1,52 @@
 from django.conf import settings
-from django.core.exceptions import PermissionDenied
 from google.oauth2 import id_token
 from google.auth.transport import requests
 from rest_framework import exceptions
 from .models import User
+import requests as http_requests
 
 class GoogleAuthService:
     @staticmethod
+    def _validate_google_profile(profile):
+        if not profile.get('email_verified'):
+            raise exceptions.AuthenticationFailed("Email not verified by Google.")
+
+        email = profile.get('email')
+        if not email or not email.endswith('@heraldcollege.edu.np'):
+            raise exceptions.PermissionDenied("Access restricted to Herald College emails only.")
+
+        return profile
+
+    @staticmethod
     def verify_google_id_token(token):
         try:
-            # Verify the ID token from Google
             id_info = id_token.verify_oauth2_token(
                 token, 
                 requests.Request(), 
                 settings.GOOGLE_CLIENT_ID
             )
-
-            # 1. Check if email is verified
-            if not id_info.get('email_verified'):
-                raise exceptions.AuthenticationFailed("Email not verified by Google.")
-
-            # 2. Domain restriction: Only @heraldcollege.edu.np
-            email = id_info.get('email')
-            if not email.endswith('@heraldcollege.edu.np'):
-                raise exceptions.PermissionDenied("Access restricted to Herald College emails only.")
-
-            return id_info
+            return GoogleAuthService._validate_google_profile(id_info)
 
         except ValueError:
-            # Invalid token
             raise exceptions.AuthenticationFailed("Invalid Google token.")
+        except Exception as e:
+            if isinstance(e, (exceptions.AuthenticationFailed, exceptions.PermissionDenied)):
+                raise e
+            raise exceptions.AuthenticationFailed(f"Google authentication failed: {str(e)}")
+
+    @staticmethod
+    def verify_google_access_token(token):
+        try:
+            response = http_requests.get(
+                'https://www.googleapis.com/oauth2/v3/userinfo',
+                headers={'Authorization': f'Bearer {token}'},
+                timeout=10,
+            )
+            if response.status_code != 200:
+                raise exceptions.AuthenticationFailed("Invalid Google access token.")
+
+            profile = response.json()
+            return GoogleAuthService._validate_google_profile(profile)
         except Exception as e:
             if isinstance(e, (exceptions.AuthenticationFailed, exceptions.PermissionDenied)):
                 raise e
@@ -57,6 +74,7 @@ class GoogleAuthService:
             # Since it's social login, they don't necessarily MUST change password 
             # if we didn't set one, but the model has a default True.
             # We might want to set it to False for social users.
+            user.set_unusable_password()
             user.must_change_password = False
             user.save()
             
