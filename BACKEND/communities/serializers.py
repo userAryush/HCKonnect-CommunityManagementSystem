@@ -7,12 +7,41 @@ User = get_user_model()
 
 class CommunityVacancySerializer(ModelSerializer):
     community_id = UUIDField(source="community.id", read_only=True)
+    community_name = CharField(source="community.community_name", read_only=True)
     has_applied = SerializerMethodField()
+    applicant_count = IntegerField(source="applications.count", read_only=True)
+    created_at = DateTimeField(read_only=True)
+    updated_at = DateTimeField(read_only=True)
 
     class Meta:
         model = CommunityVacancy
-        fields = ["id", "title", "description", "is_open", "community_id", "has_applied"]
-        read_only_fields = ["id", "community_id", "has_applied"]
+        fields = [
+            "id",
+            "title",
+            "description",
+            "deadline",
+            "status",
+            "is_open",
+            "community_id",
+            "community_name",
+            "has_applied",
+            "applicant_count",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "community_id", "community_name", "has_applied", "applicant_count", "created_at", "updated_at"]
+
+    def to_internal_value(self, data):
+        mutable_data = data.copy()
+        if "is_open" in mutable_data and "status" not in mutable_data:
+            raw_is_open = mutable_data.get("is_open")
+            is_open = raw_is_open
+            if isinstance(raw_is_open, str):
+                is_open = raw_is_open.lower() in {"true", "1", "yes", "on"}
+            mutable_data["status"] = (
+                CommunityVacancy.STATUS_OPEN if is_open else CommunityVacancy.STATUS_CLOSED
+            )
+        return super().to_internal_value(mutable_data)
 
     def get_has_applied(self, obj):
         request = self.context.get('request')
@@ -82,7 +111,7 @@ class VacancyApplicationSerializer(ModelSerializer):
             raise ValidationError("You are already a member of a community and cannot apply to new vacancies.")
 
         # 3. Vacancy must be open and not past deadline
-        if not vacancy.is_open:
+        if vacancy.status != CommunityVacancy.STATUS_OPEN:
             raise ValidationError("This vacancy is no longer accepting applications.")
             
         if vacancy.deadline and timezone.now() > vacancy.deadline:

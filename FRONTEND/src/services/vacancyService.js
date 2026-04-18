@@ -13,8 +13,12 @@ const vacancyService = {
    * Get all vacancies. Can filter by community_id.
    * Students see only open ones. Communities see their own (even closed).
    */
-  getVacancies: async (communityId = null) => {
-    const url = communityId ? `/communities/vacancies/?community_id=${communityId}` : '/communities/vacancies/';
+  getVacancies: async (communityId = null, options = {}) => {
+    const params = new URLSearchParams();
+    if (communityId) params.set('community_id', communityId);
+    if (options.status) params.set('status', options.status);
+    const query = params.toString();
+    const url = `/communities/vacancies/${query ? `?${query}` : ''}`;
     const response = await apiClient.get(url);
     return response.data;
   },

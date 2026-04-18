@@ -1,81 +1,105 @@
 import React from 'react';
 import { Briefcase, Calendar, CheckCircle, XCircle } from 'lucide-react';
 import Badge from '../shared/Badge';
+import Button from '../shared/Button';
 import { useAuth } from '../../context/AuthContext';
+import { getInitials, getDisplayName, getProfileImage } from '../../utils/userUtils';
+import { useNavigate } from 'react-router-dom';
 
 export default function VacancyCard({ vacancy, onApply, isAdmin = false, onManage }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const isMemberOfCommunity = user && user.role === 'student' && !!user.membership;
-  const { title, description, is_open, deadline, community_name } = vacancy;
+  const { title, description, is_open, deadline, community_name, community } = vacancy;
 
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md">
-      <div className="mb-4 flex items-start justify-between">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#75C043]/10 text-[#75C043]">
-          <Briefcase size={24} />
+    <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all">
+      <header className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-500 font-bold overflow-hidden border border-zinc-200 uppercase text-xs tracking-wider">
+            {getProfileImage(vacancy) ? (
+              <img src={getProfileImage(vacancy)} alt={getDisplayName(vacancy)} className="h-full w-full object-cover" />
+            ) : (
+              <span>{getInitials(getDisplayName(vacancy))}</span>
+            )}
+          </div>
+          <div>
+            <p
+              className="text-sm font-semibold text-surface-dark cursor-pointer transition-all duration-200 ease-out hover:font-bold"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/community/${community?.id || community}`);
+              }}
+            >
+              {getDisplayName(vacancy)}
+            </p>
+            <p className="text-metadata">Community Admin</p>
+          </div>
         </div>
-        <Badge variant={is_open ? 'success' : 'error'} className="flex items-center gap-1">
-          {is_open ? (
-            <>
-              <CheckCircle size={12} /> Open
-            </>
-          ) : (
-            <>
-              <XCircle size={12} /> Closed
-            </>
-          )}
-        </Badge>
-      </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="orange">Vacancy</Badge>
+          <Badge variant={is_open ? 'success' : 'red'} className="flex items-center gap-1">
+            {is_open ? (
+              <>
+                <CheckCircle size={12} /> Open
+              </>
+            ) : (
+              <>
+                <XCircle size={12} /> Closed
+              </>
+            )}
+          </Badge>
+        </div>
+      </header>
 
       <div className="flex-1">
-        <h3 className="mb-1 text-lg font-bold text-[#0d1f14] group-hover:text-[#75C043] transition-colors line-clamp-1">
-          {title}
-        </h3>
-        <p className="mb-3 text-sm font-medium text-gray-500">{community_name}</p>
-        <p className="mb-4 line-clamp-3 text-sm text-[#4b4b4b] leading-relaxed">
+        <div className="border-l-2 border-primary pl-3.5" style={{ borderRadius: 0 }}>
+          <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-1">
+            Open position
+          </p>
+          <h3 className="text-base font-semibold text-surface-dark leading-snug transition-colors duration-200 capitalize">
+            {title}
+          </h3>
+        </div>
+        <p className="mt-3 text-sm text-gray-500 leading-relaxed line-clamp-3">
           {description}
         </p>
       </div>
 
       <div className="mt-4 flex flex-col gap-4 border-t border-gray-50 pt-4">
-        {deadline && (
-          <div className="flex items-center gap-2 text-xs font-semibold text-gray-500">
-            <Calendar size={14} />
-            <span>Deadline: {new Date(deadline).toLocaleDateString()}</span>
-          </div>
-        )}
 
         <div className="flex items-center gap-2">
           {is_open && !isAdmin && (
-            <button
-              onClick={() => !vacancy.has_applied && !isMemberOfCommunity && onApply(vacancy)}
+            <Button
+              onClick={(e) => onApply(vacancy, e)}
               disabled={vacancy.has_applied || isMemberOfCommunity}
-              className={`w-full rounded-xl py-2.5 text-sm font-bold shadow-lg transition-all active:scale-95 ${
-                vacancy.has_applied || isMemberOfCommunity
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none' 
-                  : 'bg-[#75C043] text-white shadow-[#75C043]/20 hover:bg-[#68ae3b] hover:shadow-xl'
-              }`}
+              className={`w-full ${vacancy.has_applied || isMemberOfCommunity
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none hover:bg-gray-100'
+                : ''
+                }`}
             >
               {vacancy.has_applied ? 'Applied' : isMemberOfCommunity ? 'Already a Member' : 'Apply Now'}
-            </button>
+            </Button>
           )}
-          
+
           {isAdmin && (
-            <button
+            <Button
+              variant="outline"
               onClick={() => onManage(vacancy)}
-              className="w-full rounded-xl border border-[#75C043] bg-transparent py-2.5 text-sm font-bold text-[#75C043] transition-all hover:bg-[#75C043]/5 active:scale-95"
+              className="w-full border-primary/30 text-primary hover:bg-primary/5 hover:text-primary"
             >
               Manage Vacancy
-            </button>
+            </Button>
           )}
-          
+
           {!is_open && !isAdmin && (
-            <button
+            <Button
+              variant="secondary"
               disabled
-              className="w-full rounded-xl bg-gray-100 py-2.5 text-sm font-bold text-gray-400 cursor-not-allowed"
+              className="w-full bg-gray-100 text-gray-400 hover:bg-gray-100"
             >
               Applications Closed
-            </button>
+            </Button>
           )}
         </div>
       </div>

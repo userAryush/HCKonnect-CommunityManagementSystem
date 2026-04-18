@@ -1,3 +1,4 @@
+from rest_framework import status
 from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import CommunityMembership,CommunityVacancy,VacancyApplication
@@ -36,26 +37,64 @@ class ManageCommunityVacancyView(RetrieveUpdateDestroyAPIView):
     serializer_class = CommunityVacancySerializer
     permission_classes = [CanManageVacancy]
 
+    def destroy(self, request, *args, **kwargs):
+        vacancy = self.get_object()
+        # If the vacancy is already closed, a DELETE request will now permanently delete it.
+        if vacancy.status == CommunityVacancy.STATUS_CLOSED:
+            vacancy.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        
+        # If it's open, a DELETE request will close it (existing behavior).
+        vacancy.status = CommunityVacancy.STATUS_CLOSED
+        vacancy.save(update_fields=["status", "is_open", "updated_at"])
+        serializer = self.get_serializer(vacancy)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 class ListCommunityVacanciesView(ListAPIView):
     serializer_class = CommunityVacancySerializer
     # permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        # Allow filtering by a specific community via query param
         community_id = self.request.query_params.get('community_id')
-        
+        status_filter = self.request.query_params.get('status', 'ALL').upper()
+        sort_by = self.request.query_params.get('sort', '-created_at') # Default to newest
+
+        # Base queryset for all vacancies
+        queryset = CommunityVacancy.objects.select_related("community")
+
+        # Filter by status if not 'ALL'
+        if status_filter in {CommunityVacancy.STATUS_OPEN, CommunityVacancy.STATUS_CLOSED}:
+            queryset = queryset.filter(status=status_filter)
+
+        # Filter by community if ID is provided
         if community_id:
-            return CommunityVacancy.objects.filter(community_id=community_id, is_open=True)
-            
-        # Default: Students see ALL open vacancies
-        if self.request.user.role == "student":
-            return CommunityVacancy.objects.filter(is_open=True)
-            
-        # Community accounts see their own (even closed ones)
-        if self.request.user.role == "community":
-            return CommunityVacancy.objects.filter(community=self.request.user)
-            
-        return CommunityVacancy.objects.none()
+            queryset = queryset.filter(community_id=community_id)
+        # If no community_id, apply role-based filtering
+        elif self.request.user.is_authenticated:
+            if self.request.user.role == "student":
+                pass # Students can see all public vacancies
+            elif self.request.user.role == "community":
+                queryset = queryset.filter(community=self.request.user)
+            else: # e.g., representatives
+                membership = getattr(self.request.user, "membership", None)
+                if membership:
+                    queryset = queryset.filter(community=membership.community)
+                else:
+                    return CommunityVacancy.objects.none()
+        else:
+            # For unauthenticated users, show all open vacancies
+            queryset = queryset.filter(status=CommunityVacancy.STATUS_OPEN)
+
+
+        # Apply sorting
+        if sort_by == 'newest':
+            queryset = queryset.order_by('-created_at')
+        elif sort_by == 'oldest':
+            queryset = queryset.order_by('created_at')
+        else:
+            queryset = queryset.order_by(sort_by) # Default sort
+
+        return queryset
 
 # --------------------------
 # Vacancy Application Views

@@ -98,7 +98,7 @@ export default function CommunityProfilePage() {
           const membersArray = res.data.results ? res.data.results : res.data;
           setTabData(prev => ({ ...prev, members: membersArray || [] }));
         } else if (activeTab === 'Vacancies') {
-          const res = await vacancyService.getVacancies(id);
+          const res = await vacancyService.getVacancies(id, { status: 'OPEN' });
           setTabData(prev => ({ ...prev, vacancies: res.results || res || [] }));
         }
       } catch (err) {

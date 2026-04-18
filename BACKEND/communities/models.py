@@ -21,6 +21,13 @@ class CommunityMembership(BaseModel):
         return f"{self.user.username} ({self.role})"
         
 class CommunityVacancy(BaseModel):
+    STATUS_OPEN = "OPEN"
+    STATUS_CLOSED = "CLOSED"
+    STATUS_CHOICES = [
+        (STATUS_OPEN, "Open"),
+        (STATUS_CLOSED, "Closed"),
+    ]
+
     community = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,limit_choices_to={"role": "community"})
 
     title = models.CharField(max_length=255)
@@ -29,8 +36,12 @@ class CommunityVacancy(BaseModel):
     role = models.CharField(max_length=20,choices=[("member", "Member")],default="member")
     deadline = models.DateTimeField(null=True, blank=True)
 
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_OPEN)
     is_open = models.BooleanField(default=True)
 
+    def save(self, *args, **kwargs):
+        self.is_open = self.status == self.STATUS_OPEN
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.title} - {self.community.community_name}"

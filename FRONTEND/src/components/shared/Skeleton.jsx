@@ -38,3 +38,19 @@ export const DashboardStatsSkeleton = () => (
         ))}
     </div>
 )
+
+export const DashboardVacancyCardSkeleton = () => (
+    <div className="card-border flex flex-col gap-4 !p-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-start gap-4 flex-grow w-full">
+            <Skeleton variant="rect" className="h-12 w-12 flex-shrink-0" />
+            <div className="flex-1 space-y-3">
+                <Skeleton variant="text" className="w-1/2 h-5" />
+                <Skeleton variant="text" className="w-full h-4" />
+                <Skeleton variant="text" className="w-3/4 h-4" />
+            </div>
+        </div>
+        <div className="flex-shrink-0 self-start lg:self-center">
+            <Skeleton variant="rect" className="h-8 w-28" />
+        </div>
+    </div>
+);

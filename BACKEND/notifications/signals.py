@@ -66,6 +66,7 @@ def notify_new_application(sender, instance, created, **kwargs):
 @receiver(post_save, sender='communities.CommunityVacancy')
 def notify_vacancy_actions(sender, instance, created, **kwargs):
     from django.contrib.auth import get_user_model
+    from communities.models import CommunityVacancy
     User = get_user_model()
     if created:
         # Notify all students
@@ -78,8 +79,22 @@ def notify_vacancy_actions(sender, instance, created, **kwargs):
             actor=instance.community,
             metadata={'vacancy_id': str(instance.id)}
         )
-    # Check if closed
-    elif instance.is_open == False:
+
+
+@receiver(pre_save, sender='communities.CommunityVacancy')
+def notify_vacancy_closed(sender, instance, **kwargs):
+    from communities.models import CommunityVacancy
+    if not instance.pk:
+        return
+
+    try:
+        previous = CommunityVacancy.objects.get(pk=instance.pk)
+    except CommunityVacancy.DoesNotExist:
+        return
+
+    if previous.status != CommunityVacancy.STATUS_CLOSED and instance.status == CommunityVacancy.STATUS_CLOSED:
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
         applicants = User.objects.filter(vacancy_applications__vacancy=instance)
         NotificationService.notify_group(
             users=applicants,

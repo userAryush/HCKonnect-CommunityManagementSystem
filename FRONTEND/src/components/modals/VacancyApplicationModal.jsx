@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, Upload, Send, FileText } from 'lucide-react';
 import vacancyService from '../../services/vacancyService';
+import Button from '../shared/Button';
 
 export default function VacancyApplicationModal({ vacancy, onClose, onSuccess }) {
   const [resume, setResume] = useState(null);
@@ -130,27 +131,26 @@ export default function VacancyApplicationModal({ vacancy, onClose, onSuccess })
           </div>
 
           <div className="flex gap-4 pt-2">
-            <button
+            <Button
+              variant="outline"
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-xl border border-gray-200 py-3 text-sm font-bold text-gray-600 transition hover:bg-gray-50 active:scale-95"
+              className="flex-1 border-gray-200 text-gray-600 hover:bg-gray-50"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
               disabled={loading}
-              className="flex-[2] flex h-[48px] items-center justify-center gap-2 rounded-xl bg-[#75C043] text-sm font-bold text-white shadow-lg shadow-[#75C043]/20 transition-all hover:bg-[#68ae3b] hover:shadow-xl active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+              isLoading={loading}
+              loadingText="Submitting..."
+              className="flex-[2] h-[48px]"
             >
-              {loading ? (
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-              ) : (
-                <>
-                  <Send size={18} />
-                  Submit Application
-                </>
-              )}
-            </button>
+              <>
+                <Send size={18} />
+                Submit Application
+              </>
+            </Button>
           </div>
         </form>
       </div>

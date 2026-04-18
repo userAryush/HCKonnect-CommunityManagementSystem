@@ -13,12 +13,14 @@ import VacancyCard from '../cards/VacancyCard'
 import Card from '../shared/Card'
 import vacancyService from '../../services/vacancyService'
 
+
 const EMPTY_ARRAY = [];
 
 export default function FeedList({
   filter = 'all',
   hiddenTypes = EMPTY_ARRAY,
   hiddenCommunities = EMPTY_ARRAY,
+  onApplyClick = () => { },
 }) {
   const [displayItems, setDisplayItems] = useState([])
   const [loading, setLoading] = useState(true)
@@ -33,7 +35,7 @@ export default function FeedList({
           announcementService.getAnnouncements().catch(err => { console.error("Announcements fetch error", err); return { results: [] }; }),
           discussionService.getDiscussions().catch(err => { console.error("Discussions fetch error", err); return { results: [] }; }),
           postService.getPosts().catch(err => { console.error("Posts fetch error", err); return { results: [] }; }),
-          vacancyService.getVacancies().catch(err => { console.error("Vacancies fetch error", err); return []; })
+          vacancyService.getVacancies(null, { status: 'OPEN' }).catch(err => { console.error("Vacancies fetch error", err); return []; })
         ]);
 
         const events = eventsData.results || [];
@@ -59,7 +61,7 @@ export default function FeedList({
             logoText: (e.community_name || 'CO').substring(0, 2).toUpperCase()
           }
         })) : [];
-  
+
         const mappedAnnouncements = Array.isArray(announcements) ? announcements.map(a => ({
           ...a,
           type: 'announcement',
@@ -73,7 +75,7 @@ export default function FeedList({
             logoText: (a.community_name || 'CO').substring(0, 2).toUpperCase()
           }
         })) : [];
-  
+
         const discussions = discussionsData.results || [];
         const mappedDiscussions = Array.isArray(discussions) ? discussions.map(d => ({
           ...d,
@@ -88,7 +90,7 @@ export default function FeedList({
             logoText: (d.community_name || 'CO').substring(0, 2).toUpperCase()
           },
         })) : [];
-  
+
         const posts = postsData.results || [];
         const mappedPosts = Array.isArray(posts) ? posts.map(p => ({
           ...p,
@@ -159,10 +161,10 @@ export default function FeedList({
         if (item.type === 'discussion') return <DiscussionCard key={`disc-${item.id}`} item={item} />
         if (item.type === 'post') return <PostCard key={`post-${item.id}`} post={item} />
         if (item.type === 'vacancy') return (
-          <VacancyCard 
-            key={`vac-${item.id}`} 
-            vacancy={item} 
-            onApply={() => navigate(`/community/${item.community_id}?tab=Vacancies`)}
+          <VacancyCard
+            key={`vac-${item.id}`}
+            vacancy={item}
+            onApply={onApplyClick}
           />
         )
         return <EventCard key={`evt-${item.id}`} item={item} />

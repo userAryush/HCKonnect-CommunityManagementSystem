@@ -2,15 +2,20 @@
 
 @theme {
     /* Strict Brand Palette */
-    --color-primary: #75C043;
+    --color-primary: #75BF44;
     --color-primary-hover: #5fa334;
-    --color-secondary: #FAFAFA; /* Very light neutral gray */
+    --color-secondary: #FAFAFA;
+    /* Very light neutral gray */
 
     /* UI Surface & Text - Using Zinc (Neutral Grayscale) */
-    --color-surface-dark: #09090b; /* Zinc 950 - Titles */
-    --color-surface-body: #3f3f46; /* Zinc 700 - Content */
-    --color-surface-muted: #71717a; /* Zinc 500 - Metadata */
-    --color-surface-border: #e4e4e7; /* Zinc 200 - Borders */
+    --color-surface-dark: #09090b;
+    /* Zinc 950 - Titles */
+    --color-surface-body: #3f3f46;
+    /* Zinc 700 - Content */
+    --color-surface-muted: #71717a;
+    /* Zinc 500 - Metadata */
+    --color-surface-border: #e4e4e7;
+    /* Zinc 200 - Borders */
 
     /* Layout & Spacing */
     --radius-standard: 12px;
@@ -26,7 +31,12 @@
         @apply bg-[#F9FAFB] text-surface-body font-sans antialiased;
     }
 
-    h1, h2, h3, h4, h5, h6 {
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
         @apply font-display font-semibold tracking-tight text-surface-dark;
     }
 }
@@ -73,4 +83,4 @@
         content: '';
         @apply absolute -bottom-0.5 left-0 right-0 h-0.5 bg-primary rounded-full;
     }
-}
+}

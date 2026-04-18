@@ -2,10 +2,16 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { Link, useParams, useLocation } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
+import Button from '../../components/shared/Button'
+import ConfirmationModal from '../../components/modals/ConfirmationModal'
 import eventService from '../../services/eventService'
 import announcementService from '../../services/announcementService'
 import apiClient from '../../services/apiClient'
+import Badge from '../../components/shared/Badge'
 import { FeedItemSkeleton } from '../../components/feed/FeedItem'
+import MetricCard from '../../components/cards/MetricCardDashboard'
+import DashboardVacancyCard from '../../components/cards/DashboardVacancyCard'
+import CreateVacancyModal from '../../components/modals/CreateVacancyModal'
 import {
   Calendar,
   FileDown,
@@ -27,6 +33,7 @@ import {
   XCircle
 } from 'lucide-react'
 import vacancyService from '../../services/vacancyService'
+import { useToast } from '../../context/ToastContext'
 import {
   BarChart,
   Bar,
@@ -44,6 +51,7 @@ export default function CommunityDashboard() {
 
   const { id } = useParams()
   const location = useLocation()
+  const { showToast } = useToast()
   const [menuOpen, setMenuOpen] = useState(false)
   const [community, setCommunity] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -57,6 +65,9 @@ export default function CommunityDashboard() {
   const [analyticsError, setAnalyticsError] = useState(null)
   const [vacancies, setVacancies] = useState([])
   const [vacanciesLoading, setVacanciesLoading] = useState(false)
+  const [vacancyActionLoadingId, setVacancyActionLoadingId] = useState(null)
+  const [vacancyToClose, setVacancyToClose] = useState(null)
+  const [isCreateVacancyModalOpen, setCreateVacancyModalOpen] = useState(false)
 
   const quickActions = [
     {
@@ -88,22 +99,9 @@ export default function CommunityDashboard() {
       hoverClass: 'hover:border-purple-500 hover:bg-purple-50/50 group-hover:bg-purple-500'
     },
     {
-      label: 'Edit Profile',
-      path: `/profile/edit/${id}`,
-      icon: <Settings size={20} />,
-      colorIcon: 'text-rose-500',
-      hoverClass: 'hover:border-rose-500 hover:bg-rose-50/50 group-hover:bg-rose-500'
-    },
-    {
-      label: 'View Profile',
-      path: `/community/${id}`,
-      icon: <User size={20} />,
-      colorIcon: 'text-indigo-500',
-      hoverClass: 'hover:border-indigo-500 hover:bg-indigo-50/50 group-hover:bg-indigo-500'
-    },
-    {
       label: 'Create Vacancy',
-      path: `/community/${id}/manage/vacancies/create`,
+      path: `#`,
+      onClick: () => setCreateVacancyModalOpen(true),
       icon: <Briefcase size={20} />,
       colorIcon: 'text-orange-500',
       hoverClass: 'hover:border-orange-500 hover:bg-orange-50/50 group-hover:bg-orange-500'
@@ -114,6 +112,19 @@ export default function CommunityDashboard() {
     let mounted = true
     setLoading(true)
     setError('')
+
+    const fetchVacancies = async () => {
+      setVacanciesLoading(true)
+      try {
+        const data = await vacancyService.getVacancies(id)
+        if (mounted) setVacancies(data.results || data || [])
+      } catch (err) {
+        console.error('Failed to load vacancies', err)
+        if (mounted) showToast('Failed to load vacancies.', 'error')
+      } finally {
+        if (mounted) setVacanciesLoading(false)
+      }
+    }
 
     const fetchCommunity = async () => {
       try {
@@ -164,23 +175,45 @@ export default function CommunityDashboard() {
       }
     }
 
-    const fetchVacancies = async () => {
-      setVacanciesLoading(true)
-      try {
-        const data = await vacancyService.getVacancies(id)
-        if (mounted) setVacancies(data)
-      } catch (err) {
-        console.error('Failed to load vacancies', err)
-      } finally {
-        if (mounted) setVacanciesLoading(false)
-      }
-    }
-
     fetchCommunity()
     fetchAnalyticsData()
     fetchVacancies()
     return () => { mounted = false }
-  }, [id])
+  }, [id, showToast])
+
+  const reloadVacancies = async () => {
+    setVacanciesLoading(true)
+    try {
+      const data = await vacancyService.getVacancies(id)
+      setVacancies(data.results || data || [])
+    } catch (err) {
+      console.error('Failed to load vacancies', err)
+      showToast('Failed to refresh vacancies.', 'error')
+    } finally {
+      setVacanciesLoading(false)
+    }
+  }
+
+  const handleCloseVacancy = async () => {
+    if (!vacancyToClose) return
+
+    try {
+      setVacancyActionLoadingId(vacancyToClose.id)
+      await vacancyService.updateVacancy(vacancyToClose.id, { status: 'CLOSED' })
+      await reloadVacancies()
+      showToast(`"${vacancyToClose.title}" closed successfully.`, 'success')
+      setVacancyToClose(null)
+    } catch (err) {
+      console.error('Failed to close vacancy', err)
+      const message =
+        err.response?.data?.detail ||
+        err.response?.data?.error ||
+        'Failed to close vacancy.'
+      showToast(message, 'error')
+    } finally {
+      setVacancyActionLoadingId(null)
+    }
+  }
 
   // Combine for Recent Activity
   const combinedActivity = [
@@ -284,8 +317,10 @@ export default function CommunityDashboard() {
                   <p className="mt-2 text-lg text-surface-body">Manage your community workspace</p>
                 </div>
               </div>
-              <Link to={`/community/${id}`} className="btn-secondary flex items-center gap-2">
-                View Public Page <ExternalLink size={16} />
+              <Link to={`/community/${id}`}>
+                <Button variant="secondary" className="gap-2">
+                  View Public Page <ExternalLink size={16} />
+                </Button>
               </Link>
             </header>
 
@@ -294,26 +329,14 @@ export default function CommunityDashboard() {
             {/* Metric Row */}
             <div className="mb-10 grid grid-cols-2 gap-4 md:grid-cols-4">
               {statCards.map((stat, idx) => (
-                <div key={stat.label} className="card-border relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-4 opacity-70 group-hover:opacity-100 transition-opacity">
-                    {stat.icon}
-                  </div>
-                  {analyticsLoading && idx % 2 === 1 ? (
-                    <div className="space-y-2">
-                      <div className="h-8 w-16 bg-zinc-200 animate-pulse rounded-lg"></div>
-                      <div className="h-4 w-24 bg-zinc-100 animate-pulse rounded-md"></div>
-                      <div className="h-3 w-32 bg-zinc-50 animate-pulse rounded-sm mt-4"></div>
-                    </div>
-                  ) : (
-                    <>
-                      <p className="text-3xl font-bold text-surface-dark mb-1">{stat.value}</p>
-                      <p className="text-body font-medium">{stat.label}</p>
-                      <p className="mt-3 text-metadata font-semibold text-primary">
-                        {stat.meta}
-                      </p>
-                    </>
-                  )}
-                </div>
+                <MetricCard
+                  key={stat.label}
+                  label={stat.label}
+                  value={stat.value}
+                  meta={stat.meta}
+                  icon={stat.icon}
+                  isLoading={analyticsLoading && (stat.label === 'Weekly Engagement' || stat.label === 'Community Engagements')}
+                />
               ))}
             </div>
 
@@ -325,7 +348,7 @@ export default function CommunityDashboard() {
                 <div className="flex items-center justify-between p-6 border-b border-surface-border">
                   <div className="flex items-center gap-2">
                     <h3 className="text-title">Engagement Comparison</h3>
-                    <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Historical</span>
+                    <Badge variant="primary" className="!rounded-full">By Content</Badge>
                   </div>
                   <BarChart3 size={18} className="text-surface-muted" />
                 </div>
@@ -460,7 +483,7 @@ export default function CommunityDashboard() {
               <div className="flex items-center justify-between p-6 border-b border-surface-border">
                 <div className="flex items-center gap-2">
                   <h3 className="text-title">Communities Engagement Leaderboard</h3>
-                  <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Global Rankings</span>
+                  <Badge variant="primary" className="!rounded-full">Global Rankings</Badge>
                 </div>
                 <BarChart3 size={18} className="text-surface-muted" />
               </div>
@@ -530,20 +553,25 @@ export default function CommunityDashboard() {
                   <div className="space-y-4">
                     {dashboardEvents.slice(0, 3).map(event => (
                       <div key={event.id} className="card-border flex flex-col sm:flex-row sm:items-center justify-between !p-4 gap-4">
-                        <div className="flex items-center gap-4">
-                          <div className="bg-primary/10 text-primary rounded-xl p-3 text-center min-w-[60px]">
-                            <p className="text-xs font-bold uppercase">{event.date ? new Date(event.date).toLocaleDateString('en-US', { month: 'short' }) : 'TBD'}</p>
-                            <p className="text-lg font-black leading-none">{event.date ? new Date(event.date).getDate() : '--'}</p>
+                        <div className="flex items-center gap-4 flex-grow">
+                          <div className="bg-primary/10 text-primary rounded-xl p-3 flex items-center justify-center">
+                            <Calendar size={20} />
                           </div>
                           <div>
                             <h4 className="font-bold text-surface-dark line-clamp-1">{event.title}</h4>
-                            <p className="text-metadata text-surface-muted flex items-center gap-1 mt-1">
-                              <Calendar size={12} /> {event.start_time || 'TBD'} • {event.location || 'Online'}
+                            <p className="text-metadata text-surface-muted flex items-center gap-1.5 mt-1">
+                              <span>{event.date ? new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'TBD'}</span>
+                              <span className="text-gray-300">•</span>
+                              <span>{event.start_time || 'TBD'}</span>
+                              <span className="text-gray-300">•</span>
+                              <span>{event.location || 'Online'}</span>
                             </p>
                           </div>
                         </div>
-                        <Link to={`/community/${id}/manage/events`} className="btn-secondary !px-4 !py-1.5 !text-xs whitespace-nowrap text-center">
-                          Manage
+                        <Link to={`/community/${id}/manage/events`}>
+                          <Button variant="secondary" className="!px-4 !py-1.5 !text-xs whitespace-nowrap">
+                            Manage
+                          </Button>
                         </Link>
                       </div>
                     ))}
@@ -557,11 +585,11 @@ export default function CommunityDashboard() {
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-title">Active Vacancies</h3>
-                    <Link 
-                      to={`/community/${id}/manage/vacancies/create`}
-                      className="text-xs font-bold text-[#75C043] hover:underline"
+                    <Link
+                      to={`/community/${id}/manage/vacancies/list`}
+                      className="text-xs font-bold text-surface-muted hover:text-primary"
                     >
-                      + New Vacancy
+                      View Closed
                     </Link>
                   </div>
                   <div className="space-y-4">
@@ -569,56 +597,19 @@ export default function CommunityDashboard() {
                       <div className="flex items-center justify-center py-8">
                         <Loader2 className="animate-spin text-primary" size={24} />
                       </div>
-                    ) : vacancies.length > 0 ? (
-                      vacancies.slice(0, 3).map(v => (
-                        <div key={v.id} className="card-border flex items-center justify-between !p-4">
-                          <div className="flex items-center gap-4">
-                            <div className={`p-3 rounded-xl ${v.is_open ? 'bg-[#75C043]/10 text-[#75C043]' : 'bg-red-50 text-red-500'}`}>
-                              <Briefcase size={20} />
-                            </div>
-                            <div>
-                              <h4 className="font-bold text-surface-dark">{v.title}</h4>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                <span className={`text-[10px] font-bold uppercase ${v.is_open ? 'text-[#75C043]' : 'text-red-500'}`}>
-                                  {v.is_open ? 'Open' : 'Closed'}
-                                </span>
-                                <span className="text-gray-300">•</span>
-                                <span className="text-xs text-surface-muted">
-                                  {v.applications?.length || 0} applicants
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Link 
-                              to={`/community/${id}/vacancies/${v.id}/applicants`}
-                              className="btn-secondary !px-3 !py-1.5 !text-xs"
-                            >
-                              Applicants
-                            </Link>
-                            {v.is_open && (
-                              <button 
-                                onClick={async () => {
-                                  if (window.confirm('Are you sure you want to close this vacancy?')) {
-                                    try {
-                                      await vacancyService.updateVacancy(v.id, { is_open: false });
-                                      const updated = await vacancyService.getVacancies(id);
-                                      setVacancies(updated);
-                                    } catch (err) {
-                                      alert('Failed to close vacancy');
-                                    }
-                                  }
-                                }}
-                                className="rounded-lg border border-red-200 text-red-500 hover:bg-red-50 !px-3 !py-1.5 text-xs font-bold transition-all"
-                              >
-                                Close
-                              </button>
-                            )}
-                          </div>
-                        </div>
+                    ) : vacancies.filter(v => v.is_open).length > 0 ? (
+                      vacancies.filter(v => v.is_open).slice(0, 3).map(v => (
+                        <DashboardVacancyCard
+                          key={v.id}
+                          vacancy={v}
+                          communityId={id}
+                          onAction={setVacancyToClose}
+                          showDescription={false}
+                          isActionLoading={vacancyActionLoadingId === v.id}
+                        />
                       ))
                     ) : (
-                      <div className="card-border text-center text-surface-muted !py-8">No vacancies created.</div>
+                      <div className="card-border text-center text-surface-muted !py-8">No active vacancies.</div>
                     )}
                   </div>
                 </div>
@@ -627,18 +618,22 @@ export default function CommunityDashboard() {
                 <div>
                   <h3 className="text-title mb-4">Quick Actions</h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {quickActions.map((action) => (
-                      <Link
-                        key={action.label}
-                        to={action.path}
-                        className={`card-border flex flex-col items-center justify-center text-center gap-3 group !p-5 transition-colors ${action.hoverClass.split(' ').slice(0, 2).join(' ')}`}
-                      >
-                        <div className={`bg-secondary rounded-full p-3 group-hover:text-white transition-colors ${action.colorIcon} ${action.hoverClass.split(' ')[2]}`}>
-                          {action.icon}
-                        </div>
-                        <span className="text-sm font-semibold text-surface-dark">{action.label}</span>
-                      </Link>
-                    ))}
+                    {quickActions.map((action) => {
+                      const ActionElement = action.path === '#' ? 'button' : Link;
+                      return (
+                        <ActionElement
+                          key={action.label}
+                          to={action.path !== '#' ? action.path : undefined}
+                          onClick={action.onClick}
+                          className={`card-border flex flex-col items-center justify-center text-center gap-3 group !p-5 transition-colors ${action.hoverClass.split(' ').slice(0, 2).join(' ')}`}
+                        >
+                          <div className={`bg-secondary rounded-full p-3 group-hover:text-white transition-colors ${action.colorIcon} ${action.hoverClass.split(' ')[2]}`}>
+                            {action.icon}
+                          </div>
+                          <span className="text-sm font-semibold text-surface-dark">{action.label}</span>
+                        </ActionElement>
+                      )
+                    })}
                   </div>
                 </div>
               </div>
@@ -652,11 +647,6 @@ export default function CommunityDashboard() {
                       <div key={activity.id} className="relative pl-6 before:absolute before:left-0 before:top-2 before:h-2 before:w-2 before:rounded-full before:bg-primary">
                         <p className="text-body font-medium flex items-center justify-between">
                           <span className="line-clamp-1 pr-2">{activity.content}</span>
-                          {/* {activity.type === 'announcement' && (
-                            <span className="flex items-center gap-1 text-xs text-primary font-bold bg-primary/10 px-2 py-0.5 rounded-full whitespace-nowrap">
-                              <Eye size={12} /> {Math.floor(Math.random() * 50) + 100} views
-                            </span>
-                          )} */}
                         </p>
                         <p className="text-metadata mt-1">{activity.time}</p>
                       </div>
@@ -670,6 +660,25 @@ export default function CommunityDashboard() {
           </div>
         )}
       </main>
+
+      <CreateVacancyModal
+        isOpen={isCreateVacancyModalOpen}
+        onClose={() => setCreateVacancyModalOpen(false)}
+        communityId={id}
+        onVacancyCreated={reloadVacancies}
+      />
+
+      <ConfirmationModal
+        isOpen={Boolean(vacancyToClose)}
+        onClose={() => {
+          if (!vacancyActionLoadingId) setVacancyToClose(null)
+        }}
+        onConfirm={handleCloseVacancy}
+        title="Close vacancy?"
+        message={`Applicants will still be visible, but this vacancy will stop accepting new applications.`}
+        confirmText="Close Vacancy"
+        isLoading={Boolean(vacancyActionLoadingId)}
+      />
     </div>
   )
 }

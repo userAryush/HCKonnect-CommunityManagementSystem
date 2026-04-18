@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import StudentSelect from '../../components/communities/StudentSelect'
 import apiClient from '../../services/apiClient'
+import CreateVacancyModal from '../../components/modals/CreateVacancyModal'
 
 export default function MemberManagement() {
   const { id } = useParams()
@@ -19,6 +20,7 @@ export default function MemberManagement() {
   const [banner, setBanner] = useState({ type: '', msg: '' })
   const [loadingMembers, setLoadingMembers] = useState(true)
   const [errorMembers, setErrorMembers] = useState('')
+  const [isCreateVacancyModalOpen, setCreateVacancyModalOpen] = useState(false)
 
   // 1. Fetch Members
   useEffect(() => {
@@ -162,7 +164,7 @@ export default function MemberManagement() {
       <Navbar menuOpen={menuOpen} toggleMenu={() => setMenuOpen(!menuOpen)} closeMenu={() => setMenuOpen(false)} navSolid />
 
       <main className="pt-24 pb-16">
-        <div className="mx-auto w-full max-w-6xl px-4"> {/* Increased max-w for better fit */}
+        <div className="mx-auto w-full max-w-6xl px-4">
           <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold">Manage Members</h1>
@@ -183,9 +185,10 @@ export default function MemberManagement() {
             <button onClick={() => setAddModalOpen(true)} className="rounded-xl bg-[#75C043] px-5 py-2.5 text-sm font-bold text-[#0f1a12] shadow-lg shadow-[#75C043]/20 hover:bg-[#68ae3b] transition-all">
               Add Member
             </button>
-            <Link to={`/community/${id}/manage/vacancies/create`} className="rounded-xl bg-[#3B82F6] px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#3B82F6]/20 hover:bg-[#2563EB] transition-all">
+            <button onClick={() => setCreateVacancyModalOpen(true)} className="rounded-xl bg-[#3B82F6] px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#3B82F6]/20 hover:bg-[#2563EB] transition-all">
               Create Vacancy
-            </Link>
+            </button>
+
           </div>
 
           <div className="overflow-hidden rounded-3xl border border-[#e5e7eb] bg-white shadow-sm">
@@ -379,6 +382,15 @@ export default function MemberManagement() {
           </div>
         </div>
       )}
+            <CreateVacancyModal
+        isOpen={isCreateVacancyModalOpen}
+        onClose={() => setCreateVacancyModalOpen(false)}
+        communityId={id}
+        onVacancyCreated={() => {
+          // Optional: You could show a toast or just close the modal.
+          // Since this page doesn't show vacancies, no reload is needed.
+        }}
+      />
 
     </div>
   )

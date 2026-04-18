@@ -12,6 +12,7 @@ import CreateAnnouncement from './pages/community_admin/CreateAnnouncement'
 import MemberManagement from './pages/community_admin/MemberManagement'
 import CommunitiesList from './pages/community_pages/CommunitiesList'
 import CreateVacancy from './pages/community_admin/CreateVacancy';
+import VacancyPage from './pages/community_admin/VacancyPage';
 import VacancyApplicantsPage from './pages/community_admin/VacancyApplicantsPage';
 import EventDetailPage from './pages/community_pages/EventDetailPage'
 import EventRegistrationPage from './pages/community_pages/EventRegistrationPage';
@@ -63,6 +64,7 @@ function App() {
         <Route path="/community/:id/manage/announcements/create" element={<CreateAnnouncement />} />
         <Route path="/community/:id/manage/members" element={<MemberManagement />} />
         <Route path="/community/:id/manage/vacancies/create" element={<CreateVacancy />} />
+        <Route path="/community/:id/manage/vacancies/list" element={<VacancyPage />} />
         <Route path="/community/:id/vacancies/:vacancyId/applicants" element={<VacancyApplicantsPage />} />
         <Route path="/community/:id/manage/events/create" element={<CreateEvent />} />
         <Route path="/community/:id/manage/events/:eventId/edit" element={<CreateEvent />} />

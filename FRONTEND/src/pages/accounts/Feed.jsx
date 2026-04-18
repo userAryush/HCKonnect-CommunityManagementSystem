@@ -7,12 +7,33 @@ import InfoRow from '../../components/feed/InfoRow'
 import Button from '../../components/shared/Button'
 import { useNavigate } from 'react-router-dom'
 import { Plus, MessageSquare } from 'lucide-react'
+import VacancyApplicationModal from '../../components/vacancies/VacancyApplicationModal'
+import { useToast } from '../../context/ToastContext'
 
 export default function Feed() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [filter, setFilter] = useState('all')
   const location = useLocation()
   const navigate = useNavigate()
+  const { showToast } = useToast()
+
+  const [selectedVacancy, setSelectedVacancy] = useState(null)
+  const [isApplying, setIsApplying] = useState(false)
+
+  const handleApplyClick = (vacancy, event) => {
+    event.stopPropagation();
+    event.preventDefault();
+    setSelectedVacancy(vacancy);
+    setIsApplying(true);
+  };
+
+  const handleApplicationSuccess = (message) => {
+    showToast(message, 'success');
+    // We might need to refresh the feed list or update the specific item
+    // For now, just close the modal. A full refresh could be done by changing the key on FeedList.
+    setIsApplying(false);
+    setSelectedVacancy(null);
+  };
 
   return (
     <div className="bg-[#F9FAFB] min-h-screen antialiased">
@@ -64,6 +85,7 @@ export default function Feed() {
                 <FeedList
                   key={filter}
                   filter={filter}
+                  onApplyClick={handleApplyClick}
                 />
               </div>
             </div>
@@ -81,6 +103,14 @@ export default function Feed() {
           </div>
         </div>
       </main>
+
+      {selectedVacancy && (
+        <VacancyApplicationModal
+          vacancy={selectedVacancy}
+          onClose={() => setSelectedVacancy(null)}
+          onSuccess={handleApplicationSuccess}
+        />
+      )}
     </div>
   )
 }
