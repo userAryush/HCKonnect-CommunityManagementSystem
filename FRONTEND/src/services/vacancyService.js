@@ -17,6 +17,7 @@ const vacancyService = {
     const params = new URLSearchParams();
     if (communityId) params.set('community_id', communityId);
     if (options.status) params.set('status', options.status);
+    if (options.sort) params.set('sort', options.sort);
     const query = params.toString();
     const url = `/communities/vacancies/${query ? `?${query}` : ''}`;
     const response = await apiClient.get(url);

@@ -1,4 +1,4 @@
-import api from './api';
+import apiClient from './apiClient';
 
 export async function fetchFeed({ page = 1, filter = 'all', hiddenTypes = [], hiddenCommunities = [] } = {}) {
 
@@ -8,7 +8,7 @@ export async function fetchFeed({ page = 1, filter = 'all', hiddenTypes = [], hi
   if (filter === 'all' || filter === 'announcement') {
     if (!hiddenTypes.includes('announcement')) {
       try {
-        const res = await api.get('/communities/announcements/');
+        const res = await apiClient.get('/communities/announcements/');
         // Backend currently lacks pagination in views, so we fetch all and slice locally or assume limited set
         // Ideally backend should support ?page=
         const announcements = res.data.map(item => ({
@@ -39,7 +39,7 @@ export async function fetchFeed({ page = 1, filter = 'all', hiddenTypes = [], hi
   if (filter === 'all' || filter === 'event') {
     if (!hiddenTypes.includes('event')) {
       try {
-        const res = await api.get('/communities/events/');
+        const res = await apiClient.get('/communities/events/');
         const events = res.data.map(item => ({
           id: `evt-${item.id}`,
           type: 'event',
