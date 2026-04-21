@@ -14,8 +14,7 @@ import OverviewTab from '../../components/community_profile/OverviewTab';
 import ContentGrid from '../../components/community_profile/ContentGrid';
 import MembersTab from '../../components/community_profile/MembersTab';
 import vacancyService from '../../services/vacancyService';
-import VacancyApplicationModal from '../../components/vacancies/VacancyApplicationModal';
-import { Briefcase } from 'lucide-react';
+import VacancyApplicationModal from '../../components/modals/VacancyApplicationModal';
 
 export default function CommunityProfilePage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -219,10 +218,10 @@ export default function CommunityProfilePage() {
             )}
 
             {activeTab === 'Vacancies' && (
-              <ContentGrid 
-                tab="Vacancies" 
-                data={tabData.vacancies} 
-                loading={loadingTab} 
+              <ContentGrid
+                tab="Vacancies"
+                data={tabData.vacancies}
+                loading={loadingTab}
                 onApply={(v) => {
                   setSelectedVacancy(v);
                   setIsApplyModalOpen(true);
@@ -252,9 +251,8 @@ export default function CommunityProfilePage() {
       )}
 
       {toast.show && (
-        <div className={`fixed bottom-8 left-1/2 z-[100] -translate-x-1/2 animate-in slide-in-from-bottom-5 rounded-2xl px-6 py-3 text-sm font-bold shadow-2xl ${
-          toast.type === 'success' ? 'bg-[#75C043] text-white' : 'bg-red-500 text-white'
-        }`}>
+        <div className={`fixed bottom-8 left-1/2 z-[100] -translate-x-1/2 animate-in slide-in-from-bottom-5 rounded-2xl px-6 py-3 text-sm font-bold shadow-2xl ${toast.type === 'success' ? 'bg-[#75C043] text-white' : 'bg-red-500 text-white'
+          }`}>
           {toast.message}
         </div>
       )}

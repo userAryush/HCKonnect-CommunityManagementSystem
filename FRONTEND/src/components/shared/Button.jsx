@@ -13,14 +13,16 @@ const Button = ({
     "inline-flex items-center justify-center transition-all focus:outline-none relative";
 
   const variants = {
-    primary: "btn-primary",
-    secondary: "btn-secondary",
+    primary:
+      "rounded-button bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-primary-hover active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none",
+    secondary:
+      "rounded-button border border-surface-border bg-white px-5 py-2.5 text-sm font-semibold text-surface-body transition-all hover:bg-secondary hover:text-surface-dark active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none",
     outline:
-      "border border-surface-border bg-white text-surface-body hover:bg-secondary hover:text-surface-dark rounded-button px-5 py-2.5 text-sm font-semibold",
+      "border border-surface-border bg-white text-surface-body hover:bg-secondary hover:text-surface-dark rounded-button px-5 py-2.5 text-sm font-semibold disabled:opacity-50 disabled:pointer-events-none",
     'danger-outline':
-      "border border-red-500 bg-transparent text-red-500 hover:bg-red-50 hover:border-red-600 hover:text-red-600 rounded-button px-5 py-2.5 text-sm font-semibold",
+      "border border-red-500 bg-transparent text-red-500 hover:bg-red-50 hover:border-red-600 hover:text-red-600 rounded-button px-5 py-2.5 text-sm font-semibold disabled:opacity-50 disabled:pointer-events-none",
     ghost:
-      "bg-transparent text-surface-muted hover:bg-secondary hover:text-surface-dark rounded-button px-4 py-2 text-sm font-medium",
+      "bg-transparent text-surface-muted hover:bg-secondary hover:text-surface-dark rounded-button px-4 py-2 text-sm font-medium disabled:opacity-50 disabled:pointer-events-none",
   };
 
   return (

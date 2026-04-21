@@ -62,8 +62,10 @@ export default function OverviewTab({ communityData, tabData, loadingTab, canMan
                                             </div>
                                         </div>
                                         {(canManageContent === true) && (
-                                            <Link to={`/events/${event.id}`} className="btn-secondary !px-4 !py-1.5 !text-[11px] font-bold whitespace-nowrap text-center transition-all">
-                                                Manage
+                                            <Link to={`/events/${event.id}`}>
+                                                <Button variant="secondary" className="!px-4 !py-1.5 !text-[11px] font-bold whitespace-nowrap text-center">
+                                                    Manage
+                                                </Button>
                                             </Link>
                                         )}
                                     </div>

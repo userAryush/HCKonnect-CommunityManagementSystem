@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import Navbar from '../../components/Navbar'
-import api from '../../services/api'
+import apiClient from '../../services/apiClient'
 import authService from '../../services/authService'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
@@ -54,7 +54,7 @@ export default function EditProfile() {
         setLoading(true)
         try {
             const endpoint = id ? `/accounts/profile/${id}/` : '/accounts/profile/'
-            const res = await api.get(endpoint)
+            const res = await apiClient.get(endpoint)
             const data = res.data
             setFormData({
                 username: data.username || '',
@@ -150,7 +150,7 @@ export default function EditProfile() {
             data.append('interests', JSON.stringify(interestsArray))
 
             const endpoint = id ? `/accounts/profile/${id}/` : '/accounts/profile/'
-            await api.patch(endpoint, data, {
+            await apiClient.patch(endpoint, data, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }

@@ -13,6 +13,7 @@ import PaginationControls from '../../components/shared/PaginationControls'
 import ManagementToolbar from '../../components/applicationmanagement/ManagementToolbar'
 import CreateVacancyModal from '../../components/modals/CreateVacancyModal'
 import Button from '../../components/shared/Button'
+import getApiErrorMessage from '../../utils/getApiErrorMessage'
 
 export default function VacanciesPage() {
   const { id } = useParams()
@@ -119,10 +120,7 @@ export default function VacanciesPage() {
       setVacancyToClose(null)
     } catch (err) {
       console.error('Failed to close vacancy', err)
-      const message =
-        err.response?.data?.detail ||
-        err.response?.data?.error ||
-        'Failed to close vacancy.'
+      const message = getApiErrorMessage(err, 'Failed to close vacancy.')
       showToast(message, 'error')
     } finally {
       setVacancyActionLoadingId(null)
@@ -170,7 +168,7 @@ export default function VacanciesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-secondary text-[#0d1f14]">
+    <div className="min-h-screen bg-secondary text-surface-dark">
       <Navbar
         menuOpen={menuOpen}
         toggleMenu={() => setMenuOpen((v) => !v)}
@@ -262,6 +260,7 @@ export default function VacanciesPage() {
         message={`Applicants will still be visible, but this vacancy will stop accepting new applications.`}
         confirmText="Close Vacancy"
         isLoading={Boolean(vacancyActionLoadingId)}
+        loadingText="Closing..."
       />
 
       <ConfirmationModal

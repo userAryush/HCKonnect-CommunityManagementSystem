@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useLocation } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
-import api from '../../services/api'
+import apiClient from '../../services/apiClient'
 import AnnouncementCard from '../../components/cards/AnnouncementCard'
 import DiscussionCard from '../../components/cards/DiscussionCard'
 import EventCard from '../../components/cards/EventCard'
@@ -32,14 +32,14 @@ export default function Profile() {
     const fetchProfile = async () => {
         setLoading(true)
         try {
-            const res = await api.get(`/accounts/profile/${profileId}/`)
+            const res = await apiClient.get(`/accounts/profile/${profileId}/`)
             setProfile(res.data)
         } catch (error) {
             console.error("Failed to load profile", error)
             // Fallback for current user if UUID endpoint is not fully ready or if accessing /profile
             if (isOwnProfile) {
                 try {
-                    const fallback = await api.get('/accounts/profile/')
+                    const fallback = await apiClient.get('/accounts/profile/')
                     setProfile(fallback.data)
                 } catch (e) {
                     console.error("Fallback failed", e)

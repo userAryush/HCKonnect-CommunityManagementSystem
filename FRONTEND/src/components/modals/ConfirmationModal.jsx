@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 import Button from '../shared/Button';
+import ModalWrapper from './ModalWrapper';
 
 export default function ConfirmationModal({
     isOpen,
@@ -11,17 +12,16 @@ export default function ConfirmationModal({
     confirmText = 'Confirm',
     cancelText = 'Cancel',
     isLoading = false,
+    loadingText = 'Processing...',
 }) {
-    if (!isOpen) return null;
-
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-md animate-in fade-in zoom-in-95 duration-300 rounded-2xl bg-white p-6 text-center shadow-2xl">
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+        <ModalWrapper isOpen={isOpen} onClose={onClose} className="max-w-md">
+            <div className="p-8 text-center">
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50/50">
                     <AlertTriangle className="h-6 w-6 text-red-600" />
                 </div>
-                <h3 className="mb-2 text-lg font-bold text-surface-dark">{title}</h3>
-                <p className="text-sm text-surface-body">{message}</p>
+                <h3 className="mb-2 text-title">{title}</h3>
+                <p className="text-body">{message}</p>
                 <div className="mt-6 flex justify-center gap-4">
                     <Button variant="secondary" onClick={onClose} className="w-full">
                         {cancelText}
@@ -30,13 +30,13 @@ export default function ConfirmationModal({
                         variant="danger-outline"
                         onClick={onConfirm}
                         isLoading={isLoading}
-                        loadingText="Closing..."
-                        className="w-full bg-red-600 hover:bg-red-700-text-secondary focus:ring-red-500/50"
+                        loadingText={loadingText}
+                        className="w-full"
                     >
                         {confirmText}
                     </Button>
                 </div>
             </div>
-        </div>
+        </ModalWrapper>
     );
 }

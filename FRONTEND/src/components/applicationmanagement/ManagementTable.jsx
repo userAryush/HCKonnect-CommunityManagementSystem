@@ -3,26 +3,26 @@ import { Search } from 'lucide-react';
 
 const ManagementTable = ({ columns, items, renderRow, emptyStateMessage }) => {
     return (
-        <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-standard border border-surface-border shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
                 <table className="w-full text-left">
                     <thead>
-                        <tr className="bg-[#fcfdfa] border-b border-gray-100">
+                        <tr className="bg-secondary/30 border-b border-surface-border">
                             {columns.map((col, index) => (
-                                <th key={index} className="px-8 py-5 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">
+                                <th key={index} className="px-8 py-5 text-xs font-bold text-surface-muted uppercase tracking-widest text-center">
                                     {col}
                                 </th>
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody className="divide-y divide-surface-border">
                         {items.length > 0 ? (
-                            items.map((item) => renderRow(item))
+                            items.map((item, index) => renderRow(item, index))
                         ) : (
                             <tr>
                                 <td colSpan={columns.length} className="px-8 py-20 text-center">
-                                    <div className="flex flex-col items-center gap-2 text-gray-500">
-                                        <Search size={32} className="text-gray-300" />
+                                    <div className="flex flex-col items-center gap-2 text-surface-muted">
+                                        <Search size={32} className="text-surface-muted" />
                                         <p className="text-lg font-medium">No one found</p>
                                         <p className="text-sm">{emptyStateMessage || "There's nothing to show here."}</p>
                                     </div>

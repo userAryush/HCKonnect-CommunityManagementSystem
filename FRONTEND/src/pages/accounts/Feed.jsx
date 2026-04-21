@@ -7,7 +7,7 @@ import InfoRow from '../../components/feed/InfoRow'
 import Button from '../../components/shared/Button'
 import { useNavigate } from 'react-router-dom'
 import { Plus, MessageSquare } from 'lucide-react'
-import VacancyApplicationModal from '../../components/vacancies/VacancyApplicationModal'
+import VacancyApplicationModal from '../../components/modals/VacancyApplicationModal'
 import { useToast } from '../../context/ToastContext'
 
 export default function Feed() {
@@ -29,8 +29,6 @@ export default function Feed() {
 
   const handleApplicationSuccess = (message) => {
     showToast(message, 'success');
-    // We might need to refresh the feed list or update the specific item
-    // For now, just close the modal. A full refresh could be done by changing the key on FeedList.
     setIsApplying(false);
     setSelectedVacancy(null);
   };

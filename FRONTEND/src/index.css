@@ -5,17 +5,15 @@
     --color-primary: #75BF44;
     --color-primary-hover: #5fa334;
     --color-secondary: #FAFAFA;
-    /* Very light neutral gray */
 
-    /* UI Surface & Text - Using Zinc (Neutral Grayscale) */
+    /* New Deep Neutral - Footer & Dark Mode Base */
+    --color-surface-deep: #3c3c3c;
+
+    /* UI Surface & Text */
     --color-surface-dark: #09090b;
-    /* Zinc 950 - Titles */
     --color-surface-body: #3f3f46;
-    /* Zinc 700 - Content */
     --color-surface-muted: #71717a;
-    /* Zinc 500 - Metadata */
     --color-surface-border: #e4e4e7;
-    /* Zinc 200 - Borders */
 
     /* Layout & Spacing */
     --radius-standard: 12px;
@@ -23,12 +21,17 @@
 
     /* Typography */
     --font-sans: "Inter", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-    --font-display: "Plus Jakarta Sans", "Inter", sans-serif;
+    --font-display: "Inter", "Plus Jakarta Sans", sans-serif;
 }
 
 @layer base {
     body {
-        @apply bg-[#F9FAFB] text-surface-body font-sans antialiased;
+        @apply bg-secondary text-surface-body font-sans antialiased;
+    }
+
+    /* Target the footer specifically in base styles if desired */
+    footer {
+        @apply bg-surface-deep text-secondary;
     }
 
     h1,
@@ -43,6 +46,11 @@
 
 /* Custom Utilities - Modern DRY approach */
 @layer utilities {
+    .section-dark {
+        @apply bg-surface-deep text-white p-12 rounded-standard;
+    }
+
+    /* Your existing utilities... */
     .card-border {
         @apply border border-surface-border rounded-standard bg-white p-6 shadow-sm transition-all hover:shadow-md;
     }
@@ -60,15 +68,7 @@
     }
 
     .input-standard {
-        @apply bg-white border border-surface-border rounded-full px-4 py-2 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30;
-    }
-
-    .btn-primary {
-        @apply rounded-button bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-primary-hover active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
-    }
-
-    .btn-secondary {
-        @apply rounded-button border border-surface-border bg-white px-5 py-2.5 text-sm font-semibold text-surface-body transition-all hover:bg-secondary hover:text-surface-dark active:scale-[0.98];
+        @apply bg-white border border-surface-border rounded-standard px-4 py-2 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30;
     }
 
     .nav-link {
@@ -83,4 +83,5 @@
         content: '';
         @apply absolute -bottom-0.5 left-0 right-0 h-0.5 bg-primary rounded-full;
     }
+
 }

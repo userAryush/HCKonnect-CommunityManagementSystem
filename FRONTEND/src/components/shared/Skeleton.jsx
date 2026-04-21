@@ -1,5 +1,5 @@
 export const Skeleton = ({ className = '', variant = 'rect' }) => {
-    const baseClasses = 'animate-pulse bg-gray-200/80 shimmer'
+    const baseClasses = 'animate-pulse bg-surface-border/50 shimmer'
     const variants = {
         rect: 'rounded-xl',
         circle: 'rounded-full',
@@ -14,7 +14,7 @@ export const Skeleton = ({ className = '', variant = 'rect' }) => {
 }
 
 export const CardSkeleton = () => (
-    <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm mb-6">
+    <div className="rounded-3xl border border-surface-border bg-white p-6 shadow-sm mb-6">
         <div className="flex gap-4 items-center mb-4">
             <Skeleton variant="avatar" />
             <div className="space-y-2 flex-1">
@@ -31,7 +31,7 @@ export const CardSkeleton = () => (
 export const DashboardStatsSkeleton = () => (
     <div className="grid grid-cols-2 gap-4 md:grid-cols-4 mb-10">
         {[1, 2, 3, 4].map(i => (
-            <div key={i} className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
+            <div key={i} className="rounded-3xl border border-surface-border bg-white p-6 shadow-sm">
                 <Skeleton variant="text" className="w-2/3 h-8 mb-2" />
                 <Skeleton variant="text" className="w-1/2 h-4" />
             </div>
@@ -51,6 +51,36 @@ export const DashboardVacancyCardSkeleton = () => (
         </div>
         <div className="flex-shrink-0 self-start lg:self-center">
             <Skeleton variant="rect" className="h-8 w-28" />
+        </div>
+    </div>
+);
+
+export const TableSkeleton = ({ rows = 5, columns = 6 }) => (
+    <div className="bg-white rounded-[32px] border border-surface-border shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+            <table className="w-full text-left">
+                <thead>
+                    <tr className="bg-secondary/30 border-b border-surface-border">
+                        {[...Array(columns)].map((_, i) => (
+                            <th key={i} className="px-8 py-5">
+                                <Skeleton variant="text" className="h-3 w-12" />
+                            </th>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-surface-border">
+                    {[...Array(rows)].map((_, i) => (
+                        <tr key={i}>
+                            <td className="px-8 py-5"><Skeleton variant="text" className="h-4 w-4" /></td>
+                            <td className="px-8 py-5"><Skeleton variant="text" className="h-4 w-32" /></td>
+                            <td className="px-8 py-5"><Skeleton variant="text" className="h-4 w-48" /></td>
+                            <td className="px-8 py-5"><Skeleton variant="rect" className="h-5 w-20 rounded-md" /></td>
+                            <td className="px-8 py-5"><Skeleton variant="text" className="h-4 w-24" /></td>
+                            <td className="px-8 py-5 flex justify-end"><Skeleton variant="rect" className="h-8 w-20 rounded-lg" /></td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
         </div>
     </div>
 );
