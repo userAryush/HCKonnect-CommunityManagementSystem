@@ -1,25 +1,24 @@
-import { useState, useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useState } from 'react'
 import Navbar from '../../../shared/components/layout/Navbar'
 import FeedFilter from '../components/FeedFilter'
 import FeedList from '../components/FeedList'
 import InfoRow from '../components/InfoRow'
 import Button from '../../../shared/components/ui/Button'
-import { useNavigate } from 'react-router-dom'
 import { Plus, MessageSquare } from 'lucide-react'
 import VacancyApplicationModal from '../../vacancy/components/VacancyApplicationModal'
+import CreateDiscussionModal from '../../discussion/components/CreateDiscussionModal'
+import CreatePostModal from '../../posts/components/CreatePostModal'
 import { useToast } from '../../../shared/components/ui/ToastContext'
 
 export default function Feed() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [filter, setFilter] = useState('all')
-  const location = useLocation()
-  const navigate = useNavigate()
   const { showToast } = useToast()
 
   const [selectedVacancy, setSelectedVacancy] = useState(null)
   const [isApplying, setIsApplying] = useState(false)
-
+  const [isDiscussionModalOpen, setIsDiscussionModalOpen] = useState(false)
+  const [isPostModalOpen, setIsPostModalOpen] = useState(false)
   const handleApplyClick = (vacancy, event) => {
     event.stopPropagation();
     event.preventDefault();
@@ -57,7 +56,7 @@ export default function Feed() {
                   <Button
                     variant="secondary"
                     className="gap-2 !py-2 !px-4 text-xs font-bold"
-                    onClick={() => navigate('/posts?create=true')}
+                    onClick={() => setIsPostModalOpen(true)}
                   >
                     <Plus size={16} />
                     <span className="hidden xs:inline">Create Post</span>
@@ -66,7 +65,7 @@ export default function Feed() {
                   <Button
                     variant="primary"
                     className="gap-2 !py-2 !px-4 text-xs font-bold shadow-lg shadow-primary/20"
-                    onClick={() => navigate('/discussions/create')}
+                    onClick={() => setIsDiscussionModalOpen(true)}
                   >
                     <MessageSquare size={16} />
                     <span className="hidden xs:inline">Start Discussion</span>
@@ -109,6 +108,16 @@ export default function Feed() {
           onSuccess={handleApplicationSuccess}
         />
       )}
+
+      <CreateDiscussionModal
+        isOpen={isDiscussionModalOpen}
+        onClose={() => setIsDiscussionModalOpen(false)}
+      />
+
+      <CreatePostModal
+        isOpen={isPostModalOpen}
+        onClose={() => setIsPostModalOpen(false)}
+      />
     </div>
   )
 }

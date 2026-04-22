@@ -1,25 +1,39 @@
 import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import { PenLine, MessageSquarePlus } from 'lucide-react'
+import Button from '../../../shared/components/ui/Button'
+import CreateDiscussionModal from '../../discussion/components/CreateDiscussionModal'
 
 export default function HeaderActionsRow() {
   const navigate = useNavigate()
-
+  const [isDiscussionModalOpen, setIsDiscussionModalOpen] = useState(false)
 
   return (
-    <div className="inline-flex p-1 bg-slate-100/50 border border-surface-border rounded-xl gap-1 mb-8">
-      {[
-        { label: 'Create Post', icon: <PenLine size={15} />, path: '/posts?create=true' },
-        { label: 'Start Discussion', icon: <MessageSquarePlus size={15} />, path: '/discussions/create' }
-      ].map((item) => (
-        <button
-          key={item.label}
-          onClick={() => navigate(item.path)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-transparent hover:bg-white hover:text-primary hover:shadow-sm border border-transparent hover:border-surface-border/50 text-surface-body transition-all duration-200"
+    <>
+      <div className="inline-flex p-1 bg-slate-100/50 border border-surface-border rounded-xl gap-1 mb-8">
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/posts?create=true')}
+          className="!rounded-lg !px-4 !py-2 !text-surface-body hover:!text-primary hover:!bg-white hover:!shadow-sm hover:!border-surface-border/50 !border !border-transparent"
         >
-          <span className="opacity-70">{item.icon}</span>
-          <span className="text-[13px] font-bold uppercase tracking-wider">{item.label}</span>
-        </button>
-      ))}
-    </div>
+          <span className="opacity-70 mr-2"><PenLine size={15} /></span>
+          <span className="text-[13px] font-bold uppercase tracking-wider">Create Post</span>
+        </Button>
+
+        <Button
+          variant="ghost"
+          onClick={() => setIsDiscussionModalOpen(true)}
+          className="!rounded-lg !px-4 !py-2 !text-surface-body hover:!text-primary hover:!bg-white hover:!shadow-sm hover:!border-surface-border/50 !border !border-transparent"
+        >
+          <span className="opacity-70 mr-2"><MessageSquarePlus size={15} /></span>
+          <span className="text-[13px] font-bold uppercase tracking-wider">Start Discussion</span>
+        </Button>
+      </div>
+
+      <CreateDiscussionModal
+        isOpen={isDiscussionModalOpen}
+        onClose={() => setIsDiscussionModalOpen(false)}
+      />
+    </>
   )
 }

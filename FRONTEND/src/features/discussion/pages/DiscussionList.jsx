@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import discussionService from '../service/discussionService';
 import DiscussionCard from '../components/DiscussionCard';
+import CreateDiscussionModal from '../components/CreateDiscussionModal';
 import Navbar from '../../../shared/components/layout/Navbar';
 import Footer from '../../../shared/components/layout/Footer';
 import PageHeader from '../../../shared/components/layout/PageHeader';
@@ -16,11 +17,13 @@ export default function DiscussionList() {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
+    const [refreshKey, setRefreshKey] = useState(0);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
         fetchDiscussions();
-    }, [page, itemsPerPage]);
+    }, [page, itemsPerPage, refreshKey]);
 
     const fetchDiscussions = async () => {
         setLoading(true);
@@ -55,7 +58,7 @@ export default function DiscussionList() {
                         backLinkTo={`/feed`}
                         backLinkText="Feeds"
                     >
-                        <CreateButton onClick={() => navigate('/discussions/create')}>
+                        <CreateButton onClick={() => setIsCreateModalOpen(true)}>
                             New Discussion
                         </CreateButton>
                     </PageHeader>
@@ -99,6 +102,15 @@ export default function DiscussionList() {
                 </div>
             </main>
             <Footer />
+
+            <CreateDiscussionModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                onCreated={() => {
+                    setPage(1);
+                    setRefreshKey((prev) => prev + 1);
+                }}
+            />
         </div>
     );
 }

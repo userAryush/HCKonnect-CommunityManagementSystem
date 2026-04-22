@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 import Navbar from '../../../shared/components/layout/Navbar';
 import Footer from '../../../shared/components/layout/Footer';
-import PageHeader from '../../../shared/components/layout/PageHeader';
 import AnnouncementCard from '../components/AnnouncementCard';
+import CreateAnnouncementModal from '../components/CreateAnnouncementModal';
 import announcementService from '../service/announcementService';
 import { FeedItemSkeleton } from '../../feed/components/FeedItem';
 import PaginationInfo from '../../../shared/components/pagination/PaginationInfo';
 import PaginationControls from '../../../shared/components/pagination/PaginationControls';
 import CreateButton from '../../../shared/components/ui/CreateButton';
 import apiClient from '../../../shared/services/apiClient';
-import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
+import { Link, useSearchParams, useParams } from 'react-router-dom';
 
 export default function AnnouncementsList() {
     const [itemsPerPage, setItemsPerPage] = useState(20);
@@ -19,7 +19,8 @@ export default function AnnouncementsList() {
     const [page, setPage] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
     const [communities, setCommunities] = useState([]);
-    const navigate = useNavigate();
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [refreshKey, setRefreshKey] = useState(0);
     const { id } = useParams();
     const [searchParams] = useSearchParams();
     const initialCommunityId = id || searchParams.get('community_id') || '';
@@ -80,7 +81,7 @@ export default function AnnouncementsList() {
             }
         };
         fetchData();
-    }, [page, selectedCommunityId, itemsPerPage]);
+    }, [page, selectedCommunityId, itemsPerPage, refreshKey]);
 
     const handleItemsPerPageChange = (newItemsPerPage) => {
         setItemsPerPage(newItemsPerPage);
@@ -97,87 +98,105 @@ export default function AnnouncementsList() {
             />
 
             <main className="pt-24 pb-16">
-                <div className="mx-auto w-full max-w-4xl px-4">
-                    <PageHeader
-                        title="All Announcements"
-                        subtitle="Be updated with every announcement."
-                        backLinkTo="/feed"
-                        backLinkText="Feeds"
-                    >
-                        {canCreate && (
-                            <CreateButton
-                                onClick={() => {
-                                    const targetCommunityId = selectedCommunityId || (user.role === 'community' ? user.id : user.membership?.community);
-                                    if (targetCommunityId) {
-                                        navigate(`/community/${targetCommunityId}/manage/announcements/create`);
-                                    }
-                                }}
-                            >
-                                Create Announcement
-                            </CreateButton>
-                        )}
-                    </PageHeader>
-
-                    <div className="mb-8 rounded-[20px] border border-surface-border bg-white p-4 md:p-5">
-                        <div className="flex flex-col gap-2 md:max-w-sm">
-                            <label htmlFor="communityFilter" className="text-xs font-semibold uppercase tracking-wider text-surface-muted">
-                                Filter by community
-                            </label>
-                            <select
-                                id="communityFilter"
-                                value={selectedCommunityId}
-                                onChange={(e) => setSelectedCommunityId(e.target.value)}
-                                className="rounded-button border border-surface-border bg-white px-4 py-2.5 text-sm font-medium text-surface-dark focus:outline-none focus:ring-2 focus:ring-primary/20"
-                            >
-                                <option value="">All communities</option>
-                                {communities.map((community) => (
-                                    <option key={community.id} value={community.id}>
-                                        {community.community_name || community.username}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-
-                    {loading ? (
-                        <div className="flex flex-col gap-6">
-                            <FeedItemSkeleton />
-                            <FeedItemSkeleton />
-                            <FeedItemSkeleton />
-                        </div>
-                    ) : (
-                        <>
-                            <PaginationInfo
-                                totalItems={totalCount}
-                                itemsPerPage={itemsPerPage}
-                                currentPage={page}
-                                onItemsPerPageChange={handleItemsPerPageChange}
-                                className="mb-4"
-                            />
-                            <div className="flex flex-col gap-4">
-                                {announcements.map((item) => (
-                                    <AnnouncementCard key={item.id} item={item} className="w-full" />
-                                ))}
-                            </div>
-
-                            {announcements.length === 0 && (
-                                <div className="card-border text-center text-surface-muted !py-12">
-                                    No announcements found.
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
+                        <div className="lg:col-span-8 flex flex-col gap-6">
+                            <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
+                                <div>
+                                    <div className="mb-1">
+                                        <Link to="/feed" className="text-xs font-semibold uppercase tracking-wider text-surface-muted hover:text-primary">
+                                            Back to Feeds
+                                        </Link>
+                                    </div>
+                                    <h1 className="text-2xl font-bold tracking-tight text-surface-dark sm:text-3xl">All Announcements</h1>
+                                    <p className="text-sm text-surface-muted">Be updated with every announcement.</p>
                                 </div>
-                            )}
+                                {canCreate && (
+                                    <CreateButton onClick={() => setIsCreateModalOpen(true)}>
+                                        Create Announcement
+                                    </CreateButton>
+                                )}
+                            </header>
 
-                            <PaginationControls
-                                totalItems={totalCount}
-                                itemsPerPage={itemsPerPage}
-                                currentPage={page}
-                                onPageChange={setPage}
-                                className="mt-8"
-                            />
-                        </>
-                    )}
+                            {loading ? (
+                                <div className="flex flex-col gap-6">
+                                    <FeedItemSkeleton />
+                                    <FeedItemSkeleton />
+                                    <FeedItemSkeleton />
+                                </div>
+                            ) : (
+                                <>
+                                    <PaginationInfo
+                                        totalItems={totalCount}
+                                        itemsPerPage={itemsPerPage}
+                                        currentPage={page}
+                                        onItemsPerPageChange={handleItemsPerPageChange}
+                                        className="mb-4"
+                                    />
+                                    <div className="flex flex-col gap-4">
+                                        {announcements.map((item) => (
+                                            <AnnouncementCard key={item.id} item={item} className="w-full" />
+                                        ))}
+                                    </div>
+
+                                    {announcements.length === 0 && (
+                                        <div className="card-border text-center text-surface-muted !py-12">
+                                            No announcements found.
+                                        </div>
+                                    )}
+
+                                    <PaginationControls
+                                        totalItems={totalCount}
+                                        itemsPerPage={itemsPerPage}
+                                        currentPage={page}
+                                        onPageChange={setPage}
+                                        className="mt-8"
+                                    />
+                                </>
+                            )}
+                        </div>
+
+                        <aside className="hidden lg:block lg:col-span-4 sticky top-24 self-start">
+                            <div className="bg-white rounded-standard border border-surface-border shadow-sm p-5">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <span className="block rounded-full bg-primary" style={{ width: '3px', height: '16px' }} />
+                                    <h3 className="text-xs font-bold uppercase tracking-widest text-surface-muted">
+                                        Filters
+                                    </h3>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <label htmlFor="communityFilter" className="text-[11px] font-semibold uppercase tracking-wider text-surface-muted">
+                                        Community
+                                    </label>
+                                    <select
+                                        id="communityFilter"
+                                        value={selectedCommunityId}
+                                        onChange={(e) => setSelectedCommunityId(e.target.value)}
+                                        className="rounded-button border border-surface-border bg-white px-4 py-2.5 text-sm font-medium text-surface-dark focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                    >
+                                        <option value="">All communities</option>
+                                        {communities.map((community) => (
+                                            <option key={community.id} value={community.id}>
+                                                {community.community_name || community.username}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        </aside>
+                    </div>
                 </div>
             </main>
             <Footer />
+
+            <CreateAnnouncementModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                onCreated={() => {
+                    setPage(1);
+                    setRefreshKey((prev) => prev + 1);
+                }}
+            />
         </div>
     );
 }
