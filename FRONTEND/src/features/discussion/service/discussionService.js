@@ -2,9 +2,16 @@ import apiClient from '../../../shared/services/apiClient';
 
 const discussionService = {
     // Get list of discussions
-    getDiscussions: async (page = 1, communityId = null) => {
+    getDiscussions: async (pageOrOptions = 1, legacyCommunityId = null) => {
         try {
-            let url = `/discussions/list/?page=${page}`;
+            const options = typeof pageOrOptions === 'object'
+                ? pageOrOptions
+                : { page: pageOrOptions, communityId: legacyCommunityId };
+            const page = options.page ?? 1;
+            const pageSize = options.pageSize ?? 20;
+            const communityId = options.communityId ?? null;
+
+            let url = `/discussions/list/?page=${page}&page_size=${pageSize}`;
             if (communityId) {
                 url += `&community_id=${communityId}`;
             }

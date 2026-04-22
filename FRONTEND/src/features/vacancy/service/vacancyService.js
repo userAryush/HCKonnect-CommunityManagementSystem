@@ -18,6 +18,8 @@ const vacancyService = {
     if (communityId) params.set('community_id', communityId);
     if (options.status) params.set('status', options.status);
     if (options.sort) params.set('sort', options.sort);
+    if (options.page) params.set('page', options.page);
+    if (options.pageSize) params.set('page_size', options.pageSize);
     const query = params.toString();
     const url = `/communities/vacancies/${query ? `?${query}` : ''}`;
     const response = await apiClient.get(url);

@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useParams } from 'react-router-dom'
 import Navbar from '../../../shared/components/layout/Navbar'
 import Footer from '../../../shared/components/layout/Footer'
 import vacancyService from '../service/vacancyService'
@@ -12,7 +12,7 @@ import PaginationInfo from '../../../shared/components/pagination/PaginationInfo
 import PaginationControls from '../../../shared/components/pagination/PaginationControls'
 import ManagementToolbar from '../../../shared/components/layout/ManagementToolbar'
 import CreateVacancyModal from '../components/CreateVacancyModal'
-import Button from '../../../shared/components/ui/Button'
+import CreateButton from '../../../shared/components/ui/CreateButton'
 import getApiErrorMessage from '../../../utils/getApiErrorMessage'
 
 export default function VacanciesPage() {
@@ -20,6 +20,7 @@ export default function VacanciesPage() {
   const { showToast } = useToast()
   const [menuOpen, setMenuOpen] = useState(false)
   const [vacancies, setVacancies] = useState([])
+  const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [vacancyToDelete, setVacancyToDelete] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -38,69 +39,55 @@ export default function VacanciesPage() {
     { label: 'All' },
   ]
 
-  useEffect(() => {
-    const fetchVacancies = async () => {
-      try {
-        setLoading(true)
-        let params = {}
-        switch (activeFilter) {
-          case 'Open':
-            params.status = 'OPEN'
-            break
-          case 'Closed':
-            params.status = 'CLOSED'
-            break
-          case 'Newest':
-            params.sort = 'newest'
-            break
-          case 'Oldest':
-            params.sort = 'oldest'
-            break
-          case 'All':
-          default:
-            params.status = 'ALL'
-            break
-        }
-
-        const data = await vacancyService.getVacancies(id, params)
-        const fetchedVacancies = data.results || data || []
-        setVacancies(fetchedVacancies)
-      } catch (err) {
-        console.error('Failed to load vacancies', err)
-        showToast('Failed to load vacancies.', 'error')
-      } finally {
-        setLoading(false)
-      }
+  const buildFilterParams = () => {
+    const params = { page: currentPage, pageSize: itemsPerPage }
+    switch (activeFilter) {
+      case 'Open':
+        params.status = 'OPEN'
+        break
+      case 'Closed':
+        params.status = 'CLOSED'
+        break
+      case 'Newest':
+        params.sort = 'newest'
+        break
+      case 'Oldest':
+        params.sort = 'oldest'
+        break
+      case 'All':
+      default:
+        params.status = 'ALL'
+        break
     }
+    return params
+  }
 
+  const fetchVacancies = async () => {
+    try {
+      setLoading(true)
+      const data = await vacancyService.getVacancies(id, buildFilterParams())
+      const fetchedVacancies = data.results || data || []
+      setVacancies(fetchedVacancies)
+      setTotalCount(data.count ?? fetchedVacancies.length)
+    } catch (err) {
+      console.error('Failed to load vacancies', err)
+      showToast('Failed to load vacancies.', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
     fetchVacancies()
-  }, [id, showToast, activeFilter])
+  }, [id, showToast, activeFilter, currentPage, itemsPerPage])
 
   const reloadVacancies = async () => {
     try {
       setLoading(true)
-      let params = {}
-      switch (activeFilter) {
-        case 'Open':
-          params.status = 'OPEN'
-          break
-        case 'Closed':
-          params.status = 'CLOSED'
-          break
-        case 'Newest':
-          params.sort = 'newest'
-          break
-        case 'Oldest':
-          params.sort = 'oldest'
-          break
-        case 'All':
-        default:
-          params.status = 'ALL'
-          break
-      }
-      const data = await vacancyService.getVacancies(id, params)
+      const data = await vacancyService.getVacancies(id, buildFilterParams())
       const fetchedVacancies = data.results || data || []
       setVacancies(fetchedVacancies)
+      setTotalCount(data.count ?? fetchedVacancies.length)
     } catch (err) {
       console.error('Failed to reload vacancies', err)
       showToast('Failed to refresh vacancies.', 'error')
@@ -142,6 +129,7 @@ export default function VacanciesPage() {
     try {
       await vacancyService.deleteVacancy(vacancyToDelete.id)
       setVacancies((prev) => prev.filter((v) => v.id !== vacancyToDelete.id))
+      setTotalCount((prev) => Math.max(0, prev - 1))
       showToast('Vacancy permanently deleted.')
     } catch (err) {
       console.error('Failed to delete vacancy', err)
@@ -151,12 +139,6 @@ export default function VacanciesPage() {
       setVacancyToDelete(null)
     }
   }
-
-  // Pagination logic
-  const paginatedVacancies = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage
-    return vacancies.slice(startIndex, startIndex + itemsPerPage)
-  }, [vacancies, currentPage, itemsPerPage])
 
   const handlePageChange = (page) => {
     setCurrentPage(page)
@@ -177,16 +159,16 @@ export default function VacanciesPage() {
       />
 
       <main className="pt-24 pb-16">
-        <div className="mx-auto w-full max-w-6xl px-4">
+        <div className="mx-auto w-full max-w-4xl px-4">
           <PageHeader
             title="Manage Vacancies"
             subtitle="Review, sort, and manage all job vacancies for your community."
             backLinkTo={`/community/${id}/dashboard`}
             backLinkText="Dashboard"
           >
-            <Button onClick={() => setCreateVacancyModalOpen(true)}>
+            <CreateButton onClick={() => setCreateVacancyModalOpen(true)}>
               Create Vacancy
-            </Button>
+            </CreateButton>
           </PageHeader>
 
           <ManagementToolbar
@@ -208,14 +190,14 @@ export default function VacanciesPage() {
           ) : (
             <>
               <PaginationInfo
-                totalItems={vacancies.length}
+                totalItems={totalCount}
                 itemsPerPage={itemsPerPage}
                 currentPage={currentPage}
                 onItemsPerPageChange={handleItemsPerPageChange}
                 className="mb-4"
               />
               <div className="space-y-4">
-                {paginatedVacancies.map((vacancy) => (
+                {vacancies.map((vacancy) => (
                   <DashboardVacancyCard
                     key={vacancy.id}
                     vacancy={vacancy}
@@ -229,7 +211,7 @@ export default function VacanciesPage() {
               </div>
               <div className="mt-8">
                 <PaginationControls
-                  totalItems={vacancies.length}
+                  totalItems={totalCount}
                   itemsPerPage={itemsPerPage}
                   currentPage={currentPage}
                   onPageChange={handlePageChange}

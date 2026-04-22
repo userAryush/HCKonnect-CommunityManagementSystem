@@ -2,9 +2,16 @@ import apiClient from '../../../shared/services/apiClient';
 
 const postService = {
     // Get list of posts
-    getPosts: async (page = 1, userId = null) => {
+    getPosts: async (pageOrOptions = 1, legacyUserId = null) => {
         try {
-            let url = `/contents/post-list/?page=${page}`;
+            const options = typeof pageOrOptions === 'object'
+                ? pageOrOptions
+                : { page: pageOrOptions, userId: legacyUserId };
+            const page = options.page ?? 1;
+            const pageSize = options.pageSize ?? 20;
+            const userId = options.userId ?? null;
+
+            let url = `/contents/post-list/?page=${page}&page_size=${pageSize}`;
             if (userId) {
                 url += `&user_id=${userId}`;
             }
@@ -115,9 +122,9 @@ const postService = {
     },
 
     // Get posts for a specific community (authored by community user)
-    getPostsForCommunity: async (communityId, page = 1) => {
+    getPostsForCommunity: async (communityId, page = 1, pageSize = 20) => {
         try {
-            const response = await apiClient.get(`/contents/post-list/?user_id=${communityId}&page=${page}`);
+            const response = await apiClient.get(`/contents/post-list/?user_id=${communityId}&page=${page}&page_size=${pageSize}`);
             return response.data;
         } catch (error) {
             throw error;

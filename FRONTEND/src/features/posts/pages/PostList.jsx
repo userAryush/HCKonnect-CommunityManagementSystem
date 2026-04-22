@@ -1,20 +1,25 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, Image as ImageIcon, X } from 'lucide-react';
+import { Image as ImageIcon, X } from 'lucide-react';
 import postService from '../service/postService';
 import Navbar from '../../../shared/components/layout/Navbar';
+import Footer from '../../../shared/components/layout/Footer';
+import PageHeader from '../../../shared/components/layout/PageHeader';
 import PostCard from '../components/PostCard';
 import { Skeleton } from '../../../shared/components/layout/Skeleton';
 import Card from '../../../shared/components/card/Card';
 import Button from '../../../shared/components/ui/Button';
+import PaginationInfo from '../../../shared/components/pagination/PaginationInfo';
+import PaginationControls from '../../../shared/components/pagination/PaginationControls';
 import { useToast } from '../../../shared/components/ui/ToastContext';
 
 export default function PostList() {
+    const [itemsPerPage, setItemsPerPage] = useState(20);
     const [searchParams] = useSearchParams();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
-    const [hasMore, setHasMore] = useState(false);
+    const [totalCount, setTotalCount] = useState(0);
     const { showToast } = useToast();
 
     useEffect(() => {
@@ -32,18 +37,14 @@ export default function PostList() {
 
     useEffect(() => {
         fetchPosts();
-    }, [page]);
+    }, [page, itemsPerPage]);
 
     const fetchPosts = async () => {
         setLoading(true);
         try {
-            const data = await postService.getPosts(page);
-            if (page === 1) {
-                setPosts(data.results);
-            } else {
-                setPosts(prev => [...prev, ...data.results]);
-            }
-            setHasMore(!!data.next);
+            const data = await postService.getPosts({ page, pageSize: itemsPerPage });
+            setPosts(data.results || []);
+            setTotalCount(data.count ?? (data.results?.length || 0));
         } catch (error) {
             console.error("Failed to fetch posts", error);
         } finally {
@@ -81,7 +82,6 @@ export default function PostList() {
             setShowCreate(false);
             setPage(1);
             showToast('post created successfully.', 'success');
-            fetchPosts();
         } catch (error) {
             console.error("Failed to create post", error);
             showToast('Failed to create post. Please try again.', 'error');
@@ -90,30 +90,38 @@ export default function PostList() {
         }
     };
 
+    const handleItemsPerPageChange = (newItemsPerPage) => {
+        setItemsPerPage(newItemsPerPage);
+        setPage(1);
+    };
+
     return (
-        <div className="min-h-screen bg-[#F9FAFB] pt-28">
+        <div className="min-h-screen bg-secondary text-surface-dark">
             <Navbar navSolid={true} />
-            <main className="max-w-4xl mx-auto px-4 pb-20">
+            <main className="pt-24 pb-16">
+                <div className="mx-auto w-full max-w-4xl px-4">
+                    <PageHeader
+                        title="Community Posts"
+                        subtitle="Shared stories and updates from your college."
+                        backLinkTo={`/feed`}
+            backLinkText="Feeds"
+                    >
+                    </PageHeader>
 
-                <header className="mb-8">
-                    <h1 className="text-2xl font-bold tracking-tight text-surface-dark sm:text-3xl">Community Posts</h1>
-                    <p className="text-sm text-surface-muted mt-1">Shared stories and updates from your neighbors.</p>
-                </header>
-
-                {/* Create Post Bar */}
-                <Card className="p-4 mb-6 !rounded-2xl">
-                    <div className="flex gap-4 items-center">
-                        <div className="h-10 w-10 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-600 font-bold shrink-0">
-                            {JSON.parse(localStorage.getItem('user'))?.first_name?.[0] || 'U'}
+                    {/* Create Post Bar */}
+                    <Card className="p-4 mb-6 !rounded-2xl">
+                        <div className="flex gap-4 items-center">
+                            <div className="h-10 w-10 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-600 font-bold shrink-0">
+                                {JSON.parse(localStorage.getItem('user'))?.first_name?.[0] || 'U'}
+                            </div>
+                            <button
+                                onClick={() => setShowCreate(true)}
+                                className="input-standard flex-1 text-left text-surface-muted hover:border-zinc-300 transition-colors"
+                            >
+                                What's on your mind?
+                            </button>
                         </div>
-                        <button
-                            onClick={() => setShowCreate(true)}
-                            className="input-standard flex-1 text-left text-surface-muted hover:border-zinc-300 transition-colors"
-                        >
-                            What's on your mind?
-                        </button>
-                    </div>
-                </Card>
+                    </Card>
 
                 {/* Create Post Modal/Sheet */}
                 {showCreate && (
@@ -172,36 +180,42 @@ export default function PostList() {
                     </div>
                 )}
 
-                {/* Post List */}
-                <div className="space-y-4 mt-6">
-                    {posts.map(post => (
-                        <PostCard key={post.id} post={post} onDelete={(id) => setPosts(prev => prev.filter(p => p.id !== id))} />
-                    ))}
+                    <PaginationInfo
+                        totalItems={totalCount}
+                        itemsPerPage={itemsPerPage}
+                        currentPage={page}
+                        onItemsPerPageChange={handleItemsPerPageChange}
+                        className="mt-8 mb-4"
+                    />
+                    {/* Post List */}
+                    <div className="space-y-4 mt-6">
+                        {posts.map(post => (
+                            <PostCard key={post.id} post={post} onDelete={(id) => setPosts(prev => prev.filter(p => p.id !== id))} />
+                        ))}
 
-                    {loading && (
-                        <div className="space-y-4">
-                            <Skeleton className="h-40 w-full rounded-standard" />
-                            <Skeleton className="h-40 w-full rounded-standard" />
-                        </div>
-                    )}
+                        {loading && (
+                            <div className="space-y-4">
+                                <Skeleton className="h-40 w-full rounded-standard" />
+                                <Skeleton className="h-40 w-full rounded-standard" />
+                            </div>
+                        )}
 
-                    {!loading && hasMore && (
-                        <Button
-                            variant="secondary"
-                            onClick={() => setPage(prev => prev + 1)}
-                            className="w-full py-3"
-                        >
-                            Load more
-                        </Button>
-                    )}
+                        {!loading && posts.length === 0 && (
+                            <Card className="text-center py-20 px-6 border-zinc-200 border-dashed bg-zinc-50/50 shadow-none">
+                                <p className="text-surface-muted font-medium">No posts yet. Be the first to post!</p>
+                            </Card>
+                        )}
+                    </div>
 
-                    {!loading && posts.length === 0 && (
-                        <Card className="text-center py-20 px-6 border-zinc-200 border-dashed bg-zinc-50/50 shadow-none">
-                            <p className="text-surface-muted font-medium">No posts yet. Be the first to post!</p>
-                        </Card>
-                    )}
+                    <PaginationControls
+                        totalItems={totalCount}
+                        itemsPerPage={itemsPerPage}
+                        currentPage={page}
+                        onPageChange={setPage}
+                    />
                 </div>
             </main>
+            <Footer />
         </div>
     );
 }

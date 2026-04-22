@@ -1,9 +1,16 @@
 import apiClient from '../../../shared/services/apiClient';
 
 const announcementService = {
-    getAnnouncements: async (page = 1, communityId = null) => {
+    getAnnouncements: async (pageOrOptions = 1, legacyCommunityId = null) => {
         try {
-            let url = `/contents/announcements/?page=${page}`;
+            const options = typeof pageOrOptions === 'object'
+                ? pageOrOptions
+                : { page: pageOrOptions, communityId: legacyCommunityId };
+            const page = options.page ?? 1;
+            const pageSize = options.pageSize ?? 20;
+            const communityId = options.communityId ?? null;
+
+            let url = `/contents/announcements/?page=${page}&page_size=${pageSize}`;
             if (communityId) {
                 url += `&community_id=${communityId}`;
             }

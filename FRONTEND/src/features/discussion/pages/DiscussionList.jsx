@@ -1,28 +1,33 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
 import discussionService from '../service/discussionService';
 import DiscussionCard from '../components/DiscussionCard';
 import Navbar from '../../../shared/components/layout/Navbar';
-import Button from '../../../shared/components/ui/Button';
+import Footer from '../../../shared/components/layout/Footer';
+import PageHeader from '../../../shared/components/layout/PageHeader';
 import Card from '../../../shared/components/card/Card';
+import PaginationInfo from '../../../shared/components/pagination/PaginationInfo';
+import PaginationControls from '../../../shared/components/pagination/PaginationControls';
+import CreateButton from '../../../shared/components/ui/CreateButton';
 
 export default function DiscussionList() {
+    const [itemsPerPage, setItemsPerPage] = useState(20);
     const [discussions, setDiscussions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
     const navigate = useNavigate();
+
     useEffect(() => {
         fetchDiscussions();
-    }, [page]);
+    }, [page, itemsPerPage]);
 
     const fetchDiscussions = async () => {
         setLoading(true);
         try {
-            const data = await discussionService.getDiscussions(page);
-            setDiscussions(data.results);
-            setTotalPages(Math.ceil(data.count / 10)); 
+            const data = await discussionService.getDiscussions({ page, pageSize: itemsPerPage });
+            setDiscussions(data.results || []);
+            setTotalCount(data.count ?? (data.results?.length || 0));
         } catch (error) {
             console.error("Failed to fetch discussions", error);
         } finally {
@@ -34,74 +39,66 @@ export default function DiscussionList() {
         setDiscussions(discussions.filter(d => d.id !== id));
     };
 
+    const handleItemsPerPageChange = (newItemsPerPage) => {
+        setItemsPerPage(newItemsPerPage);
+        setPage(1);
+    };
+
     return (
-        <div className="min-h-screen bg-[#F9FAFB] flex flex-col pt-20 pb-12">
+        <div className="min-h-screen bg-secondary text-surface-dark">
             <Navbar navSolid={true} />
-            <main className="flex-1 w-full max-w-4xl mx-auto px-4 py-8 mt-4">
-
-                <div className="flex items-center justify-between mb-10">
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight text-surface-dark sm:text-3xl">Community Discussions</h1>
-                        <p className="text-sm text-surface-muted mt-1">Deep dives, debates, and detailed conversations.</p>
-                    </div>
-                    <Button
-                        onClick={() => navigate('/discussions/create')}
-                        className="flex items-center gap-2"
+            <main className="pt-24 pb-16">
+                <div className="mx-auto w-full max-w-4xl px-4">
+                    <PageHeader
+                        title="Community Discussions"
+                        subtitle="Deep dives, debates, and detailed conversations."
+                        backLinkTo={`/feed`}
+                        backLinkText="Feeds"
                     >
-                        <Plus size={18} />
-                        New Discussion
-                    </Button>
+                        <CreateButton onClick={() => navigate('/discussions/create')}>
+                            New Discussion
+                        </CreateButton>
+                    </PageHeader>
+                    <PaginationInfo
+                        totalItems={totalCount}
+                        itemsPerPage={itemsPerPage}
+                        currentPage={page}
+                        onItemsPerPageChange={handleItemsPerPageChange}
+                        className="mt-8 mb-4"
+                    />
+                    {loading ? (
+                        <div className="flex flex-col gap-4">
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className="h-48 w-full bg-zinc-100 rounded-standard animate-pulse" />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {discussions.length > 0 ? (
+                                discussions.map(discussion => (
+                                    <DiscussionCard
+                                        key={discussion.id}
+                                        item={discussion}
+                                        onDelete={handleDelete}
+                                    />
+                                ))
+                            ) : (
+                                <Card className="text-center py-20 px-6 border-zinc-200 border-dashed bg-zinc-50/50 shadow-none">
+                                    <p className="text-surface-muted font-medium">No discussions found. Be the first to start one!</p>
+                                </Card>
+                            )}
+                        </div>
+                    )}
+
+                    <PaginationControls
+                        totalItems={totalCount}
+                        itemsPerPage={itemsPerPage}
+                        currentPage={page}
+                        onPageChange={setPage}
+                    />
                 </div>
-
-                {loading ? (
-                    <div className="flex flex-col gap-4">
-                        {[1, 2, 3].map(i => (
-                            <div key={i} className="h-48 w-full bg-zinc-100 rounded-standard animate-pulse" />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="space-y-4">
-                        {discussions.length > 0 ? (
-                            discussions.map(discussion => (
-                                <DiscussionCard
-                                    key={discussion.id}
-                                    item={discussion}
-                                    onDelete={handleDelete}
-                                />
-                            ))
-                        ) : (
-                            <Card className="text-center py-20 px-6 border-zinc-200 border-dashed bg-zinc-50/50 shadow-none">
-                                <p className="text-surface-muted font-medium">No discussions found. Be the first to start one!</p>
-                            </Card>
-                        )}
-                    </div>
-                )}
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                    <div className="flex justify-center items-center mt-12 gap-4">
-                        <Button
-                            variant="secondary"
-                            disabled={page === 1}
-                            onClick={() => setPage(p => p - 1)}
-                            className="!py-1.5 !px-4 !text-xs"
-                        >
-                            Previous
-                        </Button>
-                        <span className="text-metadata font-bold text-zinc-600">
-                            Page {page} of {totalPages}
-                        </span>
-                        <Button
-                            variant="secondary"
-                            disabled={page === totalPages}
-                            onClick={() => setPage(p => p + 1)}
-                            className="!py-1.5 !px-4 !text-xs"
-                        >
-                            Next
-                        </Button>
-                    </div>
-                )}
             </main>
+            <Footer />
         </div>
     );
 }
