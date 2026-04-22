@@ -1,10 +1,10 @@
-import AnnouncementCard from '../cards/AnnouncementCard';
-import EventCard from '../../features/events/components/shared/EventCard';
-import DiscussionCard from '../../features/discussion/components/DiscussionCard';
-import PostCard from '../../features/posts/components/PostCard'; // Import PostCard
-import { Skeleton, CardSkeleton } from '../../shared/components/layout/Skeleton';
-import ResourceCard from '../../features/resource/components/ResourceCard'; // Import ResourceCard
-import VacancyCard from '../../features/vacancy/components/VacancyCard';
+import AnnouncementCard from '../../../announcement/components/AnnouncementCard';
+import EventCard from '../../../events/components/shared/EventCard';
+import DiscussionCard from '../../../discussion/components/DiscussionCard';
+import PostCard from '../../../posts/components/PostCard';
+import { Skeleton, CardSkeleton } from '../../../../shared/components/layout/Skeleton';
+import ResourceCard from '../../../resource/components/ResourceCard';
+import VacancyCard from '../../../vacancy/components/VacancyCard';
 
 // Reusable Soft Container Component
 const SoftContainer = ({ children, className = '' }) => (

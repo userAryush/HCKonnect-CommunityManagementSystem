@@ -1,34 +1,34 @@
 import './App.css'
 import { Routes, Route } from 'react-router-dom'
-import Landing from './pages/accounts/Landing'
-import Register from './pages/accounts/Register'
-import Login from './pages/accounts/Login'
-import Feed from './pages/accounts/Feed'
-import Profile from './pages/accounts/Profile'
-import EditProfile from './pages/accounts/EditProfile'
-import CommunityProfilePage from './pages/community_pages/CommunityProfilePage'
-import CommunityDashboard from './pages/community_admin/CommunityDashboard'
-import CreateAnnouncement from './pages/community_admin/CreateAnnouncement'
-import MemberManagement from './pages/community_admin/MemberManagement'
-import CommunitiesList from './pages/community_pages/CommunitiesList'
-import CreateVacancy from './pages/community_admin/CreateVacancy';
-import VacancyPage from './pages/community_admin/VacancyPage';
-import VacancyApplicantsPage from './pages/community_admin/VacancyApplicantsPage';
-import EventDetailPage from './pages/community_pages/EventDetailPage'
-import EventRegistrationPage from './pages/community_pages/EventRegistrationPage';
-import CreateEvent from './pages/community_admin/CreateEvent'
+import Landing from './features/landing/page/Landing'
+import Register from './features/authentication/pages/Register'
+import Login from './features/authentication/pages/Login'
+import Feed from './features/feed/pages/Feed'
+import Profile from './features/profile/pages/Profile'
+import EditProfile from './features/profile/pages/EditProfile'
+import CommunityProfilePage from './features/profile/pages/CommunityProfilePage'
+import CommunityDashboard from './features/community_dash/pages/CommunityDashboard'
+import CreateAnnouncement from './features/announcement/pages/CreateAnnouncement'
+import MemberManagement from './features/member_management/pages/MemberManagement'
+import CommunitiesList from './features/community_dash/pages/CommunitiesList'
+import CreateVacancy from './features/vacancy/pages/CreateVacancy';
+import VacancyPage from './features/vacancy/pages/VacancyPage';
+import VacancyApplicantsPage from './features/vacancy/pages/VacancyApplicantsPage';
+import EventDetailPage from './features/events/pages/EventDetailPage'
+import EventRegistrationPage from './features/events/pages/EventRegistrationPage';
+import CreateEvent from './features/events/pages/CreateEvent'
 
-import EventsList from './pages/community_pages/EventsList'
-import AnnouncementsList from './pages/community_pages/AnnouncementsList'
-import DiscussionList from './pages/community_pages/DiscussionList'
-import CreateDiscussion from './pages/community_pages/CreateDiscussion'
-import DiscussionDetail from './pages/community_pages/DiscussionDetail'
-import PostList from './pages/community_pages/PostList'
-import PostDetail from './pages/community_pages/PostDetail'
-import FirstLoginChangePassword from './pages/accounts/FirstLoginChangePassword'
-import EventParticipantsPage from './pages/community_admin/EventParticipantsPage'
+import EventsList from './features/events/pages/EventsList'
+import AnnouncementsList from './features/announcement/pages/AnnouncementsList'
+import DiscussionList from './features/discussion/pages/DiscussionList'
+import CreateDiscussion from './features/discussion/pages/CreateDiscussion'
+import DiscussionDetail from './features/discussion/pages/DiscussionDetail'
+import PostList from './features/posts/pages/PostList'
+import PostDetail from './features/posts/pages/PostDetail'
+import FirstLoginChangePassword from './features/authentication/pages/FirstLoginChangePassword'
+import EventParticipantsPage from './features/events/pages/EventParticipantsPage'
 
-import ProtectedRoute from './components/ProtectedRoute'
+import ProtectedRoute from './shared/components/layout/ProtectedRoute'
 
 function App() {
   return (
