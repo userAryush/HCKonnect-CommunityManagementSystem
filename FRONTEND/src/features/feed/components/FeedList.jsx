@@ -10,7 +10,7 @@ import postService from '../../posts/service/postService'
 import DiscussionCard from '../../discussion/components/DiscussionCard'
 import PostCard from '../../posts/components/PostCard'
 import VacancyCard from '../../vacancy/components/VacancyCard'
-import Card from '../../../shared/components/ui/Card'
+import Card from '../../../shared/components/card/Card'
 import vacancyService from '../../vacancy/service/vacancyService'
 
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { formatTimeAgo } from '../../../utils/timeFormatter'
-import Card from '../../../shared/components/ui/Card'
+import Card from '../../../shared/components/card/Card'
 import Badge from '../../../shared/components/ui/Badge'
 import Button from '../../../shared/components/ui/Button'
 

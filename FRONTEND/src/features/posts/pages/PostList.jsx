@@ -5,7 +5,7 @@ import postService from '../service/postService';
 import Navbar from '../../../shared/components/layout/Navbar';
 import PostCard from '../components/PostCard';
 import { Skeleton } from '../../../shared/components/layout/Skeleton';
-import Card from '../../../shared/components/ui/Card';
+import Card from '../../../shared/components/card/Card';
 import Button from '../../../shared/components/ui/Button';
 import { useToast } from '../../../shared/components/ui/ToastContext';
 

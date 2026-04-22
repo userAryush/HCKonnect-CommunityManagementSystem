@@ -5,7 +5,7 @@ import discussionService from '../service/discussionService';
 import DiscussionCard from '../components/DiscussionCard';
 import Navbar from '../../../shared/components/layout/Navbar';
 import Button from '../../../shared/components/ui/Button';
-import Card from '../../../shared/components/ui/Card';
+import Card from '../../../shared/components/card/Card';
 
 export default function DiscussionList() {
     const [discussions, setDiscussions] = useState([]);

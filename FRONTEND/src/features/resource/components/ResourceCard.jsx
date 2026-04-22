@@ -1,20 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     FileText,
     Play,
     Download,
-    Share2,
-    MoreVertical,
-    Edit,
-    Trash2,
     File,
     ExternalLink
 } from 'lucide-react';
-import { formatTimeAgo } from '../../../utils/timeFormatter';
-import { getInitials, getDisplayName, getRoleLabel, getProfileImage } from '../../../utils/userUtils';
+import Card from '../../../shared/components/card/Card';
+import CardHeader from '../../../shared/components/card/CardHeader';
+import CardActionMenu from '../../../shared/components/card/CardActionMenu';
 import Badge from '../../../shared/components/ui/Badge';
-import Dropdown from '../../../shared/components/ui/Dropdown';
-import { useNavigate } from 'react-router-dom';
+import Button from '../../../shared/components/ui/Button';
+import ShareButton from '../../../shared/components/card/ShareButton';
+import ConfirmationModal from '../../../shared/components/modals/ConfirmationModal';
 
 const getResourceIcon = (category) => {
     switch (category) {
@@ -40,145 +38,137 @@ const formatFileSize = (bytes) => {
 };
 
 export default function ResourceCard({ resource, onEdit, onDelete }) {
-    const navigate = useNavigate();
     const user = JSON.parse(localStorage.getItem('user') || 'null');
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const canManage = user && (
         (user.role === 'community' && String(user.id) === String(resource.community?.id || resource.community)) ||
         (user.membership && user.membership.role === 'representative' && String(user.membership.community) === String(resource.community?.id || resource.community))
     );
 
-    const handleShare = () => {
-        const url = resource.category === 'video' ? resource.video_url : window.location.origin + resource.file;
-        navigator.clipboard.writeText(url);
-        alert('Link copied to clipboard!');
-    };
-
-    const handleOpen = () => {
+    const handleOpen = (e) => {
+        e.stopPropagation();
         const url = resource.category === 'video' ? resource.video_url : resource.file;
         window.open(url, '_blank');
     };
 
-    return (
-        <div className="group relative overflow-hidden rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm transition hover:shadow-md break-words">
-            <header className="flex items-center justify-between mb-5">
-                <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-500 font-bold overflow-hidden border border-zinc-200 uppercase text-xs tracking-wider">
-                        {getProfileImage(resource) ? (
-                            <img src={getProfileImage(resource)} alt={getDisplayName(resource)} className="h-full w-full object-cover" />
-                        ) : (
-                            <span>{getInitials(getDisplayName(resource))}</span>
-                        )}
-                    </div>
-                    <div>
-                        <p
-                            className="text-sm font-semibold text-surface-dark cursor-pointer transition-all duration-200 ease-out hover:font-bold"
+    const handleEdit = (e) => {
+        if (e) e.stopPropagation();
+        onEdit(resource);
+    };
 
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/community/${resource.community?.id || resource.community}`);
-                            }}
-                        >
-                            {getDisplayName(resource)}
-                        </p>
-                        <p className="text-metadata">
-                            {getRoleLabel(resource)} • {formatTimeAgo(resource.created_at || new Date())}
-                        </p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2">
+    const handleDelete = (e) => {
+        if (e) e.stopPropagation();
+        setIsDeleteModalOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!onDelete) return;
+        setIsDeleting(true);
+        try {
+            await onDelete(resource.id);
+            setIsDeleteModalOpen(false);
+        } catch (error) {
+            console.error('Failed to delete resource', error);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    const resourceUrl = resource.category === 'video' ? resource.video_url : window.location.origin + resource.file;
+
+    return (
+        <>
+            <Card className="group relative break-words">
+                <CardHeader
+                    item={resource}
+                    actions={
+                        <CardActionMenu
+                            canEdit={canManage}
+                            onEdit={handleEdit}
+                            canDelete={canManage}
+                            onDelete={handleDelete}
+                        />
+                    }
+                >
                     <Badge variant="orange">Resource</Badge>
                     {resource.visibility && (
                         <Badge variant={resource.visibility === 'public' ? 'success' : 'gray'}>
                             {resource.visibility}
                         </Badge>
                     )}
-                </div>
-            </header>
+                </CardHeader>
 
-            <div className="flex items-start gap-4">
-                {/* Icon Container */}
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#f4f5f2] transition group-hover:bg-[#eaf0e6]">
-                    {getResourceIcon(resource.category)}
-                </div>
+                <div className="flex items-start gap-4">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-zinc-100 transition group-hover:bg-zinc-200/50">
+                        {getResourceIcon(resource.category)}
+                    </div>
 
-                {/* Info */}
-                <div className="flex-1 min-w-0 overflow-hidden">
-                    <div className="flex items-center justify-between gap-2">
-                        <h3 className="text-title transition-transform duration-200 ease-out group-hover:-translate-y-0.5" title={resource.title}>
+                    <div className="flex-1 min-w-0 overflow-hidden">
+                        <h3 className="text-title transition-transform duration-200 ease-out group-hover:-translate-y-0.5 truncate" title={resource.title}>
                             {resource.title}
                         </h3>
-
-                        <div className="flex items-center gap-1">
-                            {canManage && (
-                                <Dropdown
-                                    actions={[
-                                        {
-                                            label: 'Edit',
-                                            icon: <Edit size={14} />,
-                                            onClick: () => onEdit(resource)
-                                        },
-                                        {
-                                            label: 'Delete',
-                                            icon: <Trash2 size={14} />,
-                                            onClick: () => onDelete(resource.id),
-                                            variant: 'danger'
-                                        }
-                                    ]}
-                                />
-                            )}
-                        </div>
-                    </div>
-
-                    <p className="mt-1 text-xs text-[#4b4b4b] line-clamp-2 break-words leading-relaxed">
-                        {resource.description}
-                    </p>
-
-                    <div className="mt-4 flex items-center justify-between text-[11px] text-[#4b4b4b]">
-                        <div className="flex items-center gap-2 overflow-hidden">
-                            {resource.category === 'video' ? (
-                                <span className="shrink-0 font-bold text-primary">LINK</span>
-                            ) : (
-                                <>
-                                    <span className="truncate max-w-[60px] uppercase font-bold">{resource.file_extension || 'FILE'}</span>
-                                    <span>•</span>
-                                    <span className="shrink-0 font-medium">{formatFileSize(resource.file_size)}</span>
-                                </>
-                            )}
+                        <p className="mt-1 text-xs text-surface-muted line-clamp-2 break-words leading-relaxed">
+                            {resource.description}
+                        </p>
+                        <div className="mt-4 flex items-center justify-between text-[11px] text-surface-muted">
+                            <div className="flex items-center gap-2 overflow-hidden">
+                                {resource.category === 'video' ? (
+                                    <span className="shrink-0 font-bold text-primary">LINK</span>
+                                ) : (
+                                    <>
+                                        <span className="truncate max-w-[60px] uppercase font-bold">{resource.file_extension || 'FILE'}</span>
+                                        <span>•</span>
+                                        <span className="shrink-0 font-medium">{formatFileSize(resource.file_size)}</span>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Actions */}
-            <div className="mt-5 flex items-center gap-2 border-t border-[#f4f5f2] pt-4">
-                <button
-                    onClick={handleOpen}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#0d1f14] py-2.5 text-xs font-semibold text-white transition hover:bg-[#0d1f14]/90"
-                >
-                    <ExternalLink size={14} />
-                    {resource.category === 'video' ? 'Watch Video' : 'Open File'}
-                </button>
-
-                {resource.category !== 'video' && (
-                    <a
-                        href={resource.file}
-                        download
-                        className="flex items-center justify-center rounded-xl bg-[#f4f5f2] p-2.5 text-[#0d1f14] transition hover:bg-[#e5e7eb] shrink-0"
-                        title="Download"
+                <div className="mt-5 flex items-center gap-2 border-t border-surface-border pt-4">
+                    <Button
+                        onClick={handleOpen}
+                        className="flex-1 !py-2.5 !text-xs"
                     >
-                        <Download size={16} />
-                    </a>
-                )}
+                        <ExternalLink size={14} className="mr-2" />
+                        {resource.category === 'video' ? 'Watch Video' : 'Open File'}
+                    </Button>
 
-                <button
-                    onClick={handleShare}
-                    className="flex items-center justify-center rounded-xl bg-[#f4f5f2] p-2.5 text-[#0d1f14] transition hover:bg-[#e5e7eb] shrink-0"
-                    title="Share"
-                >
-                    <Share2 size={16} />
-                </button>
-            </div>
-        </div>
+                    {resource.category !== 'video' && (
+                        <a
+                            href={resource.file}
+                            download
+                            onClick={(e) => e.stopPropagation()}
+                            title="Download"
+                        >
+                            <Button variant="ghost" className="!p-2.5">
+                                <Download size={16} />
+                            </Button>
+                        </a>
+                    )}
+
+                    <ShareButton
+                        url={resourceUrl}
+                        title={resource.title}
+                        text={`Check out this resource: ${resource.title}`}
+                        className="!p-2.5"
+                    />
+                </div>
+            </Card>
+
+            <ConfirmationModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={confirmDelete}
+                title="Delete resource?"
+                message="This action cannot be undone."
+                confirmText="Delete"
+                isLoading={isDeleting}
+                loadingText="Deleting..."
+            />
+        </>
     );
 }
