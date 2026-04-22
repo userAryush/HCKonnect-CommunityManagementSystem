@@ -84,4 +84,43 @@
         @apply absolute -bottom-0.5 left-0 right-0 h-0.5 bg-primary rounded-full;
     }
 
+    .mini-profile-card {
+        @apply rounded-standard overflow-hidden relative;
+        background: var(--color-primary);
+        box-shadow: 0 8px 32px rgba(117, 191, 68, 0.30), 0 2px 8px rgba(117, 191, 68, 0.15);
+    }
+    .mini-profile-avatar {
+        border: 2.5px solid rgba(255, 255, 255, 0.5);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    .mini-profile-avatar-fallback {
+        background: rgba(255, 255, 255, 0.18);
+        backdrop-filter: blur(8px);
+        border: 2.5px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    }
+
+    .mini-profile-stat {
+        @apply flex flex-col items-center py-2 rounded-xl;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(6px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .mini-profile-badge {
+        @apply mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(6px);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    .mini-profile-badge-icon {
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .mini-profile-badge-icon-fallback {
+        background: rgba(255, 255, 255, 0.25);
+    }
+
 }
