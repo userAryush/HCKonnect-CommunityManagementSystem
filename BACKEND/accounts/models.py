@@ -110,3 +110,21 @@ class PasswordResetOTP(BaseModel):
 
     def __str__(self):
         return f"{self.user.email} - {self.otp} ({self.otp_type})"
+
+
+class ContactUsMessage(BaseModel):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='contact_messages'
+    )
+    full_name = models.CharField(max_length=150)
+    email = models.EmailField()
+    subject = models.CharField(max_length=200)
+    message = models.TextField()
+    is_resolved = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.full_name} - {self.subject}"

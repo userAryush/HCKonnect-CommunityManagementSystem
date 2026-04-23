@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, CommunityUser, PasswordResetOTP, AdminManagement
+from .models import User, CommunityUser, PasswordResetOTP, AdminManagement, ContactUsMessage
 
 from django.forms import ModelForm, ValidationError, CharField, PasswordInput
 from .utils import generate_community_tag,generate_auto_password
@@ -12,6 +12,7 @@ from utils.email_utils import send_branded_email
 
 admin.site.register(User)
 admin.site.register(PasswordResetOTP)
+admin.site.register(ContactUsMessage)
 
 
 

@@ -5,7 +5,7 @@ from .serializers import (
     RegisterSerializer, LoginSerializer, ForgotPasswordSerializer, 
     VerifyOTPSerializer, ResetPasswordSerializer, UserProfileSerializer, 
     UserProfileDetailSerializer, GlobalSearchSerializer, GoogleAuthSerializer,
-    ChangePasswordSerializer
+    ChangePasswordSerializer, ContactUsMessageSerializer
 )
 from django.db.models import Q
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -214,3 +214,22 @@ class GoogleAuthView(APIView):
                 return Response({'error': error_msg}, status=status.HTTP_403_FORBIDDEN)
             
             return Response({'error': error_msg}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ContactUsView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = ContactUsMessageSerializer(data=request.data)
+        if serializer.is_valid():
+            contact_message = serializer.save(
+                user=request.user if request.user.is_authenticated else None
+            )
+            return Response(
+                {
+                    "message": "Thank you for contacting us. We will get back to you soon.",
+                    "id": str(contact_message.id)
+                },
+                status=status.HTTP_201_CREATED
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -9,7 +9,7 @@ function Footer() {
     {
       title: 'Platform',
       links: [
-        { name: 'Home', href: '/' },
+        { name: 'Home', href: '/feed' },
         { name: 'Communities', href: '/communities' },
         { name: 'Discussions', href: '/discussions' },
         { name: 'Events', href: '/events' },
@@ -19,18 +19,17 @@ function Footer() {
     {
       title: 'Support',
       links: [
-        { name: 'Help Center', href: '/help' },
-        { name: 'Guidelines', href: '/guidelines' },
-        { name: 'Contact Us', href: '/contact' },
-        { name: 'FAQ', href: '/faq' }
+        { name: 'Help Center', href: '/support#help-center' },
+        { name: 'Guidelines', href: '/support#community-guidelines' },
+        { name: 'Contact Us', href: '/support#contact-support' },
+        { name: 'FAQ', href: '/support#faq' }
       ]
     },
     {
       title: 'Legal',
       links: [
-        { name: 'Privacy Policy', href: '/privacy' },
-        { name: 'Terms of Service', href: '/terms' },
-        { name: 'Community Guidelines', href: '/community-guidelines' }
+        { name: 'Privacy Policy', href: '/legal#privacy-policy' },
+        { name: 'Terms of Service', href: '/legal#terms-of-service' }
       ]
     }
   ]

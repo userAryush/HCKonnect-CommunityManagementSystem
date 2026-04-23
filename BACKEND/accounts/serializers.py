@@ -1,4 +1,4 @@
-from .models import User, PasswordResetOTP
+from .models import User, PasswordResetOTP, ContactUsMessage
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from .utils import generate_auto_password, generate_otp
@@ -437,3 +437,10 @@ class GoogleAuthSerializer(Serializer):
         if not attrs.get('id_token') and not attrs.get('access_token'):
             raise ValidationError("Either id_token or access_token is required")
         return attrs
+
+
+class ContactUsMessageSerializer(ModelSerializer):
+    class Meta:
+        model = ContactUsMessage
+        fields = ['id', 'full_name', 'email', 'subject', 'message', 'created_at']
+        read_only_fields = ['id', 'created_at']
