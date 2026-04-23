@@ -54,7 +54,7 @@ export default function PostList() {
         <div className="min-h-screen bg-secondary text-surface-dark">
             <Navbar navSolid={true} />
             <main className="pt-24 pb-16">
-                <div className="mx-auto w-full max-w-4xl px-4">
+                <div className="mx-auto w-full max-w-6xl px-4">
                     <PageHeader
                         title="Community Posts"
                         subtitle="Shared stories and updates from your college."

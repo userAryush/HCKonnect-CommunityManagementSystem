@@ -29,17 +29,19 @@ export default function ProfileDropdown() {
   return (
     <div className="relative">
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2.5 pl-1.5 pr-3 py-1.5 transition-all hover:bg-zinc-100 rounded-xl border border-transparent hover:border-zinc-200 group"
+        aria-label={`Open profile menu for ${displayName}`}
+        aria-expanded={isOpen}
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all hover:bg-zinc-100 border border-transparent hover:border-zinc-200 group"
       >
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-100 text-zinc-500 font-bold text-[10px] ring-2 ring-transparent group-hover:ring-zinc-100 transition-all overflow-hidden border border-zinc-200 uppercase">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 font-bold text-[10px] ring-2 ring-transparent group-hover:ring-zinc-100 transition-all overflow-hidden border border-zinc-200 uppercase">
           {profileImage ? (
-            <img src={profileImage} alt={displayName} className="h-full w-full object-cover" />
+            <img src={profileImage} alt="" className="h-full w-full object-cover" />
           ) : (
             initials
           )}
         </div>
-        <span className="hidden text-[13px] font-bold text-surface-dark lg:block max-w-[120px] truncate">{displayName}</span>
       </button>
 
       {isOpen && (
@@ -50,8 +52,8 @@ export default function ProfileDropdown() {
           />
           <div className="absolute right-0 mt-3 w-80 z-50 rounded-2xl border border-surface-border bg-white py-2 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             <div className="px-4 py-3 border-b border-zinc-100 mb-1">
-              <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Account</p>
-              <p className="text-sm font-bold text-surface-dark mt-0.5 truncate">{user?.email}</p>
+              <p className="text-sm font-bold text-surface-dark truncate">{displayName}</p>
+              <p className="text-xs text-zinc-500 mt-0.5 truncate">{user?.email}</p>
             </div>
 
             <Link

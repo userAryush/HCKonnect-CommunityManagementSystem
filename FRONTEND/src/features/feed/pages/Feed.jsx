@@ -42,7 +42,7 @@ export default function Feed() {
       />
 
       <main className="pt-24 pb-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-6xl px-4">
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
 
             {/* Main Feed Column */}

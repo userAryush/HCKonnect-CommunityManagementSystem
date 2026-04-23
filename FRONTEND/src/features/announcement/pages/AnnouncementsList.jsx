@@ -10,6 +10,7 @@ import PaginationControls from '../../../shared/components/pagination/Pagination
 import CreateButton from '../../../shared/components/ui/CreateButton';
 import apiClient from '../../../shared/services/apiClient';
 import { Link, useSearchParams, useParams } from 'react-router-dom';
+import BackLink from '../../../shared/components/layout/BackLink';
 
 export default function AnnouncementsList() {
     const [itemsPerPage, setItemsPerPage] = useState(20);
@@ -98,15 +99,13 @@ export default function AnnouncementsList() {
             />
 
             <main className="pt-24 pb-16">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div className="mx-auto w-full max-w-6xl px-4">
                     <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
                         <div className="lg:col-span-8 flex flex-col gap-6">
                             <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
                                 <div>
                                     <div className="mb-1">
-                                        <Link to="/feed" className="text-xs font-semibold uppercase tracking-wider text-surface-muted hover:text-primary">
-                                            Back to Feeds
-                                        </Link>
+                                        <BackLink to="/feed" text="Feeds" />
                                     </div>
                                     <h1 className="text-2xl font-bold tracking-tight text-surface-dark sm:text-3xl">All Announcements</h1>
                                     <p className="text-sm text-surface-muted">Be updated with every announcement.</p>

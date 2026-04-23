@@ -12,6 +12,7 @@ import PaginationControls from '../../../shared/components/pagination/Pagination
 import CreateVacancyModal from '../components/CreateVacancyModal'
 import CreateButton from '../../../shared/components/ui/CreateButton'
 import getApiErrorMessage from '../../../utils/getApiErrorMessage'
+import BackLink from '../../../shared/components/layout/BackLink'
 
 export default function VacanciesPage() {
   const { id } = useParams()
@@ -157,15 +158,13 @@ export default function VacanciesPage() {
       />
 
       <main className="pt-24 pb-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-6xl px-4">
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
             <div className="lg:col-span-8 flex flex-col gap-6">
               <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
                 <div>
                   <div className="mb-1">
-                    <Link to={`/community/${id}/dashboard`} className="text-xs font-semibold uppercase tracking-wider text-surface-muted hover:text-primary">
-                      Back to Dashboard
-                    </Link>
+                  <BackLink to={`/community/${id}/dashboard`} text="Dashboard" />
                   </div>
                   <h1 className="text-2xl font-bold tracking-tight text-surface-dark sm:text-3xl">Manage Vacancies</h1>
                   <p className="text-sm text-surface-muted">Review, sort, and manage all job vacancies for your community.</p>

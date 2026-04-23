@@ -7,7 +7,7 @@ import apiClient from '../../services/apiClient'
 import { useAuth } from '../../../features/authentication/components/AuthContext'
 import NotificationPopover from '../../../features/notifications/NotificationPopover'
 import notificationService from '../../../features/notifications/notificationService'
-import { getDisplayName, getInitials, getProfileImage } from '../../../utils/userUtils'
+import { getInitials } from '../../../utils/userUtils'
 
 const studentLinks = [
   { label: 'Home', href: '/feed' },
@@ -118,151 +118,180 @@ function Navbar({ menuOpen = false, toggleMenu = () => { }, closeMenu = () => { 
 
   return (
     <header className={`${baseStyles} ${navSolid ? solid : transparent}`}>
-      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-3">
-        <div className="flex items-center justify-between gap-4 md:gap-8">
+  <div className="mx-auto w-full max-w-6xl px-4 py-3">
 
-          {/* ZONE 1: BRAND */}
-          <Link
-            to={isLanding ? '/' : '/feed'}
-            onClick={closeMenu}
-            className="flex-shrink-0 flex flex-col group"
-          >
-            <div className="flex items-center gap-2 group cursor-pointer">
-              <img src={logo} alt="logo" className="h-8 w-8 rounded-lg transition-transform group-hover:scale-105" />
+    {/* MAIN FLEX */}
+    <div className="flex items-center gap-4 md:gap-6">
 
-              <span className="text-xl text-primary font-display font-bold tracking-tight">
-                HCKonnect
-              </span>
+      {/* LEFT GROUP */}
+      <div className="flex items-center gap-4">
+
+        {/* BRAND */}
+        <Link
+          to={isLanding ? '/' : '/feed'}
+          onClick={closeMenu}
+          className="flex-shrink-0 flex items-center gap-2 group"
+        >
+          <img
+            src={logo}
+            alt="logo"
+            className="h-8 w-8 rounded-lg transition-transform group-hover:scale-105"
+          />
+          <span className="text-xl text-primary font-display font-bold tracking-tight">
+            HCKonnect
+          </span>
+        </Link>
+
+        {/* SEARCH */}
+        {!isLanding && (
+          <div className="hidden md:flex w-[260px] relative" ref={dropdownRef}>
+            <div className="relative w-full group">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-primary transition-colors" size={16} />
+              
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-zinc-100/80 border border-transparent rounded-xl py-2 pl-10 pr-4 text-sm transition-all focus:bg-white focus:ring-4 focus:ring-zinc-100 focus:border-zinc-200 outline-none placeholder:text-zinc-500 font-medium"
+              />
+
+              {isSearching && (
+                <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 animate-spin text-primary" size={16} />
+              )}
             </div>
-            <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-surface-muted mt-0.5 ml-0.5">
-              Herald Community Konnect
-            </span>
-          </Link>
 
-          {/* ZONE 2: SEARCH */}
-          {!isLanding && (
-            <div className="hidden md:flex flex-1 justify-center max-w-md relative" ref={dropdownRef}>
-              <div className="relative w-full group">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-primary transition-colors" size={16} />
-                <input
-                  type="text"
-                  placeholder="Search anything..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-zinc-100/80 border border-transparent rounded-xl py-2 pl-10 pr-4 text-sm transition-all focus:bg-white focus:ring-4 focus:ring-zinc-100 focus:border-zinc-200 outline-none placeholder:text-zinc-500 font-medium"
-                />
-                {isSearching && (
-                  <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 animate-spin text-primary" size={16} />
+            {/* DROPDOWN */}
+            {showDropdown && searchQuery.trim().length > 1 && (
+              <div className="absolute top-full left-0 right-0 mt-3 bg-white border border-surface-border rounded-2xl shadow-xl overflow-hidden z-[60]">
+                {isSearching ? (
+                  <div className="p-8 flex flex-col items-center justify-center gap-3">
+                    <Loader2 className="animate-spin text-primary" size={20} />
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+                      Searching...
+                    </p>
+                  </div>
+                ) : searchResults.length > 0 ? (
+                  <div className="py-2 max-h-[420px] overflow-y-auto">
+                    {searchResults.map((result) => (
+                      <button
+                        key={`${result.type}-${result.id}`}
+                        onClick={() => handleSelectResult(result)}
+                        className="w-full flex items-center gap-3.5 px-4 py-3 hover:bg-zinc-50 transition-all group text-left"
+                      >
+                        <div className="h-10 w-10 rounded-full border border-zinc-100 overflow-hidden bg-zinc-50 flex items-center justify-center">
+                          {result.image ? (
+                            <img src={result.image} alt={result.name} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="text-zinc-400 font-bold text-xs">
+                              {getInitials(result.name)}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-surface-dark truncate group-hover:text-primary transition-colors">
+                            {result.name}
+                          </p>
+                          <p className="text-xs text-zinc-400 truncate mt-0.5">
+                            {result.type === 'student' ? `@${result.username}` : 'Community'}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-8 text-center">
+                    <p className="text-sm font-medium text-surface-dark">No matches found</p>
+                    <p className="text-xs text-zinc-400 mt-1">Try a different search term.</p>
+                  </div>
                 )}
               </div>
+            )}
+          </div>
+        )}
 
-              {showDropdown && searchQuery.trim().length > 1 && (
-                <div className="absolute top-full left-0 right-0 mt-3 bg-white border border-surface-border rounded-2xl shadow-xl overflow-hidden z-[60]">
-                  {isSearching ? (
-                    <div className="p-8 flex flex-col items-center justify-center gap-3">
-                      <Loader2 className="animate-spin text-primary" size={20} />
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Searching...</p>
-                    </div>
-                  ) : searchResults.length > 0 ? (
-                    <div className="py-2 max-h-[420px] overflow-y-auto">
-                      {searchResults.map((result) => (
-                        <button
-                          key={`${result.type}-${result.id}`}
-                          onClick={() => handleSelectResult(result)}
-                          className="w-full flex items-center gap-3.5 px-4 py-3 hover:bg-zinc-50 transition-all group text-left"
-                        >
-                          <div className="h-10 w-10 rounded-full border border-zinc-100 overflow-hidden bg-zinc-50 flex-shrink-0 flex items-center justify-center">
-                            {result.image ? (
-                              <img src={result.image} alt={result.name} className="h-full w-full object-cover" />
-                            ) : (
-                              <div className="h-full w-full flex items-center justify-center text-zinc-400 font-bold text-xs bg-zinc-100">
-                                {getInitials(result.name)}
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-surface-dark truncate group-hover:text-primary transition-colors">
-                              {result.name}
-                            </p>
-                            <p className="text-xs text-zinc-400 truncate mt-0.5">
-                              {result.type === 'student' ? `@${result.username}` : 'Community'}
-                            </p>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="p-8 text-center">
-                      <p className="text-sm font-medium text-surface-dark">No matches found</p>
-                      <p className="text-xs text-zinc-400 mt-1">Try a different search term.</p>
-                    </div>
-                  )}
-                </div>
-              )}
+      </div>
+
+      {/* RIGHT GROUP */}
+      <div className="ml-auto flex items-center gap-2 md:gap-4">
+
+        {/* NAV LINKS */}
+        <nav className="hidden xl:flex items-center gap-1">
+          {navLinks.map((link) => {
+            const isActive = location.pathname === link.href
+            return (
+              <Link
+                key={link.label}
+                to={link.href}
+                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                  isActive
+                    ? 'text-primary bg-primary/5'
+                    : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50'
+                }`}
+              >
+                {link.label}
+              </Link>
+            )
+          })}
+        </nav>
+
+        {/* ACTIONS */}
+        <div className="flex items-center gap-2.5 md:pl-4 xl:border-l border-zinc-100">
+
+          {!user ? (
+            <div className="flex items-center gap-2">
+              <Link to="/login" className="px-4 py-2 text-sm font-bold text-zinc-600 hover:text-zinc-900">
+                Login
+              </Link>
+              <Link to="/register" className="bg-primary text-white px-5 py-2 rounded-xl text-sm font-bold">
+                Join
+              </Link>
             </div>
+          ) : (
+            <>
+              {/* NOTIFICATIONS */}
+              <div className="relative" ref={notificationRef}>
+                <button
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  className={`p-2.5 rounded-xl ${
+                    showNotifications
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-zinc-400 hover:bg-zinc-100'
+                  }`}
+                >
+                  <Bell size={20} />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-2 right-2 h-3.5 w-3.5 bg-primary text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-white">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                <NotificationPopover
+                  isOpen={showNotifications}
+                  onClose={() => setShowNotifications(false)}
+                />
+              </div>
+
+              <ProfileDropdown />
+            </>
           )}
 
-          {/* ZONE 3: NAV & ACTIONS */}
-          <div className="flex items-center gap-2 md:gap-4">
-            <nav className="hidden xl:flex items-center gap-1">
-              {navLinks.map((link) => {
-                const isActive = location.pathname === link.href
-                return (
-                  <Link
-                    key={link.label}
-                    to={link.href}
-                    className={`px-4 py-2 text-sm font-semibold transition-colors rounded-lg ${isActive
-                      ? 'text-primary bg-primary/5'
-                      : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50'
-                      }`}
-                  >
-                    {link.label}
-                  </Link>
-                )
-              })}
-            </nav>
+          {/* MOBILE MENU */}
+          <button
+            onClick={toggleMenu}
+            className="lg:hidden p-2 text-zinc-600 hover:bg-zinc-100 rounded-xl"
+          >
+            {menuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
 
-            <div className="flex items-center gap-1 sm:gap-4 md:pl-4 xl:border-l border-zinc-100">
-              {!user ? (
-                <div className="flex items-center gap-2">
-                  <Link to="/login" className="px-4 py-2 text-sm font-bold text-zinc-600 hover:text-zinc-900 transition-colors">Login</Link>
-                  <Link to="/register" className="bg-primary text-white px-5 py-2 rounded-xl text-sm font-bold shadow-md shadow-primary/20 hover:bg-primary-hover transition-all">Join</Link>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2.5">
-                  <div className="relative" ref={notificationRef}>
-                    <button
-                      onClick={() => setShowNotifications(!showNotifications)}
-                      className={`p-2.5 rounded-xl transition-all ${showNotifications
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600'
-                        }`}
-                    >
-                      <Bell size={20} />
-                      {unreadCount > 0 && (
-                        <span className="absolute top-2 right-2 h-3.5 w-3.5 bg-primary text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-white">
-                          {unreadCount}
-                        </span>
-                      )}
-                    </button>
-                    <NotificationPopover isOpen={showNotifications} onClose={() => setShowNotifications(false)} />
-                  </div>
-                  <ProfileDropdown />
-                </div>
-              )}
-
-              {/* Mobile Toggle */}
-              <button
-                onClick={toggleMenu}
-                className="lg:hidden p-2 text-zinc-600 hover:bg-zinc-100 rounded-xl transition-colors"
-              >
-                {menuOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
-            </div>
-          </div>
         </div>
       </div>
-    </header>
+
+    </div>
+  </div>
+</header>
   )
 }
 
