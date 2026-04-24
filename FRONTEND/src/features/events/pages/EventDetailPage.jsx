@@ -113,18 +113,6 @@ export default function EventDetailPage() {
         }
     }
 
-    const handleShare = () => {
-        const fullUrl = window.location.href;
-        navigator.clipboard.writeText(fullUrl)
-            .then(() => {
-                setToast("Link copied to clipboard!");
-            })
-            .catch(err => {
-                console.error('Failed to copy: ', err);
-                setToast("Failed to copy link.");
-            });
-    }
-
     const handleRegistrationRedirect = () => {
         if (!currentUser) {
             navigate('/login');
@@ -219,7 +207,8 @@ export default function EventDetailPage() {
                             isFull={isFull}
                             onRegister={handleRegister}
                             onRegistrationRedirect={handleRegistrationRedirect}
-                            onShare={handleShare}
+                            shareUrl={window.location.href}
+                            shareTitle={event.title}
                         />
                     </aside>
                 </div>

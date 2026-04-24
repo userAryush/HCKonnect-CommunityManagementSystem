@@ -25,7 +25,6 @@ import PostList from './features/posts/pages/PostList'
 import PostDetail from './features/posts/pages/PostDetail'
 import FirstLoginChangePassword from './features/authentication/pages/FirstLoginChangePassword'
 import EventParticipantsPage from './features/events/pages/EventParticipantsPage'
-import ContactUs from './shared/pages/ContactUs'
 import Support from './shared/pages/Support'
 import Legal from './shared/pages/Legal'
 
@@ -42,7 +41,6 @@ function App() {
       <Route path="/events/:eventId" element={<EventDetailPage />} />
       <Route path="/community" element={<CommunityProfilePage />} />
       <Route path="/community/:id" element={<CommunityProfilePage />} />
-      <Route path="/contact-us" element={<ContactUs />} />
       <Route path="/support" element={<Support />} />
       <Route path="/legal" element={<Legal />} />
 

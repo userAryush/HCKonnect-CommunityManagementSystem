@@ -1,8 +1,8 @@
 import React from 'react';
 import { ThumbsUp, MessageSquare, Share2 } from 'lucide-react';
 import Button from './Button';
-import { useToast } from './ToastContext';
-import { useLocation } from 'react-router-dom';
+import ShareButton from '../card/ShareButton';
+import { getContentShareUrl } from '../../../utils/shareUtils';
 
 export default function ActionButtons({
     item,
@@ -11,24 +11,7 @@ export default function ActionButtons({
     showShare = true,
     type = 'post' // 'post' or 'discussion'
 }) {
-    const { showToast } = useToast();
-    const location = useLocation();
-
-    const handleShare = (e) => {
-        e.stopPropagation();
-        const baseUrl = window.location.origin;
-        const path = type === 'discussion' ? `/discussions/${item.id}` : `/posts/${item.id}`;
-        const fullUrl = `${baseUrl}${path}`;
-
-        navigator.clipboard.writeText(fullUrl)
-            .then(() => {
-                showToast('Link copied to clipboard!', 'success');
-            })
-            .catch(err => {
-                console.error('Failed to copy: ', err);
-                showToast('Failed to copy link', 'error');
-            });
-    };
+    const shareUrl = getContentShareUrl(type, item.id);
     const isLiked = item.user_has_liked;
     const reactionCount = item.reaction_count || 0;
     const commentCount = item.comment_count || item.reply_count || 0;
@@ -63,14 +46,16 @@ export default function ActionButtons({
             </Button>
 
             {showShare && (
-                <Button
+                <ShareButton
                     variant="secondary"
-                    onClick={handleShare}
+                    url={shareUrl}
+                    title={item.topic || item.title || 'Shared from HCKonnect'}
+                    text="Take a look at this on HCKonnect."
                     className="rounded-full px-4 py-1.5 !text-xs gap-2 ml-auto"
                 >
                     <Share2 size={14} className="text-zinc-400" />
                     <span className="hidden sm:inline">Share</span>
-                </Button>
+                </ShareButton>
             )}
         </div>
     );

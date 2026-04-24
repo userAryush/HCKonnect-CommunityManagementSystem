@@ -1,47 +1,50 @@
-import React from 'react';
-import { Share2 } from 'lucide-react';
-import Button from '../ui/Button';
+import { useState } from 'react'
+import { Share2 } from 'lucide-react'
+import Button from '../ui/Button'
+import ShareModal from '../modals/ShareModal'
+import { getShareUrl } from '../../../utils/shareUtils'
 
-const ShareButton = ({ title, url, text, className = '', ...props }) => {
-    const handleShare = async (e) => {
-        e.stopPropagation();
-        const shareData = {
-            title: title || document.title,
-            text: text || 'Check this out!',
-            url: url || window.location.href,
-        };
+const ShareButton = ({
+  title,
+  url,
+  text = 'Check this out!',
+  className = '',
+  children,
+  onClick,
+  ...props
+}) => {
+  const [isOpen, setIsOpen] = useState(false)
+  const shareUrl = getShareUrl(url)
 
-        try {
-            if (navigator.share) {
-                await navigator.share(shareData);
-            } else {
-                await navigator.clipboard.writeText(shareData.url);
-                alert('Link copied to clipboard!');
-            }
-        } catch (error) {
-            console.error('Error sharing:', error);
-            // Fallback for failed share API or clipboard access
-            try {
-                await navigator.clipboard.writeText(shareData.url);
-                alert('Link copied to clipboard!');
-            } catch (copyError) {
-                console.error('Error copying to clipboard:', copyError);
-                alert('Could not copy link. Please copy it manually.');
-            }
-        }
-    };
+  const openModal = (event) => {
+    if (event) event.stopPropagation()
+    if (onClick) onClick(event)
+    setIsOpen(true)
+  }
 
-    return (
-        <Button
-            onClick={handleShare}
-            variant="ghost"
-            className={`shrink-0 ${className}`}
-            title="Share"
-            {...props}
-        >
-            <Share2 size={16} />
-        </Button>
-    );
-};
+  return (
+    <>
+      <Button
+        onClick={openModal}
+        variant="ghost"
+        className={`shrink-0 ${className}`}
+        title="Share"
+        aria-haspopup="dialog"
+        aria-expanded={isOpen}
+        {...props}
+      >
+        {children || <Share2 size={16} />}
+      </Button>
 
-export default ShareButton;
+      <ShareModal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        title={title}
+        text={text}
+        url={shareUrl}
+      />
+    </>
+  )
+}
+
+export default ShareButton

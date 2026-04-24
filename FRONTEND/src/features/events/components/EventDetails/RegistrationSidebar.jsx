@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import Button from '../../../../shared/components/ui/Button';
 import CommunityAvatar from '../../../../shared/components/ui/CommunityAvatar';
+import ShareButton from '../../../../shared/components/card/ShareButton';
 import { Calendar, Clock, Share2, ChevronRight, ArrowLeft } from 'lucide-react';
 
 export default function RegistrationSidebar({
@@ -11,7 +12,8 @@ export default function RegistrationSidebar({
     isFull,
     onRegister,
     onRegistrationRedirect,
-    onShare
+    shareUrl,
+    shareTitle
 }) {
     return (
         <div className="sticky top-32 space-y-8 animate-in fade-in slide-in-from-right-8 duration-700">
@@ -72,14 +74,16 @@ export default function RegistrationSidebar({
                         )}
                     </Button>
 
-                    <Button
+                    <ShareButton
                         variant="outline"
-                        onClick={onShare}
+                        url={shareUrl}
+                        title={shareTitle}
+                        text="Join this event on HCKonnect."
                         className="w-full !py-3 !rounded-xl !font-bold !text-zinc-700 hover:!bg-zinc-50 active:scale-95"
                     >
                         <Share2 size={16} className="mr-2" />
                         <span>Invite Friends</span>
-                    </Button>
+                    </ShareButton>
                 </div>
             </div>
 

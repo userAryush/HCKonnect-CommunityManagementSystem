@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../authentication/components/AuthContext'
 import { useToast } from '../../../../shared/components/ui/ToastContext'
-import { LogOut, User, Settings, ShieldCheck, Edit3 } from 'lucide-react'
+import { LogOut, User, Settings, ShieldCheck, Edit3, Moon, Sun } from 'lucide-react'
 import { getDisplayName, getInitials, getProfileImage } from '../../../../utils/userUtils'
 import Button from '../../../../shared/components/ui/Button'
+import { useTheme } from '../../../../shared/context/ThemeContext'
 
 export default function ProfileDropdown() {
   const [isOpen, setIsOpen] = useState(false)
@@ -12,6 +13,7 @@ export default function ProfileDropdown() {
   const navigate = useNavigate()
   const { user, logout } = useAuth()
   const { showToast } = useToast()
+  const { isDark, toggleTheme } = useTheme()
 
   const handleLogout = () => {
     setIsLoggingOut(true)
@@ -52,7 +54,18 @@ export default function ProfileDropdown() {
           />
           <div className="absolute right-0 mt-3 w-80 z-50 rounded-2xl border border-surface-border bg-white py-2 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             <div className="px-4 py-3 border-b border-zinc-100 mb-1">
-              <p className="text-sm font-bold text-surface-dark truncate">{displayName}</p>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-bold text-surface-dark truncate">{displayName}</p>
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className="inline-flex items-center justify-center h-8 w-8 rounded-full border border-surface-border text-surface-muted hover:text-primary hover:bg-zinc-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                  title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                >
+                  {isDark ? <Sun size={16} /> : <Moon size={16} />}
+                </button>
+              </div>
               <p className="text-xs text-zinc-500 mt-0.5 truncate">{user?.email}</p>
             </div>
 
