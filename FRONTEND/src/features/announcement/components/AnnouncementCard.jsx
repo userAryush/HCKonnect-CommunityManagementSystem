@@ -77,11 +77,11 @@ export default function AnnouncementCard({ item, onDelete }) {
           </p>
 
           {itemState.image && (
-            <div className="mt-4 rounded-xl overflow-hidden bg-zinc-50 border border-surface-border/50 aspect-video">
+            <div className="mt-4 rounded-xl overflow-hidden bg-zinc-50 border border-surface-border/50 flex items-center justify-center max-h-80">
               <img
                 src={itemState.image}
                 alt="Announcement content"
-                className="w-full h-full object-cover"
+                className="w-full h-auto max-h-80 object-contain"
               />
             </div>
           )}

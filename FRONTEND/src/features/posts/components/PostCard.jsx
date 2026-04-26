@@ -100,11 +100,11 @@ export default function PostCard({ post, onDelete, isDetailView = false }) {
                 </div>
 
                 {itemState.image && (
-                    <div className={`mt-4 rounded-xl overflow-hidden bg-zinc-50 border border-surface-border/50 ${isDetailView ? '-mx-6 rounded-none' : 'aspect-video'}`}>
+                    <div className={`mt-4 rounded-xl overflow-hidden bg-zinc-50 border border-surface-border/50 flex items-center justify-center ${isDetailView ? '-mx-6 rounded-none max-h-[32rem]' : 'max-h-80'}`}>
                         <img
                             src={itemState.image}
                             alt="Post content"
-                            className="w-full h-full object-cover"
+                            className="w-full h-auto max-h-[32rem] object-contain"
                         />
                     </div>
                 )}

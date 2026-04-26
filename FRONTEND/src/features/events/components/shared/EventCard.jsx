@@ -50,6 +50,8 @@ export default function EventCard({ item, onDelete }) {
   const dateObj = new Date(eventMeta?.date || Date.now());
   const month = dateObj.toLocaleString('default', { month: 'short' });
   const day = dateObj.getDate();
+  const eventLocation = eventMeta?.location || item.location || item.event_location || 'Location TBA';
+  const eventTime = eventMeta?.time || item.start_time || item.time || '';
 
   return (
     <>
@@ -80,11 +82,11 @@ export default function EventCard({ item, onDelete }) {
           </div>
           <div className="space-y-4">
             {item.image && (
-              <div className="rounded-xl overflow-hidden bg-zinc-50 border border-surface-border/50 aspect-video">
+              <div className="rounded-xl overflow-hidden bg-zinc-50 border border-surface-border/50 flex items-center justify-center max-h-80">
                 <img
                   src={item.image}
                   alt={item.title}
-                  className="w-full h-full object-cover"
+                  className="w-full h-auto max-h-80 object-contain"
                 />
               </div>
             )}
@@ -94,7 +96,7 @@ export default function EventCard({ item, onDelete }) {
                 {item.title}
               </h3>
               <p className="text-metadata font-medium">
-                📍 {eventMeta?.location} • {eventMeta?.time}
+                📍 {eventLocation}{eventTime ? ` • ${eventTime}` : ''}
               </p>
               <p className="text-body line-clamp-2">
                 {item.description}
