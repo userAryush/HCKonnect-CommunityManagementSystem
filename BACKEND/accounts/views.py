@@ -5,7 +5,7 @@ from .serializers import (
     RegisterSerializer, LoginSerializer, ForgotPasswordSerializer, 
     VerifyOTPSerializer, ResetPasswordSerializer, UserProfileSerializer, 
     UserProfileDetailSerializer, GlobalSearchSerializer, GoogleAuthSerializer,
-    ChangePasswordSerializer, ContactUsMessageSerializer
+    ChangePasswordSerializer, ContactUsMessageSerializer, ThemePreferenceSerializer
 )
 from django.db.models import Q
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -48,6 +48,13 @@ class LoginView(APIView):
             user = serializer.validated_data['user']
             update_last_login(None, user) # Update the last_login timestamp
             token_data = serializer.get_jwt_token(user)
+            token_data["data"]["user"] = {
+                "id": str(user.id),
+                "email": user.email,
+                "username": user.username,
+                "role": user.role,
+                "theme": user.theme,
+            }
             return Response(token_data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -201,7 +208,8 @@ class GoogleAuthView(APIView):
                     'id': user.id,
                     'email': user.email,
                     'username': user.username,
-                    'role': getattr(user, 'role', None)
+                    'role': getattr(user, 'role', None),
+                    'theme': getattr(user, 'theme', 'light')
                 }
             }, status=status.HTTP_200_OK)
 
@@ -232,4 +240,22 @@ class ContactUsView(APIView):
                 },
                 status=status.HTTP_201_CREATED
             )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserThemePreferenceView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({"theme": request.user.theme}, status=status.HTTP_200_OK)
+
+    def patch(self, request):
+        serializer = ThemePreferenceSerializer(
+            request.user,
+            data=request.data,
+            partial=True
+        )
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

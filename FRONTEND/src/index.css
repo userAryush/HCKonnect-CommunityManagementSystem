@@ -11,7 +11,7 @@
 }
 
 .dark {
-    --app-bg: #09090b;
+    --app-bg: #2b2b2b;
     --app-text: #FAFAFA;
     --surface-card: #3c3c3c;
     --surface-muted-bg: #2b2b2b;
@@ -74,6 +74,26 @@
 }
 
 @layer components {
+    .community-profile-page .card-border,
+    .community-profile-page .community-soft-card,
+    .community-profile-page [class*="border-surface-border"] {
+        border-width: 0.5px !important;
+    }
+
+    .dark .card-border {
+        background-color: var(--surface-card) !important;
+        border-color: var(--surface-border-strong) !important;
+        color: rgba(250, 250, 250, 0.9) !important;
+    }
+
+    .dark .card-border [class*="text-black"],
+    .dark .card-border [class*="text-gray-9"],
+    .dark .card-border [class*="text-gray-8"],
+    .dark .card-border [class*="text-zinc-9"],
+    .dark .card-border [class*="text-zinc-8"] {
+        color: var(--color-secondary) !important;
+    }
+
     .dark .bg-white,
     .dark [class*="bg-white/"] {
         background-color: var(--surface-card) !important;
@@ -132,6 +152,11 @@
         color: var(--color-secondary) !important;
     }
 
+    .dark .recharts-cartesian-axis-tick-value,
+    .dark .recharts-text {
+        fill: rgba(250, 250, 250, 0.85) !important;
+    }
+
     .dark .bg-zinc-50\/80 {
         background-color: rgba(60, 60, 60, 0.92) !important;
     }
@@ -152,8 +177,7 @@
         background-color: var(--surface-card) !important;
     }
 
-    .dark header,
-    .dark [class*="backdrop-blur"][class*="border-b"] {
+    .dark header.fixed.inset-x-0.top-0 {
         background-color: var(--surface-card) !important;
         border-color: var(--surface-border-strong) !important;
     }
@@ -171,15 +195,18 @@
     }
 
     .text-title {
-        @apply text-lg font-semibold text-surface-dark;
+        @apply text-lg font-semibold;
+        color: var(--surface-heading);
     }
 
     .text-body {
-        @apply text-sm text-surface-body;
+        @apply text-sm;
+        color: var(--app-text);
     }
 
     .text-metadata {
-        @apply text-xs text-surface-muted;
+        @apply text-xs;
+        color: var(--surface-muted-text);
     }
 
     .input-standard {

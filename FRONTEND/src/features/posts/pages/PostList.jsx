@@ -71,7 +71,7 @@ export default function PostList() {
                             </div>
                             <button
                                 onClick={() => setShowCreate(true)}
-                                className="input-standard flex-1 text-left text-surface-muted hover:border-zinc-300 transition-colors"
+                                className="input-standard flex-1 text-left !text-surface-muted !bg-[var(--surface-muted-bg)] hover:border-zinc-300 transition-colors"
                             >
                                 What's on your mind?
                             </button>

@@ -285,7 +285,7 @@ class UserProfileSerializer(ModelSerializer):
             "profile_image", "course", "interests",
             "bio", "linkedin_link", "github_link", "university_id", "membership",
             "community_name", "community_description", "community_logo", "community_tag",
-            "must_change_password"
+            "must_change_password", "theme"
         ]
         read_only_fields = ["id", "email", "role"]
 
@@ -444,3 +444,9 @@ class ContactUsMessageSerializer(ModelSerializer):
         model = ContactUsMessage
         fields = ['id', 'full_name', 'email', 'subject', 'message', 'created_at']
         read_only_fields = ['id', 'created_at']
+
+
+class ThemePreferenceSerializer(ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["theme"]

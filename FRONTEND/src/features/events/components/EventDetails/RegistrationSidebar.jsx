@@ -18,19 +18,19 @@ export default function RegistrationSidebar({
     return (
         <div className="sticky top-32 space-y-8 animate-in fade-in slide-in-from-right-8 duration-700">
             {/* Registration Card */}
-            <div className="p-8 rounded-[40px] bg-white border border-zinc-100 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.06)] relative overflow-hidden group">
+            <div className="p-8 rounded-[40px] bg-[var(--surface-card)] border border-surface-border shadow-sm relative overflow-hidden group">
                 <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 group-hover:scale-110 transition-all">
                     <Calendar size={120} />
                 </div>
 
-                <h3 className="text-2xl font-black mb-8 tracking-tight">Reserve your spot</h3>
+                <h3 className="text-2xl font-black mb-8 tracking-tight text-[var(--surface-heading)]">Reserve your spot</h3>
 
                 <div className="space-y-6 mb-8">
                     <div className="flex items-center justify-between text-sm font-bold">
-                        <span className="text-zinc-500 uppercase tracking-widest text-[10px]">Registered</span>
+                        <span className="text-surface-muted uppercase tracking-widest text-[10px]">Registered</span>
                         <span className="text-primary">{eventMeta.registeredCount} / {eventMeta.maxParticipants || '∞'}</span>
                     </div>
-                    <div className="w-full h-2 bg-zinc-100 rounded-full overflow-hidden">
+                    <div className="w-full h-2 bg-secondary rounded-full overflow-hidden border border-surface-border/50">
                         <div
                             className="h-full bg-primary transition-all duration-1000"
                             style={{ width: `${eventMeta.maxParticipants ? (eventMeta.registeredCount / eventMeta.maxParticipants) * 100 : 0}%` }}
@@ -38,13 +38,13 @@ export default function RegistrationSidebar({
                     </div>
 
                     {eventMeta.registrationDeadline && (
-                        <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center gap-3">
+                        <div className="p-4 rounded-2xl bg-secondary border border-surface-border flex items-center gap-3">
                             <div className="text-red-500">
                                 <Clock size={18} />
                             </div>
                             <div>
-                                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Deadline</p>
-                                <p className="text-xs font-bold text-zinc-700">{new Date(eventMeta.registrationDeadline).toLocaleDateString()}</p>
+                                <p className="text-[10px] font-black text-surface-muted uppercase tracking-widest">Deadline</p>
+                                <p className="text-xs font-bold text-[var(--surface-heading)]">{new Date(eventMeta.registrationDeadline).toLocaleDateString()}</p>
                             </div>
                         </div>
                     )}
@@ -79,7 +79,7 @@ export default function RegistrationSidebar({
                         url={shareUrl}
                         title={shareTitle}
                         text="Join this event on HCKonnect."
-                        className="w-full !py-3 !rounded-xl !font-bold !text-zinc-700 hover:!bg-zinc-50 active:scale-95"
+                        className="w-full !py-3 !rounded-xl !font-bold !text-surface-body hover:!bg-secondary active:scale-95"
                     >
                         <Share2 size={16} className="mr-2" />
                         <span>Invite Friends</span>
@@ -97,7 +97,7 @@ export default function RegistrationSidebar({
                             <CommunityAvatar name={community?.name} logo={community?.logo} size="md" className="rounded-xl" />
                         </div>
                         <div>
-                            <h4 className="font-black text-lg text-zinc-900">{community?.name || 'Community'}</h4>
+                            <h4 className="font-black text-lg text-surface-dark">{community?.name || 'Community'}</h4>
                             <p className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">Verified Organizer</p>
                         </div>
                     </div>
@@ -114,7 +114,7 @@ export default function RegistrationSidebar({
             </div>
 
             {/* Back Link */}
-            <Link to="/events" className="flex items-center justify-center gap-2 text-zinc-400 font-bold hover:text-zinc-900 transition-colors text-sm">
+            <Link to="/events" className="flex items-center justify-center gap-2 text-surface-muted font-bold hover:text-surface-dark transition-colors text-sm">
                 <ArrowLeft size={16} />
                 <span>Back to all events</span>
             </Link>

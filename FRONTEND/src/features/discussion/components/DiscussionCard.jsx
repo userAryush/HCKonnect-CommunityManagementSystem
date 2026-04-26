@@ -80,10 +80,10 @@ export default function DiscussionCard({ item, onDelete, isDetailView = false })
                 </CardHeader>
 
                 <div className="space-y-2">
-                    <h3 className={`text-title transition-transform duration-200 ease-out ${isDetailView ? 'text-2xl' : 'group-hover:-translate-y-0.5'}`}>
+                    <h3 className={`text-title !text-[var(--surface-heading)] transition-transform duration-200 ease-out ${isDetailView ? 'text-2xl' : 'group-hover:-translate-y-0.5'}`}>
                         {itemState.topic}
                     </h3>
-                    <p className={`text-body leading-relaxed ${isDetailView ? '' : 'line-clamp-2'}`}>
+                    <p className={`text-body !text-[var(--app-text)] leading-relaxed ${isDetailView ? '' : 'line-clamp-2'}`}>
                         {itemState.content}
                     </p>
                 </div>

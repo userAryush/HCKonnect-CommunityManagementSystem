@@ -134,7 +134,7 @@ export default function PostDetail() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 pt-20">
+            <div className="min-h-screen bg-secondary pt-20">
                 <Navbar navSolid={true} />
                 <div className="max-w-2xl mx-auto px-4">
                     <Skeleton className="h-60 w-full mb-6" />
@@ -151,13 +151,13 @@ export default function PostDetail() {
     const canDelete = isAuthor || isAdmin;
 
     return (
-        <div className="min-h-screen bg-gray-50 pt-24">
+        <div className="min-h-screen bg-secondary pt-24">
             <Navbar navSolid={true} />
             <main className="max-w-2xl mx-auto px-4 py-8">
 
                 <button
                     onClick={() => navigate('/posts')}
-                    className="mb-6 flex items-center gap-2 text-gray-500 hover:text-gray-900 font-semibold text-sm transition"
+                    className="mb-6 flex items-center gap-2 text-surface-muted hover:text-surface-dark font-semibold text-sm transition"
                 >
                     <Reply size={16} className="rotate-180" /> Back to Feed
                 </button>

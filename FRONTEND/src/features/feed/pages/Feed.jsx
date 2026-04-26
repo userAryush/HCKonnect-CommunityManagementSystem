@@ -33,7 +33,7 @@ export default function Feed() {
   };
 
   return (
-    <div className="bg-[#F9FAFB] min-h-screen antialiased">
+    <div className="bg-secondary min-h-screen antialiased">
       <Navbar
         menuOpen={menuOpen}
         toggleMenu={() => setMenuOpen((v) => !v)}
@@ -74,7 +74,7 @@ export default function Feed() {
                 </div>
               </header>
 
-              <div className="sticky top-[72px] z-20 bg-[#F9FAFB]/80 backdrop-blur-md py-4 border-b border-surface-border/50 -mx-4 px-4 sm:mx-0 sm:px-0">
+              <div className="sticky top-[72px] z-20 bg-secondary py-4 border-b border-surface-border/40 -mx-4 px-4 sm:mx-0 sm:px-0">
                 <FeedFilter value={filter} onChange={setFilter} />
               </div>
 

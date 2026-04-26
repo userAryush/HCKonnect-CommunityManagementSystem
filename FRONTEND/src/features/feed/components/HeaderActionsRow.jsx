@@ -9,11 +9,11 @@ export default function HeaderActionsRow() {
   const [isPostModalOpen, setIsPostModalOpen] = useState(false)
   return (
     <>
-      <div className="inline-flex p-1 bg-slate-100/50 border border-surface-border rounded-xl gap-1 mb-8">
+      <div className="inline-flex p-1 bg-secondary/70 border border-surface-border/70 rounded-xl gap-1 mb-8">
         <Button
           variant="ghost"
           onClick={() => setIsPostModalOpen(true)}
-          className="!rounded-lg !px-4 !py-2 !text-surface-body hover:!text-primary hover:!bg-white hover:!shadow-sm hover:!border-surface-border/50 !border !border-transparent"
+          className="!rounded-lg !px-4 !py-2 !text-surface-body hover:!text-primary hover:!bg-secondary hover:!shadow-sm hover:!border-surface-border/50 !border !border-transparent"
         >
           <span className="opacity-70 mr-2"><PenLine size={15} /></span>
           <span className="text-[13px] font-bold uppercase tracking-wider">Create Post</span>
@@ -22,7 +22,7 @@ export default function HeaderActionsRow() {
         <Button
           variant="ghost"
           onClick={() => setIsDiscussionModalOpen(true)}
-          className="!rounded-lg !px-4 !py-2 !text-surface-body hover:!text-primary hover:!bg-white hover:!shadow-sm hover:!border-surface-border/50 !border !border-transparent"
+          className="!rounded-lg !px-4 !py-2 !text-surface-body hover:!text-primary hover:!bg-secondary hover:!shadow-sm hover:!border-surface-border/50 !border !border-transparent"
         >
           <span className="opacity-70 mr-2"><MessageSquarePlus size={15} /></span>
           <span className="text-[13px] font-bold uppercase tracking-wider">Start Discussion</span>

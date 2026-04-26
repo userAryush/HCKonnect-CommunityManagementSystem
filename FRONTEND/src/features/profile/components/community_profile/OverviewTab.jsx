@@ -6,7 +6,7 @@ import { Skeleton } from '../../../../shared/components/layout/Skeleton';
 
 // Reusable Soft Container Component
 const SoftContainer = ({ children, className = '' }) => (
-    <div className={`bg-white border border-gray-200 rounded-xl p-5 ${className}`}>
+    <div className={`community-soft-card bg-[var(--surface-card)] border border-surface-border/10 rounded-xl p-5 ${className}`}>
         {children}
     </div>
 );
@@ -26,7 +26,7 @@ export default function OverviewTab({ communityData, tabData, loadingTab, canMan
 
                 {/* Upcoming Schedule Section */}
                 <SoftContainer>
-                    <div className="flex items-center justify-between mb-6 border-b border-gray-100 pb-3">
+                    <div className="flex items-center justify-between mb-6 border-b border-surface-border/60 pb-3">
                         <h2 className="text-lg font-semibold text-surface-dark">Upcoming Schedule</h2>
                     </div>
 
@@ -86,7 +86,7 @@ export default function OverviewTab({ communityData, tabData, loadingTab, canMan
 
                 {/* Open Vacancies Section */}
                 <SoftContainer>
-                    <div className="flex items-center justify-between mb-6 border-b border-gray-100 pb-3">
+                    <div className="flex items-center justify-between mb-6 border-b border-surface-border/60 pb-3">
                         <h2 className="text-lg font-semibold text-surface-dark">Open Vacancies</h2>
                         <button
                             onClick={() => handleTabChange('Vacancies')}
@@ -164,7 +164,7 @@ export default function OverviewTab({ communityData, tabData, loadingTab, canMan
                             tabData.announcements.slice(0, 3).map((ann) => (
                                 <div
                                     key={ann.id}
-                                    className="group p-3 rounded-xl hover:bg-white border border-transparent hover:border-zinc-200 hover:shadow-sm transition-all"
+                                    className="group p-3 rounded-xl hover:bg-secondary/40 border border-transparent hover:border-surface-border/70 hover:shadow-sm transition-all"
                                     onClick={() => handleTabChange('Announcements')}
                                 >
                                     <h4 className="text-body font-semibold line-clamp-1 group-hover:text-primary transition-colors">{ann.title}</h4>

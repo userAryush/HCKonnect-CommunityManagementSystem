@@ -15,21 +15,21 @@ export default function PaginationInfo({
         <div className={`flex flex-col md:flex-row items-center justify-between gap-4 ${className}`}>
             {/* Items per page */}
             <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Show</span>
+                <span className="text-sm text-surface-muted">Show</span>
                 <select
                     value={itemsPerPage}
                     onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
-                    className="px-3 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600/20"
+                    className="px-3 py-1 text-sm border border-surface-border rounded-lg bg-[var(--surface-card)] text-[var(--app-text)] focus:outline-none focus:ring-2 focus:ring-primary/20"
                 >
                     {itemsPerPageOptions.map(option => (
                         <option key={option} value={option}>{option}</option>
                     ))}
                 </select>
-                <span className="text-sm text-gray-600">per page</span>
+                <span className="text-sm text-surface-muted">per page</span>
             </div>
 
             {/* Result count */}
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-surface-muted">
                 Showing {startItem} to {endItem} of {totalItems} results
             </div>
         </div>

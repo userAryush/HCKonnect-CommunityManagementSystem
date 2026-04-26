@@ -149,7 +149,7 @@ export default function DiscussionDetail() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex flex-col pt-20">
+            <div className="min-h-screen bg-secondary flex flex-col pt-20">
                 <Navbar navSolid={true} />
                 <div className="flex-1 flex justify-center items-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-green-600"></div>
@@ -163,14 +163,14 @@ export default function DiscussionDetail() {
     const isOwner = currentUser && String(currentUser.id) === String(discussion.created_by);
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col pt-16">
+        <div className="min-h-screen bg-secondary flex flex-col pt-16">
             <Navbar navSolid={true} />
             <main className="flex-1 w-full max-w-4xl mx-auto px-4 py-8">
 
                 {/* Modern Back Button */}
                 <button
                     onClick={() => navigate('/discussions')}
-                    className="mb-6 flex items-center gap-2 text-gray-500 hover:text-gray-900 font-semibold text-sm transition px-2 py-1 rounded-lg hover:bg-gray-100"
+                    className="mb-6 flex items-center gap-2 text-surface-muted hover:text-surface-dark font-semibold text-sm transition px-2 py-1 rounded-lg hover:bg-zinc-100/60"
                 >
                     <Reply size={16} className="rotate-180" /> Back to Feed
                 </button>

@@ -90,10 +90,10 @@ export default function PostCard({ post, onDelete, isDetailView = false }) {
                     {itemState.is_pinned && (
                         <Pin size={14} className="text-primary fill-primary/10 p-0.5" />
                     )}
-                    <Badge variant="deepBlue">Post</Badge>
+                    <Badge variant="deepBlue" className="!bg-primary/10 !text-primary !border-primary/20">Post</Badge>
                 </CardHeader>
 
-                <div className={`text-body leading-relaxed whitespace-pre-wrap ${isDetailView ? 'text-lg' : ''}`}>
+                <div className={`text-body !text-[var(--app-text)] leading-relaxed whitespace-pre-wrap ${isDetailView ? 'text-lg' : ''}`}>
                     {itemState.content}
                 </div>
 

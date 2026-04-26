@@ -18,10 +18,12 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from accounts.views import UserThemePreferenceView
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/user/theme/', UserThemePreferenceView.as_view(), name='api-user-theme'),
     path('accounts/', include('accounts.urls')),
     path('communities/', include('communities.urls')),
     path('contents/', include('contents.urls')),

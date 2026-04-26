@@ -8,7 +8,7 @@ import VacancyCard from '../../../vacancy/components/VacancyCard';
 
 // Reusable Soft Container Component
 const SoftContainer = ({ children, className = '' }) => (
-    <div className={`bg-white border border-gray-200 rounded-xl p-5 ${className}`}>
+    <div className={`community-soft-card bg-[var(--surface-card)] border border-surface-border/10 rounded-xl p-5 ${className}`}>
         {children}
     </div>
 );
@@ -31,7 +31,7 @@ export default function ContentGrid({ tab, data, loading, onApply }) {
                 <div className={isGrid ? `grid ${gridClasses} gap-6` : gridClasses}>
                     {tab === 'Discussions' ? (
                         [1, 2, 3].map(i => (
-                            <div key={i} className="border border-gray-100 rounded-2xl p-5 space-y-3">
+                            <div key={i} className="border border-surface-border/60 rounded-2xl p-5 space-y-3">
                                 <Skeleton variant="text" className="w-1/4 h-4" />
                                 <Skeleton variant="text" className="w-3/4 h-6" />
                                 <Skeleton variant="text" className="w-1/2 h-4" />

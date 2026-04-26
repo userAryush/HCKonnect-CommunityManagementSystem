@@ -1,6 +1,6 @@
 export default function TabNavigation({ tabs, activeTab, handleTabChange }) {
     return (
-        <div className="mt-8 flex gap-8 border-b border-gray-200">
+        <div className="mt-8 flex gap-8 border-b border-surface-border/70">
             {tabs.map((tab) => (
                 <button
                     key={tab}

@@ -4,7 +4,7 @@ import { Skeleton } from '../../../../shared/components/layout/Skeleton';
 
 // Reusable Soft Container Component
 const SoftContainer = ({ children, className = '' }) => (
-    <div className={`bg-white border border-gray-200 rounded-xl p-5 ${className}`}>
+    <div className={`community-soft-card bg-[var(--surface-card)] border border-surface-border/70 rounded-xl p-5 ${className}`}>
         {children}
     </div>
 );
@@ -12,7 +12,7 @@ const SoftContainer = ({ children, className = '' }) => (
 export default function MembersTab({ members, loading }) {
     return (
         <SoftContainer className="!p-0 overflow-hidden">
-            <div className="p-5 border-b border-gray-200 bg-gray-50/50 flex justify-between items-center">
+            <div className="p-5 border-b border-surface-border/70 bg-secondary/40 flex justify-between items-center">
                 <h2 className="text-lg font-semibold text-surface-dark flex items-center gap-2">
                     <Users size={20} className="text-primary" />
                     Community Members
@@ -21,7 +21,7 @@ export default function MembersTab({ members, loading }) {
             </div>
 
             {loading ? (
-                <ul className="divide-y divide-gray-100 flex flex-col">
+                <ul className="divide-y divide-surface-border/60 flex flex-col">
                     {[1, 2, 3, 4, 5].map(i => (
                         <li key={i} className="flex items-center gap-4 px-6 py-4">
                             <Skeleton variant="avatar" />
@@ -34,12 +34,12 @@ export default function MembersTab({ members, loading }) {
                     ))}
                 </ul>
             ) : (
-                <ul className="divide-y divide-gray-100 flex flex-col">
+                <ul className="divide-y divide-surface-border/60 flex flex-col">
                     {members.map((member) => (
-                        <li key={member.membership_id} className="hover:bg-gray-50 transition-colors">
+                        <li key={member.membership_id} className="hover:bg-secondary/40 transition-colors">
                             <Link to={`/profile/${member.user_id}`} className="flex items-center gap-4 px-6 py-4">
                                 {member.profile_image ? (
-                                    <img src={member.profile_image} alt={member.first_name} className="w-12 h-12 rounded-full border border-gray-200 object-cover" />
+                                    <img src={member.profile_image} alt={member.first_name} className="w-12 h-12 rounded-full border border-surface-border/70 object-cover" />
                                 ) : (
                                     <div className="w-12 h-12 rounded-full bg-surface-dark text-white flex items-center justify-center font-bold text-sm">
                                         {member.first_name ? member.first_name[0].toUpperCase() : member.username[0].toUpperCase()}
@@ -53,7 +53,7 @@ export default function MembersTab({ members, loading }) {
                                     <p className="text-xs text-surface-muted">@{member.username}</p>
                                 </div>
                                 <div className="text-right flex items-center gap-3">
-                                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${member.role === 'representative' ? 'bg-primary/10 text-primary border-primary/20' : 'bg-gray-100 text-surface-muted border-gray-200'}`}>
+                                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${member.role === 'representative' ? 'bg-primary/10 text-primary border-primary/20' : 'bg-secondary/60 text-surface-muted border-surface-border/70'}`}>
                                         {member.role}
                                     </span>
                                 </div>

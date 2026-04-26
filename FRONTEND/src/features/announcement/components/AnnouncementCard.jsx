@@ -67,11 +67,11 @@ export default function AnnouncementCard({ item, onDelete }) {
           )}
         </CardHeader>
 
-        <div className="space-y-2">
-          <h3 className="text-title transition-transform duration-200 ease-out group-hover:-translate-y-0.5">
+        <div className="space-y-2 text-surface-body">
+          <h3 className="text-title !text-surface-dark transition-transform duration-200 ease-out group-hover:-translate-y-0.5">
             {item.title}
           </h3>
-          <p className="text-body leading-relaxed">
+          <p className="text-body !text-surface-body leading-relaxed">
             {item.description}
           </p>
 

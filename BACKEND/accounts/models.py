@@ -49,6 +49,10 @@ class User(AbstractUser, BaseModel):
     ('blocked', 'Blocked'),
     ('deleted', 'Deleted'),
     ]
+    THEME_CHOICES = [
+        ('light', 'Light'),
+        ('dark', 'Dark'),
+    ]
 
 
     #common fields
@@ -56,6 +60,7 @@ class User(AbstractUser, BaseModel):
     username = models.CharField(max_length=255, unique=True)
     role = models.CharField(max_length=20, choices=role_choices, default='student')
     status = models.CharField(max_length=20,choices=STATUS_CHOICES,default='active')
+    theme = models.CharField(max_length=10, choices=THEME_CHOICES, default='light')
 
     #extra info for students
     profile_image = models.ImageField(upload_to='profile_images/', null=True, blank=True)

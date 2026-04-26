@@ -12,12 +12,12 @@ export default function CommunityHeader({
     setIsMessageModalOpen,
 }) {
     return (
-        <header className="rounded-2xl border border-gray-200 bg-white p-8 overflow-hidden">
+        <header className="rounded-2xl border border-surface-border/10 bg-[var(--surface-card)] p-8 overflow-hidden">
             <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
 
                     {communityData.community_logo ? (
-                        <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white overflow-hidden">
+                        <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-xl border border-surface-border/70 bg-[var(--surface-card)] overflow-hidden">
                             <img
                                 src={communityData.community_logo}
                                 alt={communityData.community_name}
@@ -49,7 +49,7 @@ export default function CommunityHeader({
                     {(isProfileOwner === true) && (
                         <Link
                             to={`/profile/edit/${communityData.id}`}
-                            className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-bold text-surface-dark transition hover:bg-zinc-50 hover:border-zinc-300"
+                            className="flex items-center gap-2 rounded-xl border border-surface-border/70 bg-[var(--surface-card)] px-4 py-2 text-sm font-bold text-surface-dark transition hover:bg-secondary hover:border-surface-border"
                         >
                             <Edit2 size={16} className="text-primary" />
                             <span>Edit Profile</span>
@@ -72,7 +72,7 @@ export default function CommunityHeader({
                             onClick={handleJoinRequest}
                             disabled={membershipStatus === 'pending'}
                             className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${membershipStatus === 'pending'
-                                ? 'bg-gray-50 border border-gray-200 text-surface-muted cursor-not-allowed'
+                                ? 'bg-secondary/60 border border-surface-border/70 text-surface-muted cursor-not-allowed'
                                 : 'bg-primary text-white hover:bg-primary/90'
                                 }`}
                         >

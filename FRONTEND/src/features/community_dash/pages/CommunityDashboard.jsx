@@ -45,7 +45,7 @@ import {
   Cell,
 } from 'recharts'
 import analyticsService from '../service/analyticsService'
-
+import Footer from '../../../shared/components/layout/Footer'
 
 export default function CommunityDashboard() {
 
@@ -259,7 +259,7 @@ export default function CommunityDashboard() {
   ]
 
   return (
-    <div className="min-h-screen bg-secondary text-[#0d1f14]">
+    <div className="min-h-screen bg-secondary text-surface-body">
       <Navbar
         menuOpen={menuOpen}
         toggleMenu={() => setMenuOpen((v) => !v)}
@@ -517,7 +517,7 @@ export default function CommunityDashboard() {
                         axisLine={false}
                         tickLine={false}
                         style={{ fontSize: '12px', fontWeight: '600' }}
-                        tick={{ fill: '#0d1f14' }}
+                        tick={{ fill: 'var(--surface-heading)' }}
                       />
                       <Tooltip
                         cursor={{ fill: 'transparent' }}
@@ -561,9 +561,9 @@ export default function CommunityDashboard() {
                             <h4 className="font-bold text-surface-dark line-clamp-1">{event.title}</h4>
                             <p className="text-metadata text-surface-muted flex items-center gap-1.5 mt-1">
                               <span>{event.date ? new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'TBD'}</span>
-                              <span className="text-gray-300">•</span>
+                              <span className="text-surface-muted/60">•</span>
                               <span>{event.start_time || 'TBD'}</span>
-                              <span className="text-gray-300">•</span>
+                              <span className="text-surface-muted/60">•</span>
                               <span>{event.location || 'Online'}</span>
                             </p>
                           </div>
@@ -660,6 +660,7 @@ export default function CommunityDashboard() {
           </div>
         )}
       </main>
+      <Footer />
 
       <CreateVacancyModal
         isOpen={isCreateVacancyModalOpen}

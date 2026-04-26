@@ -177,7 +177,7 @@ export default function CommunityProfilePage() {
             setIsMessageModalOpen={setIsMessageModalOpen}
           />
 
-          <div className="mt-2 flex gap-8 border-b border-gray-200 overflow-x-auto no-scrollbar">
+          <div className="mt-2 flex gap-8 border-b border-surface-border/70 overflow-x-auto no-scrollbar">
             <TabNavigation tabs={tabs} activeTab={activeTab} handleTabChange={handleTabChange} />
           </div>
 

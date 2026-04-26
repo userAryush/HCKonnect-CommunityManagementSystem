@@ -3,13 +3,12 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import Navbar from '../../../shared/components/layout/Navbar';
 import eventService from '../service/eventService';
 import Toast from '../../../shared/components/ui/Toast';
-
-// Import the new components
 import EventHero from '../components/EventDetails/EventHero';
 import EventAdminBar from '../components/EventDetails/EventAdminBar';
 import EventAbout from '../components/EventDetails/EventAbout';
 import EventSpeakers from '../components/EventDetails/EventSpeakers';
 import RegistrationSidebar from '../components/EventDetails/RegistrationSidebar';
+import Footer from '../../../shared/components/layout/Footer';
 
 export default function EventDetailPage() {
     const { eventId } = useParams()
@@ -122,14 +121,14 @@ export default function EventDetailPage() {
     };
 
     if (loading) return (
-        <div className="min-h-screen bg-zinc-50 flex items-center justify-center">
+        <div className="min-h-screen bg-secondary flex items-center justify-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
         </div>
     )
 
     if (!event) return (
-        <div className="min-h-screen bg-zinc-50 flex flex-col items-center justify-center gap-4">
-            <p className="text-xl font-bold text-zinc-900">Event not found</p>
+        <div className="min-h-screen bg-secondary flex flex-col items-center justify-center gap-4 px-4">
+            <p className="text-xl font-bold text-surface-dark">Event not found</p>
             <Link to="/events" className="text-primary font-bold hover:underline">Back to Events</Link>
         </div>
     )
@@ -146,7 +145,7 @@ export default function EventDetailPage() {
     const isFull = eventMeta.maxParticipants && eventMeta.registeredCount >= eventMeta.maxParticipants;
 
     return (
-        <div className="min-h-screen bg-[#fcfcfc] text-zinc-900 selection:bg-primary/20">
+        <div className="min-h-screen bg-secondary text-[var(--app-text)] selection:bg-primary/20">
             <Navbar
                 menuOpen={menuOpen}
                 toggleMenu={() => setMenuOpen((v) => !v)}
@@ -180,12 +179,12 @@ export default function EventDetailPage() {
 
                         {eventMeta.whatToExpect && eventMeta.whatToExpect.length > 0 && (
                             <section aria-label="What you'll learn">
-                                <h3 className="text-2xl font-black mb-10 tracking-tight flex items-center gap-4">
+                                <h3 className="text-2xl font-black mb-10 tracking-tight flex items-center gap-4 text-[var(--surface-heading)]">
                                     What you'll learn
                                 </h3>
                                 <div className="space-y-3">
                                     {eventMeta.whatToExpect.map((item, idx) => (
-                                        <div key={idx} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-zinc-50 border border-zinc-100 text-zinc-700 text-sm font-bold">
+                                        <div key={idx} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-secondary border border-surface-border text-[var(--app-text)] text-sm font-bold">
                                             <div className="w-2 h-2 rounded-full bg-primary" />
                                             {item}
                                         </div>
@@ -213,6 +212,7 @@ export default function EventDetailPage() {
                     </aside>
                 </div>
             </main>
+            <Footer />
         </div>
     )
 }
