@@ -1,16 +1,17 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Navbar from '../../../shared/components/layout/Navbar'
 import eventService from '../service/eventService'
 import { useToast } from '../../../shared/components/ui/ToastContext'
 import EventForm from '../components/shared/EventForm'
 
-export default function CreateEvent() {
-  const { id } = useParams()
+export default function EditEvent() {
+  const { eventId } = useParams()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const { showToast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isLoadingEvent, setIsLoadingEvent] = useState(true)
 
   const [formData, setFormData] = useState({
     title: '',
@@ -21,10 +22,41 @@ export default function CreateEvent() {
     location: '',
     format: 'On-site',
     image: null,
-    max_participants: '', // Add capacity field
-    speakers: [], // Array of {name, profession}
-    what_to_expect: [] // Array of strings
+    max_participants: '',
+    speakers: [],
+    what_to_expect: []
   })
+
+  useEffect(() => {
+    let isMounted = true
+    setIsLoadingEvent(true)
+
+    eventService.getEvent(eventId).then((data) => {
+      if (!isMounted) return
+      setFormData({
+        title: data.title,
+        description: data.description,
+        date: data.date,
+        start_time: data.start_time,
+        end_time: data.end_time || '',
+        location: data.location,
+        format: data.format,
+        image: null,
+        max_participants: data.max_participants || '',
+        speakers: data.speakers || [],
+        what_to_expect: data.what_to_expect || []
+      })
+    }).catch((err) => {
+      console.error('Failed to load event for edit', err)
+      showToast('Failed to load event data.', 'error')
+    }).finally(() => {
+      if (isMounted) setIsLoadingEvent(false)
+    })
+
+    return () => {
+      isMounted = false
+    }
+  }, [eventId, showToast])
 
   const handleSubmit = async () => {
     if (isSubmitting) return
@@ -61,21 +93,19 @@ export default function CreateEvent() {
 
       data.append('speakers', JSON.stringify(formData.speakers))
       data.append('what_to_expect', JSON.stringify(formData.what_to_expect))
-      if (id) data.append('community', id)
 
-      await eventService.createEvent(data)
-      showToast('Event posted successfully.', 'success')
-      navigate(`/community/${id}/dashboard`)
+      await eventService.updateEvent(eventId, data)
+      showToast('Event updated successfully!', 'success')
+      navigate(`/events/${eventId}`)
     } catch (e) {
-      console.error('Failed to save event', e)
+      console.error('Failed to update event', e)
       if (e.response && e.response.data) {
-        console.log('Validation Errors:', e.response.data)
         const errorMsg = typeof e.response.data === 'object'
           ? Object.entries(e.response.data).map(([k, v]) => `${k}: ${v}`).join(', ')
           : e.response.data
         showToast(`Error: ${errorMsg}`, 'error')
       } else {
-        showToast('Failed to create event. Please try again.', 'error')
+        showToast('Failed to update event. Please try again.', 'error')
       }
     } finally {
       setIsSubmitting(false)
@@ -94,8 +124,8 @@ export default function CreateEvent() {
       <main className="pt-24 pb-16">
         <div className="mx-auto w-full max-w-4xl px-4">
           <header className="mb-12 text-center">
-            <h1 className="text-4xl font-black tracking-tight text-zinc-900">Create a New Event</h1>
-            <p className="mt-2 text-zinc-500">Plan and organize your next community event.</p>
+            <h1 className="text-4xl font-black tracking-tight text-zinc-900">Edit Event</h1>
+            <p className="mt-2 text-zinc-500">Update the details for your event.</p>
           </header>
 
           <EventForm
@@ -104,8 +134,9 @@ export default function CreateEvent() {
             onSubmit={handleSubmit}
             onCancel={() => navigate(-1)}
             isSubmitting={isSubmitting}
-            submitText="Create Event"
-            loadingText="Creating..."
+            isLoading={isLoadingEvent}
+            submitText="Update Event"
+            loadingText="Updating..."
           />
         </div>
       </main>

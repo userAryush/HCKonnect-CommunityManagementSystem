@@ -41,7 +41,7 @@ export default function EventCard({ item, onDelete }) {
   const handleEdit = (e) => {
     if (e) e.stopPropagation();
     const communityId = item.community?.id || item.community;
-    navigate(`/community/${communityId}/manage/events/edit/${item.id}`);
+    navigate(`/community/${communityId}/manage/events/${item.id}/edit`);
   };
 
   const registeredCount = item.registered_count || 0;

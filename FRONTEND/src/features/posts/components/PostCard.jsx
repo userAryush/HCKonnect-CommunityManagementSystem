@@ -8,12 +8,14 @@ import CardActionMenu from '../../../shared/components/card/CardActionMenu';
 import Badge from '../../../shared/components/ui/Badge';
 import ActionButtons from '../../../shared/components/ui/ActionButtons';
 import ConfirmationModal from '../../../shared/components/modals/ConfirmationModal';
+import EditPostModal from './EditPostModal';
 
 export default function PostCard({ post, onDelete, isDetailView = false }) {
     const navigate = useNavigate();
     const user = JSON.parse(localStorage.getItem('user') || 'null');
     const [itemState, setItemState] = useState(post);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
@@ -46,7 +48,7 @@ export default function PostCard({ post, onDelete, isDetailView = false }) {
 
     const handleEdit = (e) => {
         if (e) e.stopPropagation();
-        navigate(`/posts/edit/${itemState.id}`);
+        setIsEditModalOpen(true);
     };
 
     const handleCardClick = () => {
@@ -124,6 +126,15 @@ export default function PostCard({ post, onDelete, isDetailView = false }) {
                 confirmText="Delete"
                 isLoading={isDeleting}
                 loadingText="Deleting..."
+            />
+
+            <EditPostModal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                post={itemState}
+                onUpdated={(updated) => {
+                    setItemState((prev) => ({ ...prev, ...updated }));
+                }}
             />
         </>
     );

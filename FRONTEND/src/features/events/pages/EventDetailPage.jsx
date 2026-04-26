@@ -28,6 +28,7 @@ export default function EventDetailPage() {
         const fetchEvent = async () => {
             try {
                 const data = await eventService.getEvent(eventId);
+                const normalizedCommunityId = data.community?.id ?? data.community;
                 setEvent({
                     ...data,
                     eventMeta: {
@@ -43,7 +44,7 @@ export default function EventDetailPage() {
                         isRegistered: !!data.is_registered
                     },
                     community: {
-                        id: data.community,
+                        id: normalizedCommunityId,
                         name: data.community_name,
                         logo: data.community_logo,
                         logoText: (data.community_name || 'CO').substring(0, 2).toUpperCase()
@@ -134,11 +135,12 @@ export default function EventDetailPage() {
     )
 
     const { eventMeta, community } = event
+    const eventCommunityId = event.community?.id ?? event.community;
 
     const isCreator = currentUser && (
         (String(currentUser.id) === String(event.created_by)) ||
-        (currentUser.role === 'community' && String(currentUser.id) === String(event.community.id || event.community)) ||
-        (currentUser.membership && currentUser.membership.role === 'representative' && String(currentUser.membership.community) === String(event.community.id || event.community))
+        (currentUser.role === 'community' && String(currentUser.id) === String(eventCommunityId)) ||
+        (currentUser.membership && currentUser.membership.role === 'representative' && String(currentUser.membership.community) === String(eventCommunityId))
     );
 
     const deadlinePassed = eventMeta.registrationDeadline && new Date(eventMeta.registrationDeadline) < new Date();

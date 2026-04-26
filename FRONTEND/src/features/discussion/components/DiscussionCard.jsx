@@ -7,6 +7,9 @@ import CardActionMenu from '../../../shared/components/card/CardActionMenu';
 import Badge from '../../../shared/components/ui/Badge';
 import ActionButtons from '../../../shared/components/ui/ActionButtons';
 import ConfirmationModal from '../../../shared/components/modals/ConfirmationModal';
+import EditDiscussionModal from './EditDiscussionModal';
+import { formatTimeAgo } from '../../../utils/timeFormatter';
+import { getRoleLabel } from '../../../utils/userUtils';
 
 export default function DiscussionCard({ item, onDelete, isDetailView = false }) {
     const navigate = useNavigate();
@@ -14,6 +17,7 @@ export default function DiscussionCard({ item, onDelete, isDetailView = false })
 
     const [itemState, setItemState] = useState(item);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
@@ -28,6 +32,10 @@ export default function DiscussionCard({ item, onDelete, isDetailView = false })
 
     const canEdit = isOwner;
     const canDelete = isOwner || isCommunityAdmin;
+    const createdAt = itemState.created_at || itemState.createdAt;
+    const updatedAt = itemState.updated_at || itemState.updatedAt;
+    const isEdited = Boolean(itemState.is_edited) || Boolean(updatedAt && createdAt && new Date(updatedAt).getTime() - new Date(createdAt).getTime() > 1000);
+    const secondaryText = `${getRoleLabel(itemState)} • ${formatTimeAgo(createdAt || new Date())}${isEdited ? ' • edited' : ''}`;
 
     const handleDelete = (e) => {
         if (e) e.stopPropagation();
@@ -50,7 +58,7 @@ export default function DiscussionCard({ item, onDelete, isDetailView = false })
 
     const handleEdit = (e) => {
         if (e) e.stopPropagation();
-        navigate(`/discussions/edit/${item.id}`);
+        setIsEditModalOpen(true);
     };
 
     const handleCardClick = () => {
@@ -66,6 +74,7 @@ export default function DiscussionCard({ item, onDelete, isDetailView = false })
             >
                 <CardHeader
                     item={itemState}
+                    secondaryText={secondaryText}
                     actions={
                         <CardActionMenu
                             canEdit={canEdit}
@@ -118,6 +127,15 @@ export default function DiscussionCard({ item, onDelete, isDetailView = false })
                 confirmText="Delete"
                 isLoading={isDeleting}
                 loadingText="Deleting..."
+            />
+
+            <EditDiscussionModal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                discussion={itemState}
+                onUpdated={(updated) => {
+                    setItemState((prev) => ({ ...prev, ...updated }));
+                }}
             />
         </>
     );

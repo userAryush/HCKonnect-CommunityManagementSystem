@@ -16,6 +16,7 @@ import VacancyApplicantsPage from './features/vacancy/pages/VacancyApplicantsPag
 import EventDetailPage from './features/events/pages/EventDetailPage'
 import EventRegistrationPage from './features/events/pages/EventRegistrationPage';
 import CreateEvent from './features/events/pages/CreateEvent'
+import EditEvent from './features/events/pages/EditEvent'
 
 import EventsList from './features/events/pages/EventsList'
 import AnnouncementsList from './features/announcement/pages/AnnouncementsList'
@@ -67,7 +68,7 @@ function App() {
         <Route path="/community/:id/manage/vacancies/list" element={<VacancyPage />} />
         <Route path="/community/:id/vacancies/:vacancyId/applicants" element={<VacancyApplicantsPage />} />
         <Route path="/community/:id/manage/events/create" element={<CreateEvent />} />
-        <Route path="/community/:id/manage/events/:eventId/edit" element={<CreateEvent />} />
+        <Route path="/community/:id/manage/events/:eventId/edit" element={<EditEvent />} />
         <Route path="/community/:id/manage/events/:eventId/participants" element={<EventParticipantsPage />} />
         <Route path="/community/:id/manage/events" element={<EventsList />} />
         <Route path="/community/:id/manage/announcements" element={<AnnouncementsList />} />
