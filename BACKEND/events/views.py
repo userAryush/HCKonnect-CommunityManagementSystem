@@ -120,6 +120,7 @@ class EventRegistrationView(GenericAPIView):
 class ParticipantListView(ListAPIView):
     serializer_class = EventParticipantSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = StandardPagination
 
     def get_queryset(self):
         event_id = self.kwargs.get('event_id')

@@ -4,7 +4,7 @@ import EventCard from '../components/shared/EventCard'
 import eventService from '../service/eventService'
 import { FeedItemSkeleton } from '../../feed/components/FeedItem'
 import { useNavigate, useSearchParams, useParams } from 'react-router-dom'
-import { ArrowLeft, ArrowRight } from 'lucide-react'
+import Pagination from '../../../shared/components/pagination/Pagination'
 
 export default function EventsList() {
     const [menuOpen, setMenuOpen] = useState(false)
@@ -12,7 +12,8 @@ export default function EventsList() {
     const [stats, setStats] = useState({ total_events: 0, upcoming_events: 0 })
     const [loading, setLoading] = useState(true)
     const [page, setPage] = useState(1)
-    const [totalPages, setTotalPages] = useState(1)
+    const [itemsPerPage, setItemsPerPage] = useState(20)
+    const [totalCount, setTotalCount] = useState(0)
     const navigate = useNavigate()
     const { id } = useParams()
     const [searchParams] = useSearchParams()
@@ -37,11 +38,15 @@ export default function EventsList() {
     const canCreate = (isCommunity || isRep) && isAuthorizedForThisCommunity;
 
     useEffect(() => {
+        setPage(1)
+    }, [communityId])
+
+    useEffect(() => {
         const fetchData = async () => {
             setLoading(true)
             try {
                 const [eventsData, statsData] = await Promise.all([
-                    eventService.getEvents(communityId, page),
+                    eventService.getEvents(communityId, page, itemsPerPage),
                     eventService.getEventStats(communityId)
                 ])
 
@@ -65,7 +70,7 @@ export default function EventsList() {
                 }));
 
                 setEvents(mappedEvents)
-                setTotalPages(eventsData.total_pages)
+                setTotalCount(eventsData.count ?? 0)
                 setStats(statsData)
             } catch (error) {
                 console.error("Failed to fetch events", error)
@@ -74,7 +79,12 @@ export default function EventsList() {
             }
         }
         fetchData()
-    }, [page])
+    }, [communityId, page, itemsPerPage])
+
+    const handleItemsPerPageChange = (newItemsPerPage) => {
+        setItemsPerPage(newItemsPerPage)
+        setPage(1)
+    }
 
     return (
         <div className="bg-[#f4f5f2] min-h-screen">
@@ -133,28 +143,14 @@ export default function EventsList() {
                                 </div>
                             )}
 
-                            {/* Pagination */}
-                            {totalPages > 1 && (
-                                <div className="mt-12 flex justify-center gap-2">
-                                    <button
-                                        onClick={() => setPage(p => Math.max(1, p - 1))}
-                                        disabled={page === 1}
-                                        className="p-2 rounded-lg border border-[#e5e7eb] bg-white disabled:opacity-50 hover:bg-gray-50"
-                                    >
-                                        <ArrowLeft size={20} />
-                                    </button>
-                                    <span className="flex items-center px-4 font-semibold">
-                                        Page {page} of {totalPages}
-                                    </span>
-                                    <button
-                                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                                        disabled={page === totalPages}
-                                        className="p-2 rounded-lg border border-[#e5e7eb] bg-white disabled:opacity-50 hover:bg-gray-50"
-                                    >
-                                        <ArrowRight size={20} />
-                                    </button>
-                                </div>
-                            )}
+                            <Pagination
+                                totalItems={totalCount}
+                                itemsPerPage={itemsPerPage}
+                                currentPage={page}
+                                onPageChange={setPage}
+                                onItemsPerPageChange={handleItemsPerPageChange}
+                                className="mt-12"
+                            />
                         </>
                     )}
                 </div>

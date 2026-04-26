@@ -30,8 +30,8 @@ export default function PostDetail() {
             setPost(data);
             setComments(data.comments || []);
             setCommentPage(1);
-            // If we got exactly 10 comments, there might be more (backend limit is 10)
-            setHasMoreComments(data.comments?.length === 10);
+            const firstCommentsPage = await postService.getComments(id, 1);
+            setHasMoreComments(firstCommentsPage.next !== null);
         } catch (error) {
             console.error("Failed to fetch post", error);
             if (error.response?.status === 404) {
@@ -50,7 +50,7 @@ export default function PostDetail() {
             const data = await postService.getComments(id, nextPage);
             setComments(prev => [...prev, ...data.results]);
             setCommentPage(nextPage);
-            setHasMoreComments(!!data.next);
+            setHasMoreComments(data.next !== null);
         } catch (error) {
             console.error("Failed to load more comments", error);
         } finally {

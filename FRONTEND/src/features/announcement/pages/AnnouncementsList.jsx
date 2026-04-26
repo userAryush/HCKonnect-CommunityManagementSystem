@@ -74,7 +74,7 @@ export default function AnnouncementsList() {
                 }));
 
                 setAnnouncements(mappedAnnouncements);
-                setTotalCount(data.count || mappedAnnouncements.length);
+                setTotalCount(data.count ?? 0);
             } catch (error) {
                 console.error('Failed to fetch announcements', error);
             } finally {

@@ -1,9 +1,9 @@
 import apiClient from '../../../shared/services/apiClient';
 
 const eventService = {
-    getEvents: async (communityId = null, page = 1) => {
+    getEvents: async (communityId = null, page = 1, pageSize = 20) => {
         try {
-            let url = `/events/event-list/?page=${page}`;
+            let url = `/events/event-list/?page=${page}&page_size=${pageSize}`;
             if (communityId) {
                 url += `&community_id=${communityId}`;
             }
@@ -90,9 +90,9 @@ const eventService = {
         }
     },
 
-    getParticipants: async (eventId, page = 1) => {
+    getParticipants: async (eventId, page = 1, pageSize = 100) => {
         try {
-            const response = await apiClient.get(`/events/${eventId}/participants/?page=${page}`);
+            const response = await apiClient.get(`/events/${eventId}/participants/?page=${page}&page_size=${pageSize}`);
             return response.data;
         } catch (error) {
             throw error;

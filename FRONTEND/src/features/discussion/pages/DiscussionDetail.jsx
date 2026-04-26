@@ -13,8 +13,8 @@ export default function DiscussionDetail() {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [replies, setReplies] = useState([]);
-    const [replyPage, setReplyPage] = useState(1);
-    const [hasMoreReplies, setHasMoreReplies] = useState(false);
+    const [commentPage, setCommentPage] = useState(1);
+    const [hasMoreComments, setHasMoreComments] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
     const [sortOrder, setSortOrder] = useState('newest'); // 'newest' or 'oldest'
     const [replyingTo, setReplyingTo] = useState(null); // ID of reply we are replying to
@@ -31,9 +31,9 @@ export default function DiscussionDetail() {
             const data = await discussionService.getDiscussion(id);
             setDiscussion(data);
             setReplies(data.replies || []);
-            setReplyPage(1);
-            // If we got exactly 10 replies, there might be more (backend limit is 10)
-            setHasMoreReplies(data.replies?.length === 10);
+            setCommentPage(1);
+            const firstRepliesPage = await discussionService.getReplies(id, 1);
+            setHasMoreComments(firstRepliesPage.next !== null);
         } catch (error) {
             console.error("Failed to fetch discussion", error);
         } finally {
@@ -42,14 +42,14 @@ export default function DiscussionDetail() {
     };
 
     const loadMoreReplies = async () => {
-        if (loadingMore || !hasMoreReplies) return;
+        if (loadingMore || !hasMoreComments) return;
         setLoadingMore(true);
         try {
-            const nextPage = replyPage + 1;
+            const nextPage = commentPage + 1;
             const data = await discussionService.getReplies(id, nextPage);
             setReplies(prev => [...prev, ...data.results]);
-            setReplyPage(nextPage);
-            setHasMoreReplies(!!data.next);
+            setCommentPage(nextPage);
+            setHasMoreComments(data.next !== null);
         } catch (error) {
             console.error("Failed to load more replies", error);
         } finally {
@@ -191,7 +191,7 @@ export default function DiscussionDetail() {
                     onToggleReaction={handleReaction}
                     currentUser={currentUser}
                     submitting={submitting}
-                    hasMore={hasMoreReplies}
+                    hasMore={hasMoreComments}
                     onLoadMore={loadMoreReplies}
                     loadingMore={loadingMore}
                 />

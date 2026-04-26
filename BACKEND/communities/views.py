@@ -19,6 +19,7 @@ from discussion.models import DiscussionPanel, DiscussionReply, Reaction as Disc
 from utils.email_utils import send_branded_email
 from notifications.models import Notification
 from django.conf import settings
+from utils.pagination import StandardPagination
 
 User = get_user_model()
 
@@ -52,6 +53,7 @@ class ManageCommunityVacancyView(RetrieveUpdateDestroyAPIView):
 
 class ListCommunityVacanciesView(ListAPIView):
     serializer_class = CommunityVacancySerializer
+    pagination_class = StandardPagination
     # permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
@@ -113,6 +115,7 @@ class ApplyVacancyView(CreateAPIView):
 class ListVacancyApplicationsView(ListAPIView):
     serializer_class = VacancyApplicationSerializer
     permission_classes = [CanCreateCommunityContent]
+    pagination_class = StandardPagination
 
     def get_queryset(self):
         user = self.request.user

@@ -1,4 +1,4 @@
-from rest_framework.generics import CreateAPIView, ListAPIView, UpdateAPIView, DestroyAPIView, RetrieveAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.generics import CreateAPIView, ListAPIView, UpdateAPIView, DestroyAPIView, RetrieveAPIView, RetrieveUpdateDestroyAPIView, GenericAPIView
 from .models import Announcement, Post, PostComment, PostReaction, Resource
 from rest_framework.permissions import AllowAny
 from django.db.models import Q
@@ -13,10 +13,106 @@ from .permissions import CanCreateCommunityContent, CanEditContent, IsPostOwnerO
 from .serializers import PostCommentReadSerializer, PostCommentCreateSerializer
 from rest_framework.response import Response
 from utils.pagination import StandardPagination, CommentPagination
+from discussion.models import DiscussionPanel
+from discussion.serializers import DiscussionReadSerializer
+from events.models import Event
+from events.serializers import EventSerializer
+from communities.models import CommunityVacancy
+from communities.serializers import CommunityVacancySerializer
 
 
 User = get_user_model()
 # Create your views here.
+class FeedPagination(StandardPagination):
+    page_size = 20
+
+
+class FeedListView(GenericAPIView):
+    permission_classes = [AllowAny]
+    pagination_class = FeedPagination
+
+    def get(self, request, *args, **kwargs):
+        content_type = request.query_params.get("type", "all")
+        user = request.user
+        items = []
+
+        if content_type in {"all", "announcement"}:
+            announcements_qs = Announcement.objects.filter(visibility="public")
+            if user.is_authenticated:
+                if user.role == "community":
+                    announcements_qs = announcements_qs | Announcement.objects.filter(visibility="private", community=user)
+                elif user.role == "student":
+                    membership = getattr(user, "membership", None)
+                    if membership:
+                        announcements_qs = announcements_qs | Announcement.objects.filter(
+                            visibility="private", community=membership.community
+                        )
+
+            announcements = AnnouncementReadSerializer(
+                announcements_qs.select_related("community").distinct(),
+                many=True,
+                context={"request": request},
+            ).data
+            for item in announcements:
+                item["type"] = "announcement"
+            items.extend(announcements)
+
+        if content_type in {"all", "post"}:
+            posts = PostReadSerializer(
+                Post.objects.all().select_related("author").prefetch_related("comments", "reactions"),
+                many=True,
+                context={"request": request},
+            ).data
+            for item in posts:
+                item["type"] = "post"
+            items.extend(posts)
+
+        if content_type in {"all", "discussion"}:
+            discussions_qs = DiscussionPanel.objects.all()
+            visibility_filter = Q(visibility="public")
+            if user.is_authenticated:
+                if user.role == "community":
+                    visibility_filter |= Q(community=user)
+                elif user.role == "student":
+                    membership = getattr(user, "membership", None)
+                    if membership:
+                        visibility_filter |= Q(community=membership.community)
+            discussions_qs = discussions_qs.filter(visibility_filter)
+
+            discussions = DiscussionReadSerializer(
+                discussions_qs.select_related("created_by", "community").prefetch_related("replies"),
+                many=True,
+                context={"request": request},
+            ).data
+            for item in discussions:
+                item["type"] = "discussion"
+            items.extend(discussions)
+
+        if content_type in {"all", "event"}:
+            events = EventSerializer(
+                Event.objects.all().select_related("community"),
+                many=True,
+                context={"request": request},
+            ).data
+            for item in events:
+                item["type"] = "event"
+            items.extend(events)
+
+        if content_type in {"all", "vacancy"}:
+            vacancies_qs = CommunityVacancy.objects.select_related("community").filter(status=CommunityVacancy.STATUS_OPEN)
+            vacancies = CommunityVacancySerializer(
+                vacancies_qs,
+                many=True,
+                context={"request": request},
+            ).data
+            for item in vacancies:
+                item["type"] = "vacancy"
+            items.extend(vacancies)
+
+        items.sort(key=lambda x: x.get("created_at") or "", reverse=True)
+        page = self.paginate_queryset(items)
+        return self.get_paginated_response(page)
+
 class AnnouncementCreateView(CreateAPIView):
     serializer_class = AnnouncementCreateSerializer
     permission_classes = [CanCreateCommunityContent]

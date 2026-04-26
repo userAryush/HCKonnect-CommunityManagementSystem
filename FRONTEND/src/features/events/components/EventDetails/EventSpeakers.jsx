@@ -15,17 +15,13 @@ export default function EventSpeakers({ speakers }) {
                 {speakers.map((speaker, idx) => (
                     <div key={idx} className="group flex items-center gap-6 p-6 rounded-3xl bg-[var(--surface-card)] border border-surface-border hover:border-surface-border hover:shadow-md transition-all duration-300">
                         <div className="relative shrink-0">
-                            <div className="h-20 w-20 rounded-2xl bg-zinc-200 flex items-center justify-center text-zinc-400 group-hover:bg-primary/10 group-hover:text-primary transition-all duration-500 overflow-hidden shadow-inner">
-                                <Users size={40} />
-                            </div>
-                            <div className="absolute -bottom-2 -right-2 h-8 w-8 rounded-xl bg-white shadow-lg border border-zinc-100 flex items-center justify-center text-primary">
-                                <Globe size={14} />
+                            <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-white transition-all duration-500 overflow-hidden shadow-inner">
+                                <Users size={24} />
                             </div>
                         </div>
                         <div>
-                            <h3 className="text-xl font-black text-[var(--surface-heading)] mb-1 group-hover:text-primary transition-colors">{speaker.name}</h3>
+                            <h3 className="text-xl font-black text-surface-heading mb-1 transition-colors">{speaker.name}</h3>
                             <p className="text-xs font-black text-primary uppercase tracking-widest mb-2 opacity-80">{speaker.profession}</p>
-                            <p className="text-sm text-surface-muted font-medium">Industry Expert</p>
                         </div>
                     </div>
                 ))}

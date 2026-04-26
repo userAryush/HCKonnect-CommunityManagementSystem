@@ -30,7 +30,7 @@ export default function DiscussionList() {
         try {
             const data = await discussionService.getDiscussions({ page, pageSize: itemsPerPage });
             setDiscussions(data.results || []);
-            setTotalCount(data.count ?? (data.results?.length || 0));
+            setTotalCount(data.count ?? 0);
         } catch (error) {
             console.error("Failed to fetch discussions", error);
         } finally {

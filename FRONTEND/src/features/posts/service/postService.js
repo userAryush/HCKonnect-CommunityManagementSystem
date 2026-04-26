@@ -82,9 +82,9 @@ const postService = {
     },
 
     // Get paginated comments for a post
-    getComments: async (postId, page = 1) => {
+    getComments: async (postId, page = 1, pageSize = 10) => {
         try {
-            const response = await apiClient.get(`/contents/post/comments/list/?post_id=${postId}&page=${page}`);
+            const response = await apiClient.get(`/contents/post/comments/list/?post_id=${postId}&page=${page}&page_size=${pageSize}`);
             return response.data;
         } catch (error) {
             throw error;

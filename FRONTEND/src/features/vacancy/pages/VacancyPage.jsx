@@ -24,7 +24,7 @@ export default function VacanciesPage() {
   const [vacancyToDelete, setVacancyToDelete] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [itemsPerPage, setItemsPerPage] = useState(20)
   const [activeFilter, setActiveFilter] = useState('Newest')
   const [vacancyToClose, setVacancyToClose] = useState(null)
   const [vacancyActionLoadingId, setVacancyActionLoadingId] = useState(null)
@@ -65,9 +65,8 @@ export default function VacanciesPage() {
     try {
       setLoading(true)
       const data = await vacancyService.getVacancies(id, buildFilterParams())
-      const fetchedVacancies = data.results || data || []
-      setVacancies(fetchedVacancies)
-      setTotalCount(data.count ?? fetchedVacancies.length)
+      setVacancies(data.results || [])
+      setTotalCount(data.count ?? 0)
     } catch (err) {
       console.error('Failed to load vacancies', err)
       showToast('Failed to load vacancies.', 'error')
@@ -84,9 +83,8 @@ export default function VacanciesPage() {
     try {
       setLoading(true)
       const data = await vacancyService.getVacancies(id, buildFilterParams())
-      const fetchedVacancies = data.results || data || []
-      setVacancies(fetchedVacancies)
-      setTotalCount(data.count ?? fetchedVacancies.length)
+      setVacancies(data.results || [])
+      setTotalCount(data.count ?? 0)
     } catch (err) {
       console.error('Failed to reload vacancies', err)
       showToast('Failed to refresh vacancies.', 'error')

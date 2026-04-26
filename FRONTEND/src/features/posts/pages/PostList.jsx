@@ -37,7 +37,7 @@ export default function PostList() {
         try {
             const data = await postService.getPosts({ page, pageSize: itemsPerPage });
             setPosts(data.results || []);
-            setTotalCount(data.count ?? (data.results?.length || 0));
+            setTotalCount(data.count ?? 0);
         } catch (error) {
             console.error("Failed to fetch posts", error);
         } finally {
