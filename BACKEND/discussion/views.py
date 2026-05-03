@@ -1,14 +1,21 @@
 from rest_framework.generics import CreateAPIView,ListAPIView,RetrieveAPIView,UpdateAPIView,DestroyAPIView,ListCreateAPIView
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.exceptions import PermissionDenied
-from django.db.models import Prefetch, Q
+from rest_framework.exceptions import PermissionDenied, ValidationError as DRFValidationError
+from django.db.models import Prefetch, Q, Count
 
 from .models import DiscussionPanel, DiscussionReply, Reaction
-from .serializers import DiscussionCreateSerializer,DiscussionReadSerializer,DiscussionUpdateSerializer,ReplyCreateSerializer,ReactionSerializer
+from .serializers import DiscussionCreateSerializer,DiscussionReadSerializer,DiscussionUpdateSerializer,ReplyCreateSerializer,ReplyReadSerializer,ReactionSerializer
 from .permissions import CanCreateDiscussion, CanAccessDiscussion, IsOwner
-from utils.pagination import StandardPagination, CommentPagination
+from utils.pagination import StandardPagination
+from utils.comment_cursor import (
+    apply_comment_cursor_filter,
+    collect_discussion_reply_tree_ids,
+    cursor_paginated_comment_response,
+    parse_limit,
+)
 
 
 # =====================================================
@@ -46,12 +53,28 @@ class DiscussionListView(ListAPIView):
         if community_id:
             qs = qs.filter(community_id=community_id)
 
-        return qs.select_related("created_by","community").prefetch_related(Prefetch("replies",queryset=DiscussionReply.objects.select_related("created_by")))
+        return (
+            qs.select_related("created_by", "community")
+            .prefetch_related(Prefetch("replies", queryset=DiscussionReply.objects.select_related("created_by")))
+            .annotate(_reply_count_total=Count("replies"))
+        )
 
 class DiscussionDetailView(RetrieveAPIView):
-    queryset = DiscussionPanel.objects.all()
     serializer_class = DiscussionReadSerializer
     permission_classes = [IsAuthenticated, CanAccessDiscussion]
+
+    def get_queryset(self):
+        # Replies are loaded by ReplyListView (cursor API). Avoid deep prefetch + nested serialization here.
+        return (
+            DiscussionPanel.objects.select_related("created_by", "community")
+            .prefetch_related("reactions")
+            .annotate(_reply_count_total=Count("replies"))
+        )
+
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx["omit_nested_replies"] = True
+        return ctx
 
 
 class DiscussionUpdateView(UpdateAPIView):
@@ -95,18 +118,63 @@ class ReplyDeleteView(DestroyAPIView):
     queryset = DiscussionReply.objects.all()
     permission_classes = [IsAuthenticated, IsOwner]
 
-class ReplyListView(ListAPIView):
-    serializer_class = ReplyCreateSerializer
+class ReplyListView(APIView):
+    """
+    Cursor-based list: ?topic_id=&cursor=&limit=22
+    Response: { comments, next_cursor, has_more } — same envelope as post comments.
+    """
     permission_classes = [IsAuthenticated]
-    pagination_class = CommentPagination
 
-    def get_queryset(self):
-        topic_id = self.request.query_params.get("topic_id")
+    def get(self, request, *args, **kwargs):
+        topic_id = request.query_params.get("topic_id")
         if not topic_id:
-            return DiscussionReply.objects.none()
-        
-        # Only top-level replies (those without a parent_reply)
-        return DiscussionReply.objects.filter(topic_id=topic_id, parent_reply__isnull=True).order_by("-created_at")
+            return Response({"comments": [], "next_cursor": None, "has_more": False})
+
+        limit = parse_limit(request.query_params.get("limit"), default=12)
+        cursor = request.query_params.get("cursor") or None
+
+        try:
+            grandchild_qs = (
+                DiscussionReply.objects.select_related("created_by", "created_by__membership__community")
+                .prefetch_related("reactions")
+                .order_by("-created_at", "-id")
+            )
+            child_qs = (
+                DiscussionReply.objects.select_related("created_by", "created_by__membership__community")
+                .prefetch_related(Prefetch("children", queryset=grandchild_qs), "reactions")
+                .order_by("-created_at", "-id")
+            )
+            qs = (
+                DiscussionReply.objects.filter(topic_id=topic_id, parent_reply__isnull=True)
+                .select_related("created_by", "topic", "created_by__membership__community")
+                .prefetch_related(Prefetch("children", queryset=child_qs), "reactions")
+                .order_by("-created_at", "-id")
+            )
+            qs = apply_comment_cursor_filter(qs, cursor)
+
+            def like_context(page_objs, req):
+                if not req.user.is_authenticated or not page_objs:
+                    return {}
+                ids = collect_discussion_reply_tree_ids(page_objs)
+                if not ids:
+                    return {}
+                return {
+                    "liked_reply_ids": set(
+                        Reaction.objects.filter(user=req.user, reply_id__in=ids).values_list(
+                            "reply_id", flat=True
+                        )
+                    )
+                }
+
+            return cursor_paginated_comment_response(
+                qs,
+                ReplyReadSerializer,
+                request,
+                limit=limit,
+                extra_context_callback=like_context,
+            )
+        except DRFValidationError as e:
+            return Response({"detail": e.detail}, status=400)
 
 
 

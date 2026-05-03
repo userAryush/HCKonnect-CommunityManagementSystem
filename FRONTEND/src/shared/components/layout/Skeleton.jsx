@@ -84,3 +84,18 @@ export const TableSkeleton = ({ rows = 5, columns = 6 }) => (
         </div>
     </div>
 );
+
+export const CommentSkeletonRows = ({ count = 2 }) => (
+    <div className="space-y-3 mt-4 px-1" aria-busy="true" aria-label="Loading comments">
+        {Array.from({ length: count }, (_, i) => (
+            <div key={`sk-${i}`} className="flex gap-3">
+                <Skeleton variant="circle" className="h-9 w-9 flex-shrink-0" />
+                <div className="flex-1 space-y-2 min-w-0">
+                    <Skeleton variant="text" className="w-28 max-w-[40%] h-3" />
+                    <Skeleton variant="text" className="w-full h-3" />
+                    <Skeleton variant="text" className="w-4/5 max-w-[85%] h-3" />
+                </div>
+            </div>
+        ))}
+    </div>
+)

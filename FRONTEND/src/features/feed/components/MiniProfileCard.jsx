@@ -138,8 +138,7 @@ export default function MiniProfileCard() {
     }, [isCommunityAccount, stats.discussions, stats.eventParticipated, stats.membersCount, stats.posts, stats.upcomingEvents]);
 
     return (
-        <div className="mini-profile-card">
-
+        <div className="rounded-standard relative overflow-hidden border border-primary/30 bg-primary/[0.07]">
             <div className="relative p-6 flex flex-col items-center">
                 {/* Avatar */}
                 <div className="mb-3">
@@ -147,34 +146,34 @@ export default function MiniProfileCard() {
                         <img
                             src={profileImage}
                             alt={displayName}
-                            className="h-16 w-16 rounded-full object-cover mini-profile-avatar" />
+                            className="h-16 w-16 rounded-full object-cover border-[2.5px] border-primary shadow-sm" />
                     ) : (
-                        <div className="flex h-16 w-16 items-center justify-center rounded-full mini-profile-avatar-fallback">
-                            <span className="text-lg font-bold uppercase tracking-wider text-white">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full border-[2.5px] border-primary bg-white">
+                            <span className="text-lg font-bold uppercase tracking-wider text-primary-hover">
                                 {initials}
                             </span>
                         </div>
                     )}
                 </div>
-
+    
                 {/* Name + Role */}
                 <div className="text-center">
                     <Link
                         to="/profile"
-                        className="block text-[15px] tracking-[-0.01em] font-semibold text-white transition-opacity hover:opacity-80">
+                        className="block text-[15px] tracking-[-0.01em] font-semibold text-surface-dark transition-opacity hover:opacity-70">
                         {displayName}
                     </Link>
-                    <p className="mt-0.5 text-[10px] font-medium uppercase tracking-widest text-white/70">
+                    <p className="mt-0.5 text-[10px] font-medium uppercase tracking-widest text-primary-hover">
                         {roleLabel}
                     </p>
                 </div>
-
+    
                 {/* Stats row */}
                 <div className="mt-5 w-full grid grid-cols-3 gap-2">
                     {statItems.map(({ num, lbl }) => (
-                        <div key={lbl} className="mini-profile-stat">
-                            <span className="text-[15px] font-bold text-white">{num}</span>
-                            <span className="text-[9px] uppercase tracking-[0.07em] text-white/70">{lbl}</span>
+                        <div key={lbl} className="flex flex-col items-center rounded-xl border border-primary/25 bg-white py-2">
+                            <span className="text-[15px] font-bold text-primary-hover">{num}</span>
+                            <span className="text-[9px] uppercase tracking-[0.07em] text-primary">{lbl}</span>
                         </div>
                     ))}
                 </div>

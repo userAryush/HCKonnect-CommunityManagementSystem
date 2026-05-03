@@ -9,6 +9,7 @@ import PostCard from '../../posts/components/PostCard'
 import postService from '../../posts/service/postService'
 import { Edit2, Linkedin, Github } from 'lucide-react'
 import { getDisplayName, getInitials, getProfileImage } from '../../../utils/userUtils'
+import EditProfileModal from '../components/shared/EditProfileModal'
 
 export default function Profile() {
     const { id } = useParams()
@@ -16,6 +17,7 @@ export default function Profile() {
     const [posts, setPosts] = useState([])
     const [loading, setLoading] = useState(true)
     const [menuOpen, setMenuOpen] = useState(false)
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false)
     const currentUser = JSON.parse(localStorage.getItem('user') || '{}')
 
     // If no ID is provided, it's the current user's profile
@@ -119,13 +121,14 @@ export default function Profile() {
                                 <div className="flex justify-between items-start">
                                     <h1 className="text-2xl font-bold tracking-tight text-surface-dark">{displayName}</h1>
                                     {isOwnProfile && (
-                                        <Link
-                                            to="/profile/edit"
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsEditModalOpen(true)}
                                             className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-5 py-2 text-sm font-bold text-surface-dark transition hover:bg-zinc-50 hover:border-zinc-300"
                                         >
                                             <Edit2 size={16} className="text-primary" />
                                             <span>Edit Profile</span>
-                                        </Link>
+                                        </button>
                                     )}
                                 </div>
 
@@ -199,6 +202,17 @@ export default function Profile() {
                     </div>
                 </div>
             </main>
+
+            {isOwnProfile && (
+                <EditProfileModal
+                    isOpen={isEditModalOpen}
+                    onClose={() => setIsEditModalOpen(false)}
+                    profileId={profileId}
+                    onSaved={() => {
+                        fetchProfile()
+                    }}
+                />
+            )}
         </div>
     )
 }

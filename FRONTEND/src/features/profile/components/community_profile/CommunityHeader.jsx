@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import { Edit2, Mail } from 'lucide-react';
 import SendMessageModal from '../../../../shared/components/modals/SendMessageModal';
 
@@ -10,6 +9,7 @@ export default function CommunityHeader({
     handleJoinRequest,
     isMessageModalOpen,
     setIsMessageModalOpen,
+    onEditProfile,
 }) {
     return (
         <header className="rounded-2xl border border-surface-border/10 bg-[var(--surface-card)] p-8 overflow-hidden">
@@ -47,13 +47,14 @@ export default function CommunityHeader({
                 {/* Actions */}
                 <div className="flex flex-wrap justify-center sm:justify-end gap-3">
                     {(isProfileOwner === true) && (
-                        <Link
-                            to={`/profile/edit/${communityData.id}`}
+                        <button
+                            type="button"
+                            onClick={onEditProfile}
                             className="flex items-center gap-2 rounded-xl border border-surface-border/70 bg-[var(--surface-card)] px-4 py-2 text-sm font-bold text-surface-dark transition hover:bg-secondary hover:border-surface-border"
                         >
                             <Edit2 size={16} className="text-primary" />
                             <span>Edit Profile</span>
-                        </Link>
+                        </button>
                     )}
 
                     {/* Send Message Button */}

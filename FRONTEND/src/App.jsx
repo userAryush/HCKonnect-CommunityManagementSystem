@@ -5,7 +5,6 @@ import Register from './features/authentication/pages/Register'
 import Login from './features/authentication/pages/Login'
 import Feed from './features/feed/pages/Feed'
 import Profile from './features/profile/pages/Profile'
-import EditProfile from './features/profile/pages/EditProfile'
 import CommunityProfilePage from './features/profile/pages/CommunityProfilePage'
 import CommunityDashboard from './features/community_dash/pages/CommunityDashboard'
 import MemberManagement from './features/member_management/pages/MemberManagement'
@@ -51,8 +50,6 @@ function App() {
         <Route path="/feed" element={<Feed />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/profile/:id" element={<Profile />} />
-        <Route path="/profile/edit" element={<EditProfile />} />
-        <Route path="/profile/edit/:id" element={<EditProfile />} />
         <Route path="/events" element={<EventsList />} />
         <Route path="/announcements" element={<AnnouncementsList />} />
         <Route path="/discussions" element={<DiscussionList />} />

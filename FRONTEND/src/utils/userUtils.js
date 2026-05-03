@@ -83,3 +83,36 @@ export const getRoleLabel = (user) => {
   
   return role || 'Student';
 };
+
+/**
+ * Maps a post or discussion comment/reply API object into the shape expected by UserInfo.
+ */
+export function commentAuthorItem(reply) {
+  if (!reply) return null;
+  const a = reply.author;
+  const c = reply.created_by;
+  let id = null;
+  if (a != null && typeof a === 'object' && 'id' in a) id = a.id;
+  else if (c != null && typeof c === 'object' && 'id' in c) id = c.id;
+  else id = a ?? c ?? null;
+
+  return {
+    author: id,
+    created_by: id,
+    author_name: reply.author_name,
+    author_image: reply.author_image,
+    author_role: reply.author_role,
+    author_community: reply.author_community,
+    community: reply.community,
+  };
+}
+
+/** Maps the logged-in session user to the same item shape as cards / UserInfo. */
+export function sessionUserAsItem(user) {
+  if (!user) return null;
+  return {
+    ...user,
+    author: user.id,
+    created_by: user.id,
+  };
+}

@@ -15,6 +15,7 @@ import ContentGrid from '../components/community_profile/ContentGrid';
 import MembersTab from '../components/community_profile/MembersTab';
 import vacancyService from '../../vacancy/service/vacancyService';
 import VacancyApplicationModal from '../../vacancy/components/VacancyApplicationModal';
+import EditProfileModal from '../components/shared/EditProfileModal';
 
 export default function CommunityProfilePage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -40,22 +41,25 @@ export default function CommunityProfilePage() {
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
   const [loadingTab, setLoadingTab] = useState(false)
   const [error, setError] = useState('')
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const tabs = ['Overview', 'Posts', 'Events', 'Discussions', 'Resources', 'Vacancies', 'Members'] // Add Vacancies tab
 
   const handleJoinRequest = () => {
     setMembershipStatus('pending')
   }
 
-  useEffect(() => {
-    const fetchCommunity = async () => {
-      try {
-        const res = await apiClient.get(`/communities/dashboard/${id}/`)
-        setCommunityData(res.data)
-      } catch (err) {
-        console.error("Failed to load community", err)
-        setError('Failed to load community. You may not have access or need to login.')
-      }
+  const fetchCommunity = async () => {
+    try {
+      const res = await apiClient.get(`/communities/dashboard/${id}/`)
+      setCommunityData(res.data)
+      setError('')
+    } catch (err) {
+      console.error("Failed to load community", err)
+      setError('Failed to load community. You may not have access or need to login.')
     }
+  }
+
+  useEffect(() => {
     fetchCommunity()
   }, [id])
 
@@ -175,6 +179,7 @@ export default function CommunityProfilePage() {
             handleJoinRequest={handleJoinRequest}
             isMessageModalOpen={isMessageModalOpen}
             setIsMessageModalOpen={setIsMessageModalOpen}
+            onEditProfile={() => setIsEditModalOpen(true)}
           />
 
           <div className="mt-2 flex gap-8 border-b border-surface-border/70 overflow-x-auto no-scrollbar">
@@ -255,6 +260,17 @@ export default function CommunityProfilePage() {
           }`}>
           {toast.message}
         </div>
+      )}
+
+      {isProfileOwner && (
+        <EditProfileModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          profileId={id}
+          onSaved={() => {
+            fetchCommunity()
+          }}
+        />
       )}
     </div>
   )

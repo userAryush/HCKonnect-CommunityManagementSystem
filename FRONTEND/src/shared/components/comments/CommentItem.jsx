@@ -1,0 +1,373 @@
+import { useState, useRef, useEffect } from 'react';
+import { ThumbsUp, ChevronDown, ChevronUp, CornerDownRight, MoreVertical, Pencil } from 'lucide-react';
+import { formatTimeAgo } from '../../../utils/timeFormatter';
+import { commentAuthorItem, sessionUserAsItem } from '../../../utils/userUtils';
+import { UserAvatar, UserProfileName } from '../card/UserInfo';
+import Button from '../ui/Button';
+
+function isCommentEdited(reply) {
+    if (!reply.updated_at || !reply.created_at) return false;
+    return new Date(reply.updated_at).getTime() > new Date(reply.created_at).getTime();
+}
+
+export default function CommentItem({
+    reply,
+    depth,
+    /** When true, an ancestor opened this thread — render all nested levels without further clicks. */
+    forcedExpand = false,
+    onDeleteRequest,
+    onToggleReaction,
+    onPostComment,
+    onEditComment,
+    submitInFlight,
+    currentUser,
+    viewerUser,
+}) {
+    const me = viewerUser ?? currentUser;
+    const viewerItem = sessionUserAsItem(me);
+    const authorItem = commentAuthorItem(reply);
+    const ownerId = authorItem?.author;
+
+    const [localRepliesOpen, setLocalRepliesOpen] = useState(false);
+    /** User hid nested replies while an ancestor still has the thread expanded (middle “Hide”). */
+    const [subtreeDismissed, setSubtreeDismissed] = useState(false);
+    const [isReplying, setIsReplying] = useState(false);
+    const [replyText, setReplyText] = useState('');
+    const [menuOpen, setMenuOpen] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editText, setEditText] = useState('');
+    const menuRef = useRef(null);
+
+    const isAuthor = currentUser && ownerId != null && String(currentUser.id) === String(ownerId);
+    const children = reply.replies || reply.children || [];
+    const hasReplies = children.length > 0;
+
+    const propagateExpand = forcedExpand || localRepliesOpen;
+    const showNested = propagateExpand && !subtreeDismissed;
+
+    useEffect(() => {
+        if (!forcedExpand) setSubtreeDismissed(false);
+    }, [forcedExpand]);
+
+    const canReply = depth < 2;
+    const edited = isCommentEdited(reply);
+    const rid = String(reply.id);
+
+    const replySaving = submitInFlight?.type === 'reply' && submitInFlight.parentId === rid;
+    const editSaving = submitInFlight?.type === 'edit' && submitInFlight.commentId === rid;
+    const timeLabel = formatTimeAgo(reply.created_at) || reply.time_ago || '';
+    const displayContent = reply.content ?? reply.reply_content ?? '';
+
+    useEffect(() => {
+        if (!menuOpen) return;
+        const onDoc = (e) => {
+            if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+        };
+        document.addEventListener('mousedown', onDoc);
+        return () => document.removeEventListener('mousedown', onDoc);
+    }, [menuOpen]);
+
+    const openRepliesThread = () => {
+        setLocalRepliesOpen(true);
+        setSubtreeDismissed(false);
+    };
+
+    const hideRepliesThread = () => {
+        if (localRepliesOpen) {
+            setLocalRepliesOpen(false);
+        } else if (forcedExpand) {
+            setSubtreeDismissed(true);
+        }
+    };
+
+    const handleOpenReply = () => {
+        setIsEditing(false);
+        setIsReplying(true);
+        setReplyText('');
+    };
+    const handleCancelReply = () => {
+        setIsReplying(false);
+        setReplyText('');
+    };
+    const handleSubmitReply = async () => {
+        if (!replyText.trim()) return;
+        try {
+            await onPostComment(reply.id, replyText);
+            setReplyText('');
+            setIsReplying(false);
+        } catch {
+            /* keep composer open */
+        }
+    };
+
+    const startEdit = () => {
+        setIsReplying(false);
+        setReplyText('');
+        setEditText(displayContent);
+        setIsEditing(true);
+    };
+    const cancelEdit = () => {
+        setIsEditing(false);
+        setEditText('');
+    };
+    const saveEdit = async () => {
+        const next = editText.trim();
+        if (!next) return;
+        try {
+            await onEditComment(reply.id, next);
+            setIsEditing(false);
+            setEditText('');
+        } catch {
+            /* stay in edit mode */
+        }
+    };
+
+    const sharedChildProps = {
+        onDeleteRequest,
+        onToggleReaction,
+        onPostComment,
+        onEditComment,
+        submitInFlight,
+        currentUser,
+        viewerUser,
+    };
+
+    return (
+        <div className="flex gap-0 relative">
+            <div className="flex flex-col items-center" style={{ width: 44, flexShrink: 0 }}>
+                <div style={{ zIndex: 1 }}>
+                    <UserAvatar item={authorItem} size="sm" />
+                </div>
+                {((hasReplies && showNested) || isReplying) && (
+                    <div
+                        className="w-0.5 flex-1 mt-1 bg-gradient-to-b from-emerald-200 to-gray-200 dark:from-emerald-900/60 dark:to-zinc-600"
+                        style={{ minHeight: 20 }}
+                    />
+                )}
+            </div>
+
+            <div className="flex-1 pb-4 pl-3" style={{ minWidth: 0 }}>
+                <div className="flex items-start justify-between mb-0.5 gap-2">
+                    <div className="flex items-center gap-2 flex-wrap min-w-0">
+                        <UserProfileName
+                            item={authorItem}
+                            className={`text-[14px] leading-snug focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm ${depth === 0 ? '' : 'opacity-95'}`}
+                        />
+                        {reply.author_role === 'community' && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 tracking-wide">
+                                Admin
+                            </span>
+                        )}
+                        <span className="text-[12px] text-[var(--surface-muted-text)]">
+                            {reply.author_role !== 'community' &&
+                                (reply.author_community ? `· ${reply.author_community}` : '· Student')}
+                        </span>
+                        <span className="text-[12px] text-[var(--surface-muted-text)]">
+                            · {timeLabel}
+                            {edited && <span> · edited</span>}
+                        </span>
+                    </div>
+
+                    {isAuthor && !isEditing && (
+                        <div className="relative flex-shrink-0" ref={menuRef}>
+                            <button
+                                type="button"
+                                onClick={() => setMenuOpen((o) => !o)}
+                                className="p-1.5 rounded-lg text-[var(--surface-muted-text)] hover:text-[var(--surface-heading)] hover:bg-[var(--surface-muted-bg)] dark:hover:bg-zinc-700/80 transition-colors"
+                                aria-expanded={menuOpen}
+                                aria-haspopup="menu"
+                                aria-label="Comment actions"
+                            >
+                                <MoreVertical size={16} />
+                            </button>
+                            {menuOpen && (
+                                <div
+                                    className="absolute right-0 top-full mt-1 z-20 min-w-[148px] rounded-xl border border-surface-border bg-[var(--surface-card)] py-1 shadow-lg dark:shadow-xl dark:shadow-black/40"
+                                    role="menu"
+                                >
+                                    <button
+                                        type="button"
+                                        role="menuitem"
+                                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-[var(--app-text)] hover:bg-[var(--surface-muted-bg)] dark:hover:bg-zinc-700/60"
+                                        onClick={() => {
+                                            setMenuOpen(false);
+                                            startEdit();
+                                        }}
+                                    >
+                                        <Pencil size={14} className="text-[var(--surface-muted-text)]" />
+                                        Edit
+                                    </button>
+                                    <button
+                                        type="button"
+                                        role="menuitem"
+                                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/50"
+                                        onClick={() => {
+                                            setMenuOpen(false);
+                                            onDeleteRequest(reply.id);
+                                        }}
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {isEditing ? (
+                    <div className="mb-2">
+                        <div className="rounded-xl border border-surface-border bg-[var(--surface-muted-bg)] focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/25 transition-all">
+                            <textarea
+                                value={editText}
+                                onChange={(e) => setEditText(e.target.value)}
+                                className="w-full rounded-xl bg-transparent px-3 py-2.5 text-[14px] leading-relaxed text-[var(--app-text)] outline-none resize-none min-h-[72px] border-0 focus:ring-0"
+                                rows={3}
+                                autoFocus
+                            />
+                        </div>
+                        <div className="mt-2 flex justify-end gap-2">
+                            <button
+                                type="button"
+                                onClick={cancelEdit}
+                                className="text-[12px] font-medium text-[var(--surface-muted-text)] hover:text-[var(--surface-heading)] px-3 py-1.5"
+                            >
+                                Cancel
+                            </button>
+                            <Button
+                                variant="primary"
+                                onClick={saveEdit}
+                                isLoading={editSaving}
+                                disabled={!editText.trim() || editText.trim() === displayContent.trim()}
+                                className="!text-[12px] !py-1.5 !px-4 !rounded-lg"
+                                loadingText="Saving..."
+                            >
+                                Save
+                            </Button>
+                        </div>
+                    </div>
+                ) : (
+                    <p
+                        className={`text-[14px] leading-relaxed whitespace-pre-wrap mb-2 text-[var(--app-text)] ${depth === 0 ? '' : 'opacity-90'}`}
+                    >
+                        {displayContent}
+                    </p>
+                )}
+
+                {!isEditing && (
+                    <div className="flex flex-wrap items-center gap-4">
+                        <button
+                            type="button"
+                            onClick={() => onToggleReaction(reply.id)}
+                            className={`flex items-center gap-1.5 text-[13px] font-medium transition-colors
+                                ${
+                                    reply.user_has_liked
+                                        ? 'text-emerald-600 dark:text-emerald-400'
+                                        : 'text-[var(--surface-muted-text)] hover:text-[var(--surface-heading)]'
+                                }`}
+                        >
+                            <ThumbsUp
+                                size={14}
+                                className={reply.user_has_liked ? 'fill-emerald-500 text-emerald-500' : ''}
+                            />
+                            <span>{reply.reaction_count || 0}</span>
+                        </button>
+
+                        {canReply && !isReplying && (
+                            <button
+                                type="button"
+                                onClick={handleOpenReply}
+                                className="flex items-center gap-1 text-[13px] font-medium text-[var(--surface-muted-text)] hover:text-[var(--surface-heading)] transition-colors"
+                            >
+                                <CornerDownRight size={13} />
+                                <span>Reply{hasReplies ? ` (${children.length})` : ''}</span>
+                            </button>
+                        )}
+
+                        {canReply && isReplying && (
+                            <span className="flex items-center gap-1 text-[13px] font-medium text-primary">
+                                <CornerDownRight size={13} />
+                                <span>Replying…</span>
+                            </span>
+                        )}
+
+                        {hasReplies && !showNested && (
+                            <button
+                                type="button"
+                                onClick={openRepliesThread}
+                                className="flex items-center gap-1 text-[13px] font-medium text-primary hover:underline"
+                            >
+                                <ChevronDown size={13} />
+                                View replies ({children.length})
+                            </button>
+                        )}
+
+                        {hasReplies && showNested && (
+                            <button
+                                type="button"
+                                onClick={hideRepliesThread}
+                                className="flex items-center gap-1 text-[13px] font-medium text-[var(--surface-muted-text)] hover:underline"
+                            >
+                                <ChevronUp size={13} />
+                                Hide replies
+                            </button>
+                        )}
+                    </div>
+                )}
+
+                {isReplying && (
+                    <div className="mt-3 flex gap-2 items-start">
+                        <UserAvatar
+                            item={viewerItem}
+                            size="xs"
+                            className="ring-2 ring-white dark:ring-[var(--surface-card)]"
+                        />
+                        <div className="flex-1 bg-[var(--surface-muted-bg)] rounded-xl border border-surface-border overflow-hidden focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/25 transition-all">
+                            <textarea
+                                value={replyText}
+                                onChange={(e) => setReplyText(e.target.value)}
+                                placeholder="Write a reply..."
+                                className="w-full px-3 pt-2.5 pb-1 text-[13px] bg-transparent border-none outline-none resize-none text-[var(--app-text)] placeholder-[color:var(--surface-muted-text)]"
+                                rows={2}
+                                autoFocus
+                            />
+                            <div className="flex justify-end gap-2 px-3 pb-2">
+                                <button
+                                    type="button"
+                                    onClick={handleCancelReply}
+                                    disabled={replySaving}
+                                    className="text-[12px] text-[var(--surface-muted-text)] font-medium hover:text-[var(--surface-heading)] px-2 py-1 disabled:opacity-50"
+                                >
+                                    Cancel
+                                </button>
+                                <Button
+                                    variant="primary"
+                                    onClick={handleSubmitReply}
+                                    isLoading={replySaving}
+                                    disabled={!replyText.trim()}
+                                    className="!text-[12px] !py-1 !px-3 !rounded-lg"
+                                    loadingText="Posting..."
+                                >
+                                    Reply
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {showNested && hasReplies && (
+                    <div className="mt-3 space-y-0">
+                        {children.map((child) => (
+                            <CommentItem
+                                key={child.id}
+                                reply={child}
+                                depth={depth + 1}
+                                forcedExpand={propagateExpand}
+                                {...sharedChildProps}
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}

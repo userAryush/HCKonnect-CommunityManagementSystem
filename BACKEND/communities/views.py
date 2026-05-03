@@ -209,10 +209,24 @@ class StudentListView(ListAPIView):
     # permission_classes = [AllowAny]  
 
     def get_queryset(self):
-        search = self.request.GET.get("search", "")
-        return User.objects.filter(role="student").filter(
-            Q(username__icontains=search) | Q(email__icontains=search)
-        ).order_by("username")[:20]  # limit 20 results
+        search = (self.request.GET.get("search", "") or "").strip()
+        queryset = User.objects.filter(role="student")
+
+        if not search:
+            return queryset.order_by("username")[:20]
+
+        # Support searching by full name, first name, last name, username, and email.
+        # For multi-word input (e.g., "john doe"), each token must match at least one field.
+        terms = [term for term in search.split() if term]
+        for term in terms:
+            queryset = queryset.filter(
+                Q(first_name__icontains=term) |
+                Q(last_name__icontains=term) |
+                Q(username__icontains=term) |
+                Q(email__icontains=term)
+            )
+
+        return queryset.order_by("username")[:20]  # limit 20 results
 
 class CommunityListView(ListAPIView):
     serializer_class = CommunityListSerializer

@@ -6,8 +6,33 @@ export default function StudentSelect({ value, onChange }) {
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(false)
   const [showDropdown, setShowDropdown] = useState(false)
+  const [isSelectionLocked, setIsSelectionLocked] = useState(false)
+
+  const normalize = (text) => (text || '').toString().toLowerCase().trim()
+  const toDisplayName = (student) => {
+    const fullName = `${student.first_name || ''} ${student.last_name || ''}`.trim()
+    return fullName || student.username || student.email || ''
+  }
+  const matchesQuery = (student, rawQuery) => {
+    const q = normalize(rawQuery)
+    if (!q) return true
+    const fullName = normalize(`${student.first_name || ''} ${student.last_name || ''}`)
+    const firstName = normalize(student.first_name)
+    const lastName = normalize(student.last_name)
+    const username = normalize(student.username)
+    const email = normalize(student.email)
+    return (
+      fullName.includes(q) ||
+      firstName.includes(q) ||
+      lastName.includes(q) ||
+      username.includes(q) ||
+      email.includes(q)
+    )
+  }
 
   useEffect(() => {
+    if (isSelectionLocked) return
+
     // If query is empty, hide dropdown and clear results
     if (!query.trim()) {
       setResults([])
@@ -18,14 +43,34 @@ export default function StudentSelect({ value, onChange }) {
     const fetchStudents = async () => {
       try {
         setLoading(true)
-        // 1. Use apiClient to automatically attach the Bearer Token
-        // 2. Use the relative path defined in your Django urls
-        const res = await apiClient.get(`/communities/students/?search=${query}`)
-        setResults(res.data)
+        const tokens = Array.from(new Set(query.trim().split(/\s+/).filter(Boolean)))
+        const candidateQueries = Array.from(new Set([
+          query.trim(),
+          ...tokens
+        ]))
+
+        const responses = await Promise.all(
+          candidateQueries.map((q) => apiClient.get(`/communities/students/?search=${encodeURIComponent(q)}`))
+        )
+
+        const merged = []
+        const seen = new Set()
+        responses.forEach((res) => {
+          ;(res.data || []).forEach((student) => {
+            if (!seen.has(student.id)) {
+              seen.add(student.id)
+              merged.push(student)
+            }
+          })
+        })
+
+        const filtered = merged.filter((student) => matchesQuery(student, query))
+        setResults(filtered)
         setShowDropdown(true)
       } catch (err) {
         console.error("Search failed:", err)
         setResults([])
+        setShowDropdown(true)
       } finally {
         setLoading(false)
       }
@@ -33,18 +78,14 @@ export default function StudentSelect({ value, onChange }) {
 
     const debounce = setTimeout(fetchStudents, 400)
     return () => clearTimeout(debounce)
-  }, [query])
+  }, [query, isSelectionLocked])
 
   const handleSelect = (student) => {
-    onChange(student.id);
-
-    // Create a nice display name for the input box
-    const fullName = student.first_name && student.last_name
-      ? `${student.first_name} ${student.last_name}`
-      : student.username;
-
-    setQuery(fullName);
-    setShowDropdown(false);
+    onChange(student.id)
+    setQuery(toDisplayName(student))
+    setIsSelectionLocked(true)
+    setResults([])
+    setShowDropdown(false)
   }
 
   return (
@@ -57,6 +98,7 @@ export default function StudentSelect({ value, onChange }) {
           onFocus={() => query && setShowDropdown(true)}
           onChange={(e) => {
             setQuery(e.target.value)
+            setIsSelectionLocked(false)
             if (e.target.value === '') onChange('') // Reset selection if cleared
           }}
           className="w-full rounded-2xl border-2 border-[#e5e7eb] px-4 py-3 text-base focus:border-[#75C043] outline-none transition-all pr-10"

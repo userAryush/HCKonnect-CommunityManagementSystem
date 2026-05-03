@@ -81,17 +81,20 @@ class PostCommentReadSerializer(ModelSerializer):
 
     class Meta:
         model = PostComment
-        fields = ["id", "post", "parent_comment", "content", "author", "author_name", "author_role", "author_image", "author_community", "time_ago", "user_has_liked", "replies", "created_at"]
+        fields = ["id", "post", "parent_comment", "content", "author", "author_name", "author_role", "author_image", "author_community", "time_ago", "user_has_liked", "replies", "created_at", "updated_at"]
 
     def get_replies(self, obj):
-        if obj.parent_comment is None: # Only one level of nesting
-            replies = PostComment.objects.filter(parent_comment=obj)
-            return PostCommentReadSerializer(replies, many=True, context=self.context).data
-        return []
+        replies = PostComment.objects.filter(parent_comment=obj).order_by("-created_at")
+        return PostCommentReadSerializer(replies, many=True, context=self.context).data
 
     def get_user_has_liked(self, obj):
-        user = self.context['request'].user
-        return PostReaction.objects.filter(user=user, comment=obj).exists() if user.is_authenticated else False
+        user = self.context["request"].user
+        if not user.is_authenticated:
+            return False
+        liked_ids = self.context.get("liked_comment_ids")
+        if liked_ids is not None:
+            return obj.pk in liked_ids
+        return PostReaction.objects.filter(user=user, comment=obj).exists()
 
     def get_author_name(self, obj):
         user = obj.author
@@ -129,7 +132,8 @@ class PostCommentReadSerializer(ModelSerializer):
     
 class PostReadSerializer(ModelSerializer):
     comments = SerializerMethodField()
-    comment_count = IntegerField(source="comments.count", read_only=True)
+    # Must not use source="comments.count": with prefetch_related, .count() uses cache length only.
+    comment_count = SerializerMethodField()
     reaction_count = IntegerField(source="reactions.count", read_only=True)
     time_ago = SerializerMethodField()
     user_has_liked = SerializerMethodField()
@@ -178,9 +182,17 @@ class PostReadSerializer(ModelSerializer):
         return PostReaction.objects.filter(user=user, post=obj).exists() if user.is_authenticated else False
 
     def get_comments(self, obj):
-        # Only return top-level comments (those without a parent) - limited to 10
+        if self.context.get("omit_nested_comments"):
+            return []
         comments = obj.comments.filter(parent_comment__isnull=True).order_by("-created_at")[:10]
         return PostCommentReadSerializer(comments, many=True, context=self.context).data
+
+    def get_comment_count(self, obj):
+        # Prefer queryset annotation from views (feed/list/detail) to avoid N+1 and prefetch bugs.
+        n = getattr(obj, "_comment_count_total", None)
+        if n is not None:
+            return n
+        return PostComment.objects.filter(post_id=obj.pk).count()
 
     def get_time_ago(self, obj):
         return timesince(obj.created_at) + " ago"

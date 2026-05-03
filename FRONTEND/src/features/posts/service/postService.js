@@ -81,10 +81,16 @@ const postService = {
         }
     },
 
-    // Get paginated comments for a post
-    getComments: async (postId, page = 1, pageSize = 10) => {
+    /**
+     * Cursor-based top-level comments: { comments, next_cursor, has_more }
+     */
+    getComments: async (postId, { cursor = null, limit = 14 } = {}) => {
         try {
-            const response = await apiClient.get(`/contents/post/comments/list/?post_id=${postId}&page=${page}&page_size=${pageSize}`);
+            const params = new URLSearchParams();
+            params.set('post_id', postId);
+            params.set('limit', String(limit));
+            if (cursor) params.set('cursor', cursor);
+            const response = await apiClient.get(`/contents/post/comments/list/?${params.toString()}`);
             return response.data;
         } catch (error) {
             throw error;

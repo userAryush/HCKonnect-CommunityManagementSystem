@@ -36,16 +36,37 @@ class ReplyReadSerializer(serializers.ModelSerializer):
     author_image = serializers.SerializerMethodField()
     author_community = serializers.SerializerMethodField()
     user_has_liked = serializers.SerializerMethodField()
+    reaction_count = serializers.IntegerField(source="reactions.count", read_only=True)
+    replies = serializers.SerializerMethodField()
 
     class Meta:
         model = DiscussionReply
-        fields = "__all__"
+        fields = [
+            "id",
+            "topic",
+            "parent_reply",
+            "reply_content",
+            "created_by",
+            "created_at",
+            "updated_at",
+            "time_ago",
+            "author_name",
+            "author_role",
+            "author_image",
+            "author_community",
+            "user_has_liked",
+            "reaction_count",
+            "replies",
+        ]
 
     def get_user_has_liked(self, obj):
-        user = self.context['request'].user
-        if user.is_authenticated:
-            return Reaction.objects.filter(user=user, reply=obj).exists()
-        return False
+        user = self.context["request"].user
+        if not user.is_authenticated:
+            return False
+        liked_ids = self.context.get("liked_reply_ids")
+        if liked_ids is not None:
+            return obj.pk in liked_ids
+        return Reaction.objects.filter(user=user, reply=obj).exists()
 
     def get_author_name(self, obj):
         user = obj.created_by
@@ -80,10 +101,15 @@ class ReplyReadSerializer(serializers.ModelSerializer):
     def get_time_ago(self, obj):
         return timesince(obj.created_at) + " ago"
 
+    def get_replies(self, obj):
+        children = obj.children.all().order_by("-created_at")
+        return ReplyReadSerializer(children, many=True, context=self.context).data
+
 
 class DiscussionReadSerializer(serializers.ModelSerializer):
     replies = serializers.SerializerMethodField()
-    reply_count = serializers.IntegerField(source="replies.count", read_only=True)
+    # Detail view prefetches only top-level replies; source="replies.count" would undercount nested ones.
+    reply_count = serializers.SerializerMethodField()
     reaction_count = serializers.IntegerField(source="reactions.count", read_only=True)
     time_ago = serializers.SerializerMethodField()
     user_has_liked = serializers.SerializerMethodField()
@@ -140,8 +166,17 @@ class DiscussionReadSerializer(serializers.ModelSerializer):
         return timesince(obj.created_at) + " ago"
 
     def get_replies(self, obj):
+        # Detail page loads replies via cursor API; skip nested serialization here (saves huge N+1 work).
+        if self.context.get("omit_nested_replies"):
+            return []
         replies = obj.replies.filter(parent_reply__isnull=True).order_by("-created_at")[:10]
         return ReplyReadSerializer(replies, many=True, context=self.context).data
+
+    def get_reply_count(self, obj):
+        n = getattr(obj, "_reply_count_total", None)
+        if n is not None:
+            return n
+        return DiscussionReply.objects.filter(topic_id=obj.pk).count()
 
 
 # -----------------------

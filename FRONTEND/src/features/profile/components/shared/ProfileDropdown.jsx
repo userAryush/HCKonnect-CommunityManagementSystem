@@ -2,16 +2,20 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../authentication/components/AuthContext'
 import { useToast } from '../../../../shared/components/ui/ToastContext'
-import { LogOut, User, Settings, ShieldCheck, Edit3, Moon, Sun } from 'lucide-react'
+import { LogOut, User, ShieldCheck, Edit3, Moon, Sun } from 'lucide-react'
 import { getDisplayName, getInitials, getProfileImage } from '../../../../utils/userUtils'
 import Button from '../../../../shared/components/ui/Button'
 import { useTheme } from '../../../../shared/context/ThemeContext'
+import EditProfileModal from './EditProfileModal'
+import ChangePasswordModal from './ChangePasswordModal'
 
 export default function ProfileDropdown() {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
   const navigate = useNavigate()
-  const { user, logout } = useAuth()
+  const { user, logout, refreshUser } = useAuth()
   const { showToast } = useToast()
   const { isDark, toggleTheme } = useTheme()
 
@@ -23,10 +27,21 @@ export default function ProfileDropdown() {
       navigate('/login')
     }, 500)
   }
+  const openModalFromDropdown = (setModalOpen) => {
+    setIsOpen(false)
+    requestAnimationFrame(() => {
+      setModalOpen(true)
+    })
+  }
 
   const displayName = getDisplayName(user)
   const profileImage = getProfileImage(user)
   const initials = getInitials(displayName)
+  const membershipCommunityId = user?.membership?.community_id || user?.membership?.community
+  const viewProfilePath = user?.role === 'community'
+    ? `/community/${user.id}`
+    : (user?.membership?.role === 'representative' && membershipCommunityId ? `/community/${membershipCommunityId}` : '/profile')
+  const editProfileId = user?.role === 'community' ? user?.id : null
 
   return (
     <div className="relative">
@@ -70,37 +85,29 @@ export default function ProfileDropdown() {
             </div>
 
             <Link
-              to={user?.role === 'community' ? `/community/${user.id}` : (user?.membership?.role === 'representative' ? `/community/${user.membership.community_id}` : "/profile")}
+              to={viewProfilePath}
               className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50 hover:text-primary transition-colors font-semibold"
               onClick={() => setIsOpen(false)}
             >
               <User size={16} />
               View Profile
             </Link>
-            <Link
-              to={user?.role === 'community' ? `/profile/edit` : (user?.membership?.role === 'representative' ? `/profile/edit/${user.membership.community_id}` : "/profile/edit")}
+            <button
+              type="button"
+              onClick={() => openModalFromDropdown(setIsEditModalOpen)}
               className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50 hover:text-primary transition-colors font-semibold"
-              onClick={() => setIsOpen(false)}
             >
               <Edit3 size={16} />
               Edit Profile
-            </Link>
-            {/* <Link
-              to="/settings"
+            </button>
+            <button
+              type="button"
+              onClick={() => openModalFromDropdown(setIsPasswordModalOpen)}
               className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50 hover:text-primary transition-colors font-semibold"
-              onClick={() => setIsOpen(false)}
-            >
-              <Settings size={16} />
-              Settings
-            </Link> */}
-            <Link
-              to="/profile/edit#change-password"
-              className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50 hover:text-primary transition-colors font-semibold"
-              onClick={() => setIsOpen(false)}
             >
               <ShieldCheck size={16} />
               Change Password
-            </Link>
+            </button>
 
             <div className="my-1 border-t border-zinc-100" />
 
@@ -119,6 +126,20 @@ export default function ProfileDropdown() {
           </div>
         </>
       )}
+
+      <EditProfileModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        profileId={editProfileId}
+        onSaved={async () => {
+          await refreshUser()
+        }}
+      />
+
+      <ChangePasswordModal
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+      />
     </div>
   )
 }

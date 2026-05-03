@@ -1,4 +1,6 @@
 from rest_framework.generics import CreateAPIView, ListAPIView, UpdateAPIView, DestroyAPIView, RetrieveAPIView, RetrieveUpdateDestroyAPIView, GenericAPIView
+from rest_framework.views import APIView
+from rest_framework.exceptions import ValidationError as DRFValidationError
 from .models import Announcement, Post, PostComment, PostReaction, Resource
 from rest_framework.permissions import AllowAny
 from django.db.models import Q
@@ -9,10 +11,17 @@ from .serializers import (
 )
 from .permissions import IsPostOwnerOrAdmin
 from django.contrib.auth import get_user_model
+from django.db.models import Prefetch, Count
 from .permissions import CanCreateCommunityContent, CanEditContent, IsPostOwnerOrAdmin
 from .serializers import PostCommentReadSerializer, PostCommentCreateSerializer
 from rest_framework.response import Response
-from utils.pagination import StandardPagination, CommentPagination
+from utils.pagination import StandardPagination
+from utils.comment_cursor import (
+    apply_comment_cursor_filter,
+    collect_post_comment_tree_ids,
+    cursor_paginated_comment_response,
+    parse_limit,
+)
 from discussion.models import DiscussionPanel
 from discussion.serializers import DiscussionReadSerializer
 from events.models import Event
@@ -59,7 +68,10 @@ class FeedListView(GenericAPIView):
 
         if content_type in {"all", "post"}:
             posts = PostReadSerializer(
-                Post.objects.all().select_related("author").prefetch_related("comments", "reactions"),
+                Post.objects.all()
+                .select_related("author")
+                .prefetch_related("comments", "reactions")
+                .annotate(_comment_count_total=Count("comments")),
                 many=True,
                 context={"request": request},
             ).data
@@ -80,7 +92,9 @@ class FeedListView(GenericAPIView):
             discussions_qs = discussions_qs.filter(visibility_filter)
 
             discussions = DiscussionReadSerializer(
-                discussions_qs.select_related("created_by", "community").prefetch_related("replies"),
+                discussions_qs.select_related("created_by", "community")
+                .prefetch_related("replies")
+                .annotate(_reply_count_total=Count("replies")),
                 many=True,
                 context={"request": request},
             ).data
@@ -185,21 +199,37 @@ class PostListView(ListAPIView):
  
 
     def get_queryset(self):
-        qs = Post.objects.all().select_related('author').prefetch_related('comments', 'reactions')
-        
+        qs = (
+            Post.objects.all()
+            .select_related("author")
+            .prefetch_related("comments", "reactions")
+            .annotate(_comment_count_total=Count("comments"))
+        )
+
         user_id = self.request.query_params.get('user_id')
-        
-        # If viewing a specific user's profile, sort by pinned posts first
+
         if user_id:
             return qs.filter(author_id=user_id).order_by('-is_pinned', '-created_at')
-        
-        # Otherwise (General Feed), ignore pinning and just show latest
+
         return qs.order_by('-created_at')
 
 class PostDetailView(RetrieveAPIView):
-    queryset = Post.objects.all()
     serializer_class = PostReadSerializer
-    
+
+    def get_queryset(self):
+        # Comments load via PostCommentListView (cursor). Skip embedding + comments prefetch here.
+        return (
+            Post.objects.all()
+            .select_related("author")
+            .prefetch_related("reactions")
+            .annotate(_comment_count_total=Count("comments"))
+        )
+
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx["omit_nested_comments"] = True
+        return ctx
+
 
 class PostUpdateDeleteView(RetrieveUpdateDestroyAPIView):
     queryset = Post.objects.all()
@@ -244,17 +274,63 @@ class PostCommentDeleteView(DestroyAPIView):
     queryset = PostComment.objects.all()
     permission_classes = [IsPostOwnerOrAdmin]
 
-class PostCommentListView(ListAPIView):
-    serializer_class = PostCommentReadSerializer
+class PostCommentListView(APIView):
+    """
+    Cursor-based list: ?post_id=&cursor=&limit=22
+    Response: { comments, next_cursor, has_more } — ordered by -created_at, -id.
+    """
     permission_classes = [AllowAny]
-    pagination_class = CommentPagination
 
-    def get_queryset(self):
-        post_id = self.request.query_params.get("post_id")
+    def get(self, request, *args, **kwargs):
+        post_id = request.query_params.get("post_id")
         if not post_id:
-            return PostComment.objects.none()
-        # Only top-level comments for the specific post
-        return PostComment.objects.filter(post_id=post_id, parent_comment__isnull=True).order_by("-created_at")
+            return Response({"comments": [], "next_cursor": None, "has_more": False})
+
+        limit = parse_limit(request.query_params.get("limit"), default=22)
+        cursor = request.query_params.get("cursor") or None
+
+        try:
+            grandchild_qs = (
+                PostComment.objects.select_related("author", "author__membership__community")
+                .prefetch_related("reactions")
+                .order_by("-created_at", "-id")
+            )
+            child_qs = (
+                PostComment.objects.select_related("author", "author__membership__community")
+                .prefetch_related(Prefetch("replies", queryset=grandchild_qs), "reactions")
+                .order_by("-created_at", "-id")
+            )
+            qs = (
+                PostComment.objects.filter(post_id=post_id, parent_comment__isnull=True)
+                .select_related("author", "author__membership__community")
+                .prefetch_related(Prefetch("replies", queryset=child_qs), "reactions")
+                .order_by("-created_at", "-id")
+            )
+            qs = apply_comment_cursor_filter(qs, cursor)
+
+            def post_comment_like_context(page_objs, req):
+                if not req.user.is_authenticated or not page_objs:
+                    return {}
+                ids = collect_post_comment_tree_ids(page_objs)
+                if not ids:
+                    return {}
+                return {
+                    "liked_comment_ids": set(
+                        PostReaction.objects.filter(user=req.user, comment_id__in=ids).values_list(
+                            "comment_id", flat=True
+                        )
+                    )
+                }
+
+            return cursor_paginated_comment_response(
+                qs,
+                PostCommentReadSerializer,
+                request,
+                limit=limit,
+                extra_context_callback=post_comment_like_context,
+            )
+        except DRFValidationError as e:
+            return Response({"detail": e.detail}, status=400)
 
 # Resource Views
 

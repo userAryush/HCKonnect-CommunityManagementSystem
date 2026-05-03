@@ -72,10 +72,14 @@ const discussionService = {
         }
     },
 
-    // Get paginated replies for a topic
-    getReplies: async (topicId, page = 1, pageSize = 10) => {
+    /** Cursor-based top-level replies: { comments, next_cursor, has_more } */
+    getReplies: async (topicId, { cursor = null, limit = 14 } = {}) => {
         try {
-            const response = await apiClient.get(`/discussions/replies/list/?topic_id=${topicId}&page=${page}&page_size=${pageSize}`);
+            const params = new URLSearchParams();
+            params.set('topic_id', topicId);
+            params.set('limit', String(limit));
+            if (cursor) params.set('cursor', cursor);
+            const response = await apiClient.get(`/discussions/replies/list/?${params.toString()}`);
             return response.data;
         } catch (error) {
             throw error;
