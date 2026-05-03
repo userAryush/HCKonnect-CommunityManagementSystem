@@ -1,37 +1,42 @@
 import { Link } from 'react-router-dom';
 import { ShieldCheck } from 'lucide-react';
+import Button from '../../../../shared/components/ui/Button';
 
-export default function EventAdminBar({ communityId, eventId, registeredCount, onDelete }) {
+export default function EventAdminBar({ communityId, eventId, registeredCount, onDeleteClick }) {
     return (
-        <div className="flex flex-col md:flex-row md:items-center justify-between p-6 rounded-3xl bg-secondary border border-surface-border mb-8 border-l-8 border-l-primary shadow-sm gap-4">
+        <div className="mb-2 flex flex-col gap-4 rounded-2xl border border-surface-border/80 bg-[var(--surface-card)] p-5 shadow-sm md:flex-row md:items-center md:justify-between md:border-l-4 md:border-l-primary">
             <div className="flex items-center gap-3">
-                <div className="p-3 bg-primary/20 rounded-2xl text-primary">
-                    <ShieldCheck size={24} />
+                <div className="rounded-xl bg-primary/15 p-3 text-primary">
+                    <ShieldCheck size={22} strokeWidth={2} />
                 </div>
                 <div>
-                    <span className="font-black text-base block text-[var(--surface-heading)]">Organizer Command Center</span>
-                    <span className="text-xs text-surface-muted font-bold uppercase tracking-wider">{registeredCount} Participants Registered</span>
+                    <p className="text-body font-semibold text-surface-dark">Organizer tools</p>
+                    <p className="mt-0.5 text-metadata uppercase tracking-wide">
+                        {registeredCount} registered
+                    </p>
                 </div>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
                 <Link
                     to={`/community/${communityId}/manage/events/${eventId}/participants`}
-                    className="px-6 py-2.5 rounded-xl bg-surface-dark text-white text-xs font-black hover:bg-surface-dark/90 transition-colors shadow-sm border border-surface-border/30"
+                    className="inline-flex shrink-0 items-center justify-center rounded-xl bg-surface-dark px-4 py-2.5 text-xs font-semibold text-secondary transition-colors hover:bg-surface-dark/90"
                 >
-                    Manage Participants
+                    Participants
                 </Link>
                 <Link
                     to={`/community/${communityId}/manage/events/${eventId}/edit`}
-                    className="px-6 py-2.5 rounded-xl bg-[var(--surface-card)] border-2 border-surface-border text-xs font-black text-[var(--surface-heading)] hover:bg-secondary transition-all"
+                    className="inline-flex shrink-0 items-center justify-center rounded-xl border border-surface-border bg-secondary px-4 py-2.5 text-xs font-semibold text-surface-dark transition-colors hover:bg-[var(--surface-muted-bg)]"
                 >
-                    Edit Event
+                    Edit event
                 </Link>
-                <button
-                    onClick={onDelete}
-                    className="px-6 py-2.5 rounded-xl bg-red-50 text-red-600 text-xs font-black hover:bg-red-100 transition-all border-2 border-red-100"
+                <Button
+                    type="button"
+                    variant="danger-outline"
+                    onClick={onDeleteClick}
+                    className="shrink-0 !rounded-xl !px-4 !py-2.5 !text-xs !font-semibold"
                 >
                     Delete
-                </button>
+                </Button>
             </div>
         </div>
     );

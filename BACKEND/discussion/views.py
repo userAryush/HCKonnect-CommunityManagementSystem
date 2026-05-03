@@ -32,6 +32,43 @@ class DiscussionListView(ListAPIView):
     permission_classes = [IsAuthenticated]
     pagination_class = StandardPagination
 
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx["omit_nested_replies"] = True
+        return ctx
+
+    def get_serializer_context_for_page(self, page_objects):
+        ctx = self.get_serializer_context()
+        pks = [obj.pk for obj in page_objects]
+        if self.request.user.is_authenticated and pks:
+            ctx["liked_topic_ids"] = set(
+                Reaction.objects.filter(
+                    user=self.request.user,
+                    topic_id__in=pks,
+                    reply__isnull=True,
+                ).values_list("topic_id", flat=True)
+            )
+        else:
+            ctx["liked_topic_ids"] = set()
+        return ctx
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(
+                page,
+                many=True,
+                context=self.get_serializer_context_for_page(page),
+            )
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(
+            queryset,
+            many=True,
+            context=self.get_serializer_context_for_page(queryset),
+        )
+        return Response(serializer.data)
+
     def get_queryset(self):
         user = self.request.user
 
@@ -54,9 +91,12 @@ class DiscussionListView(ListAPIView):
             qs = qs.filter(community_id=community_id)
 
         return (
-            qs.select_related("created_by", "community")
-            .prefetch_related(Prefetch("replies", queryset=DiscussionReply.objects.select_related("created_by")))
-            .annotate(_reply_count_total=Count("replies"))
+            qs.select_related("created_by", "community", "created_by__membership__community")
+            .annotate(
+                _reply_count_total=Count("replies", distinct=True),
+                _topic_reaction_count_total=Count("reactions", distinct=True),
+            )
+            .order_by("-is_pinned", "-created_at")
         )
 
 class DiscussionDetailView(RetrieveAPIView):

@@ -16,6 +16,7 @@ import MembersTab from '../components/community_profile/MembersTab';
 import vacancyService from '../../vacancy/service/vacancyService';
 import VacancyApplicationModal from '../../vacancy/components/VacancyApplicationModal';
 import EditProfileModal from '../components/shared/EditProfileModal';
+import { CommunityProfileSkeleton } from '../../../shared/components/layout/Skeleton';
 
 export default function CommunityProfilePage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -142,10 +143,6 @@ export default function CommunityProfilePage() {
     setSearchParams({ tab });
   }
 
-  if (!communityData) {
-    return <div className="pt-24 text-center">Loading community…</div>
-  }
-
   const isProfileOwner = Boolean(
     currentUser && id && currentUser.role === 'community' && String(currentUser.id) === String(id)
   );
@@ -156,8 +153,28 @@ export default function CommunityProfilePage() {
       String(currentUser.membership.community_id || currentUser.membership.community) === String(id))
   );
 
-  if (error) {
-    return <div className="pt-32 text-center text-red-500">{error}</div>
+  if (!communityData) {
+    return (
+      <div className="min-h-screen bg-secondary text-surface-body">
+        <Navbar
+          menuOpen={menuOpen}
+          toggleMenu={() => setMenuOpen((v) => !v)}
+          closeMenu={() => setMenuOpen(false)}
+          navSolid={true}
+        />
+        <main className="pt-24 pb-16">
+          <div className="mx-auto w-full max-w-6xl px-4 xl:px-0">
+            {error ? (
+              <div className="rounded-2xl border border-surface-border/70 bg-[var(--surface-card)] p-10 text-center">
+                <p className="text-red-500 font-medium">{error}</p>
+              </div>
+            ) : (
+              <CommunityProfileSkeleton tabPlaceholders={tabs.length} />
+            )}
+          </div>
+        </main>
+      </div>
+    );
   }
 
   return (

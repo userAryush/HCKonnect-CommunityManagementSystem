@@ -1,5 +1,5 @@
 
-from rest_framework.serializers import ModelSerializer, ValidationError, CharField, ImageField, SerializerMethodField, IntegerField
+from rest_framework.serializers import ModelSerializer, ValidationError, CharField, ImageField, SerializerMethodField
 from django.contrib.auth import get_user_model
 from .models import Announcement, Post, PostComment, PostReaction, Resource
 from django.utils.timesince import timesince
@@ -134,7 +134,7 @@ class PostReadSerializer(ModelSerializer):
     comments = SerializerMethodField()
     # Must not use source="comments.count": with prefetch_related, .count() uses cache length only.
     comment_count = SerializerMethodField()
-    reaction_count = IntegerField(source="reactions.count", read_only=True)
+    reaction_count = SerializerMethodField()
     time_ago = SerializerMethodField()
     user_has_liked = SerializerMethodField()
     author_name = SerializerMethodField()
@@ -178,8 +178,19 @@ class PostReadSerializer(ModelSerializer):
         return ''
 
     def get_user_has_liked(self, obj):
-        user = self.context['request'].user
-        return PostReaction.objects.filter(user=user, post=obj).exists() if user.is_authenticated else False
+        user = self.context["request"].user
+        if not user.is_authenticated:
+            return False
+        liked_ids = self.context.get("liked_post_ids")
+        if liked_ids is not None:
+            return obj.pk in liked_ids
+        return PostReaction.objects.filter(user=user, post=obj, comment__isnull=True).exists()
+
+    def get_reaction_count(self, obj):
+        n = getattr(obj, "_reaction_count_total", None)
+        if n is not None:
+            return n
+        return obj.reactions.filter(comment__isnull=True).count()
 
     def get_comments(self, obj):
         if self.context.get("omit_nested_comments"):

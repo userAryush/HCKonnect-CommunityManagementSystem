@@ -1,4 +1,4 @@
-import { Globe, Users } from 'lucide-react';
+import { Users } from 'lucide-react';
 
 export default function EventSpeakers({ speakers }) {
     if (!speakers || speakers.length === 0) {
@@ -7,21 +7,27 @@ export default function EventSpeakers({ speakers }) {
 
     return (
         <section aria-label="Speakers">
-            <h2 className="text-2xl font-black mb-10 tracking-tight flex items-center gap-4 text-[var(--surface-heading)]">
-                Guest Speakers
-                <span className="text-sm font-bold px-3 py-1 bg-secondary border border-surface-border text-surface-muted rounded-full tracking-normal">{speakers.length}</span>
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="mb-6 flex flex-wrap items-center gap-3">
+                <div className="h-5 w-1 shrink-0 rounded-full bg-primary" aria-hidden />
+                <h2 className="text-xl font-semibold tracking-tight text-surface-dark">Guest speakers</h2>
+                <span className="rounded-full border border-surface-border bg-secondary px-2.5 py-0.5 text-metadata font-medium">
+                    {speakers.length}
+                </span>
+            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
                 {speakers.map((speaker, idx) => (
-                    <div key={idx} className="group flex items-center gap-6 p-6 rounded-3xl bg-[var(--surface-card)] border border-surface-border hover:border-surface-border hover:shadow-md transition-all duration-300">
-                        <div className="relative shrink-0">
-                            <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-white transition-all duration-500 overflow-hidden shadow-inner">
-                                <Users size={24} />
-                            </div>
+                    <div
+                        key={idx}
+                        className="card-border flex items-center gap-4 !p-5 transition-shadow hover:shadow-md"
+                    >
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-primary">
+                            <Users size={22} strokeWidth={2} />
                         </div>
-                        <div>
-                            <h3 className="text-xl font-black text-surface-heading mb-1 transition-colors">{speaker.name}</h3>
-                            <p className="text-xs font-black text-primary uppercase tracking-widest mb-2 opacity-80">{speaker.profession}</p>
+                        <div className="min-w-0">
+                            <h3 className="text-title !text-base text-surface-dark">{speaker.name}</h3>
+                            <p className="mt-1 text-metadata font-medium uppercase tracking-wide text-primary">
+                                {speaker.profession}
+                            </p>
                         </div>
                     </div>
                 ))}

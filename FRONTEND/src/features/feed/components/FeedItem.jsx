@@ -4,27 +4,7 @@ import Card from '../../../shared/components/card/Card'
 import Badge from '../../../shared/components/ui/Badge'
 import Button from '../../../shared/components/ui/Button'
 
-export function FeedItemSkeleton() {
-  return (
-    <article className="card-border animate-pulse">
-      <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-full bg-zinc-100" />
-        <div className="flex-1">
-          <div className="h-3 w-24 rounded bg-zinc-100" />
-          <div className="mt-2 h-2 w-40 rounded bg-zinc-100" />
-        </div>
-        <div className="h-6 w-16 rounded bg-zinc-100" />
-      </div>
-      <div className="mt-6 h-4 w-3/5 rounded bg-zinc-100" />
-      <div className="mt-3 h-3 w-full rounded bg-zinc-100" />
-      <div className="mt-2 h-3 w-4/5 rounded bg-zinc-100" />
-      <div className="mt-6 flex gap-3">
-        <div className="h-9 w-20 rounded-full bg-zinc-100" />
-        <div className="h-9 w-20 rounded-full bg-zinc-100" />
-      </div>
-    </article>
-  )
-}
+export { FeedItemSkeleton } from '../../../shared/components/layout/Skeleton'
 
 export default function FeedItem({ item }) {
   const [liked, setLiked] = useState(false)

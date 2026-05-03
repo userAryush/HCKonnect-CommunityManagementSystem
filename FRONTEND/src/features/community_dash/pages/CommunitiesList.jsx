@@ -2,23 +2,20 @@ import { useEffect, useState } from 'react'
 import apiClient from '../../../shared/services/apiClient'
 import Navbar from "../../../shared/components/layout/Navbar";
 import { Link } from 'react-router-dom'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Users } from 'lucide-react'
 import { getInitials } from '../../../utils/userUtils'
+import { CommunitiesListSkeleton } from '../../../shared/components/layout/Skeleton'
 
 export default function CommunitiesList() {
-  const [menuOpen, setMenuOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   const [communities, setCommunities] = useState([])
-  const [applyingId, setApplyingId] = useState(null)
 
   useEffect(() => {
     let mounted = true
     setLoading(true)
     setError('')
 
-    // Using apiClient instead of raw axios to ensure token is attached
     apiClient
       .get('/communities/communities-list/')
       .then((res) => {
@@ -27,7 +24,6 @@ export default function CommunitiesList() {
       })
       .catch((err) => {
         if (!mounted) return
-        // Extract backend error message if available
         const msg = err.response?.data?.detail || err.response?.data?.msg || 'Failed to load communities.'
         setError(msg)
       })
@@ -35,59 +31,61 @@ export default function CommunitiesList() {
         if (!mounted) return
         setLoading(false)
       })
-    return () => {
-      mounted = false
-    }
+
+    return () => { mounted = false }
   }, [])
 
-  const handleApply = async (communityId) => {
-    setApplyingId(communityId)
-    setError('')
-    setSuccess('')
-    try {
-      await apiClient.post('/communities/memberships/apply/', { community: communityId })
-      setSuccess('Application sent successfully.')
-    } catch (err) {
-      // Extract backend error message
-      const msg = err.response?.data?.detail || err.response?.data?.msg || 'Could not send application.'
-      setError(msg)
-    } finally {
-      setApplyingId(null)
-      setTimeout(() => {
-        setSuccess('')
-        setError('')
-      }, 3000)
-    }
-  }
-
   return (
-    <div className="min-h-screen bg-secondary text-surface-dark">
+    <div className="min-h-screen bg-[#f7f8f5] text-surface-dark">
       <Navbar navSolid={true} />
-      <main className="pt-32 pb-16">
-        <div className="mx-auto max-w-4xl px-6">
-          <header className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-6">
-            <div className="max-w-xl">
-              <h1 className="text-4xl font-display font-bold text-surface-dark">Find your <br /><span className="text-primary">Community.</span></h1>
-              <p className="mt-4 text-surface-body text-sm">
-                Discover communities where curiosity meets collaboration. From tech to arts, find the collective that speaks to you.
-              </p>
+
+      <main className="pt-28 pb-20">
+        <div className="mx-auto max-w-6xl px-6">
+
+          {/* Header */}
+          <header className="mb-12">
+            <div className="flex items-end justify-between">
+              <div>
+                <h1 className="text-[2.6rem] font-display font-bold leading-tight text-surface-dark">
+                  Find your<br />
+                  <span className="text-primary">Community.</span>
+                </h1>
+              </div>
+              {!loading && (
+                <div className="text-right pb-1">
+                  <span className="text-4xl font-display font-bold text-primary/30">{communities.length}</span>
+                  <p className="text-[10px] uppercase tracking-widest text-surface-body font-semibold mt-0.5">
+                    Communities
+                  </p>
+                </div>
+              )}
             </div>
-            <div className="text-right">
-              <span className="text-3xl font-display italic text-primary/60">{communities.length}</span>
-              <p className="text-[10px] uppercase tracking-widest text-surface-body font-bold">Available Communities</p>
-            </div>
+            <p className="mt-5 text-surface-body text-sm max-w-md leading-relaxed">
+              Discover communities where curiosity meets collaboration. From tech to arts, find the collective that speaks to you.
+            </p>
           </header>
 
-          <div className="flex flex-col border-t border-surface-border">
-            {communities.map((c) => (
-              <Link
-                key={c.id}
-                to={`/community/${c.id}`}
-                className="group flex flex-col md:flex-row md:items-center gap-8 py-10 border-b border-surface-border transition-all hover:bg-white/30 hover:px-6"
-              >
-                <div className="flex-shrink-0 relative">
-                  {/* Logo container: rounded-full and removed rotate-3 */}
-                  <div className="h-20 w-20 rounded-full bg-white shadow-sm border border-surface-border overflow-hidden flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
+          {/* Error */}
+          {error && (
+            <div className="mb-6 px-4 py-3 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm">
+              {error}
+            </div>
+          )}
+
+          {loading && <CommunitiesListSkeleton rows={4} />}
+
+          {/* Communities list */}
+          {!loading && !error && (
+            <div className="flex flex-col gap-3">
+              {communities.map((c, idx) => (
+                <Link
+                  key={c.id}
+                  to={`/community/${c.id}`}
+                  style={{ animationDelay: `${idx * 60}ms` }}
+                  className="group bg-white border border-gray-100 rounded-2xl p-5 flex items-center gap-4 hover:border-primary/20 hover:shadow-sm transition-all duration-200 animate-fadeIn"
+                >
+                  {/* Logo */}
+                  <div className="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 overflow-hidden flex items-center justify-center flex-shrink-0 group-hover:border-primary/20 transition-colors">
                     {c.community_logo ? (
                       <img
                         src={c.community_logo}
@@ -95,40 +93,55 @@ export default function CommunitiesList() {
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <span className="text-xl font-bold text-zinc-500">
+                      <span className="text-sm font-bold text-gray-400">
                         {getInitials(c.community_name || 'Community')}
                       </span>
                     )}
                   </div>
-                </div>
 
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-1">
-                    <h3 className="text-2xl font-bold tracking-tight text-surface-dark group-hover:text-primary transition-colors">
-                      {c.community_name || c.username}
-                    </h3>
-                    <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">
-                      {c.member_count} Members
-                    </span>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <h3 className="text-[15px] font-semibold text-surface-dark  transition-colors truncate">
+                        {c.community_name || c.username}
+                      </h3>
+                      <span className="flex-shrink-0 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-primary bg-primary/8 px-2 py-0.5 rounded-full">
+                        <Users size={9} />
+                        {c.member_count}
+                      </span>
+                    </div>
+                    <p className="text-[13px] text-surface-body line-clamp-1 leading-relaxed">
+                      {c.community_description}
+                    </p>
                   </div>
-                  <p className="text-surface-body text-sm max-w-2xl line-clamp-1">
-                    {c.community_description}
-                  </p>
-                </div>
 
-                {/* View Arrow - adjusted for better alignment */}
-                <div className="opacity-0 group-hover:opacity-100 transition-all -translate-x-4 group-hover:translate-x-0 hidden md:block">
-                  <div className="flex items-center gap-2 text-primary font-bold text-sm">
+                  {/* Arrow */}
+                  <div className="flex-shrink-0 flex items-center gap-1 text-primary text-[13px] font-medium opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all duration-200">
                     <span>View</span>
-                    <ArrowRight size={18} />
+                    <ArrowRight size={15} />
                   </div>
-                </div>
-              </Link>
+                </Link>
+              ))}
 
-            ))}
-          </div>
+              {communities.length === 0 && (
+                <div className="text-center py-20 text-surface-body text-sm">
+                  No communities available yet.
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </main>
+
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease both;
+        }
+      `}</style>
     </div>
   )
 }

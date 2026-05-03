@@ -110,7 +110,7 @@ class DiscussionReadSerializer(serializers.ModelSerializer):
     replies = serializers.SerializerMethodField()
     # Detail view prefetches only top-level replies; source="replies.count" would undercount nested ones.
     reply_count = serializers.SerializerMethodField()
-    reaction_count = serializers.IntegerField(source="reactions.count", read_only=True)
+    reaction_count = serializers.SerializerMethodField()
     time_ago = serializers.SerializerMethodField()
     user_has_liked = serializers.SerializerMethodField()
     
@@ -155,10 +155,19 @@ class DiscussionReadSerializer(serializers.ModelSerializer):
         return ''
 
     def get_user_has_liked(self, obj):
-        user = self.context['request'].user
-        if user.is_authenticated:
-            return Reaction.objects.filter(user=user, topic=obj).exists()
-        return False
+        user = self.context["request"].user
+        if not user.is_authenticated:
+            return False
+        liked_topic_ids = self.context.get("liked_topic_ids")
+        if liked_topic_ids is not None:
+            return obj.pk in liked_topic_ids
+        return Reaction.objects.filter(user=user, topic=obj, reply__isnull=True).exists()
+
+    def get_reaction_count(self, obj):
+        n = getattr(obj, "_topic_reaction_count_total", None)
+        if n is not None:
+            return n
+        return obj.reactions.filter(reply__isnull=True).count()
 
     def get_time_ago(self, obj):
         if not obj.created_at:

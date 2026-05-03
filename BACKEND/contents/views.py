@@ -69,11 +69,13 @@ class FeedListView(GenericAPIView):
         if content_type in {"all", "post"}:
             posts = PostReadSerializer(
                 Post.objects.all()
-                .select_related("author")
-                .prefetch_related("comments", "reactions")
-                .annotate(_comment_count_total=Count("comments")),
+                .select_related("author", "author__membership__community")
+                .annotate(
+                    _comment_count_total=Count("comments", distinct=True),
+                    _reaction_count_total=Count("reactions", distinct=True),
+                ),
                 many=True,
-                context={"request": request},
+                context={"request": request, "omit_nested_comments": True},
             ).data
             for item in posts:
                 item["type"] = "post"
@@ -92,11 +94,15 @@ class FeedListView(GenericAPIView):
             discussions_qs = discussions_qs.filter(visibility_filter)
 
             discussions = DiscussionReadSerializer(
-                discussions_qs.select_related("created_by", "community")
-                .prefetch_related("replies")
-                .annotate(_reply_count_total=Count("replies")),
+                discussions_qs.select_related(
+                    "created_by", "community", "created_by__membership__community"
+                )
+                .annotate(
+                    _reply_count_total=Count("replies", distinct=True),
+                    _topic_reaction_count_total=Count("reactions", distinct=True),
+                ),
                 many=True,
-                context={"request": request},
+                context={"request": request, "omit_nested_replies": True},
             ).data
             for item in discussions:
                 item["type"] = "discussion"
@@ -196,14 +202,52 @@ class PostCreateView(CreateAPIView):
 class PostListView(ListAPIView):
     serializer_class = PostReadSerializer
     pagination_class = StandardPagination
- 
+
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx["omit_nested_comments"] = True
+        return ctx
+
+    def get_serializer_context_for_page(self, page_objects):
+        ctx = self.get_serializer_context()
+        pks = [obj.pk for obj in page_objects]
+        if self.request.user.is_authenticated and pks:
+            ctx["liked_post_ids"] = set(
+                PostReaction.objects.filter(
+                    user=self.request.user,
+                    post_id__in=pks,
+                    comment__isnull=True,
+                ).values_list("post_id", flat=True)
+            )
+        else:
+            ctx["liked_post_ids"] = set()
+        return ctx
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(
+                page,
+                many=True,
+                context=self.get_serializer_context_for_page(page),
+            )
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(
+            queryset,
+            many=True,
+            context=self.get_serializer_context_for_page(queryset),
+        )
+        return Response(serializer.data)
 
     def get_queryset(self):
         qs = (
             Post.objects.all()
-            .select_related("author")
-            .prefetch_related("comments", "reactions")
-            .annotate(_comment_count_total=Count("comments"))
+            .select_related("author", "author__membership__community")
+            .annotate(
+                _comment_count_total=Count("comments", distinct=True),
+                _reaction_count_total=Count("reactions", distinct=True),
+            )
         )
 
         user_id = self.request.query_params.get('user_id')
@@ -220,9 +264,12 @@ class PostDetailView(RetrieveAPIView):
         # Comments load via PostCommentListView (cursor). Skip embedding + comments prefetch here.
         return (
             Post.objects.all()
-            .select_related("author")
+            .select_related("author", "author__membership__community")
             .prefetch_related("reactions")
-            .annotate(_comment_count_total=Count("comments"))
+            .annotate(
+                _comment_count_total=Count("comments", distinct=True),
+                _reaction_count_total=Count("reactions", distinct=True),
+            )
         )
 
     def get_serializer_context(self):

@@ -9,6 +9,8 @@ import EventAbout from '../components/EventDetails/EventAbout';
 import EventSpeakers from '../components/EventDetails/EventSpeakers';
 import RegistrationSidebar from '../components/EventDetails/RegistrationSidebar';
 import Footer from '../../../shared/components/layout/Footer';
+import BackLink from '../../../shared/components/layout/BackLink';
+import ConfirmationModal from '../../../shared/components/modals/ConfirmationModal';
 
 export default function EventDetailPage() {
     const { eventId } = useParams()
@@ -18,6 +20,8 @@ export default function EventDetailPage() {
     const [menuOpen, setMenuOpen] = useState(false)
     const [toast, setToast] = useState('')
     const [currentUser, setCurrentUser] = useState(null)
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+    const [deleteLoading, setDeleteLoading] = useState(false)
 
     useEffect(() => {
         const userStr = localStorage.getItem('user');
@@ -101,15 +105,17 @@ export default function EventDetailPage() {
         }
     };
 
-    const handleDelete = async () => {
-        if (window.confirm("Are you sure you want to delete this event?")) {
-            try {
-                await eventService.deleteEvent(eventId);
-                navigate('/events', { state: { success: 'Event deleted successfully' } });
-            } catch (error) {
-                console.error("Failed to delete event", error);
-                setToast("Failed to delete event.");
-            }
+    const handleConfirmDeleteEvent = async () => {
+        setDeleteLoading(true)
+        try {
+            await eventService.deleteEvent(eventId);
+            setDeleteModalOpen(false);
+            navigate('/events', { state: { success: 'Event deleted successfully' } });
+        } catch (error) {
+            console.error("Failed to delete event", error);
+            setToast("Failed to delete event.");
+        } finally {
+            setDeleteLoading(false);
         }
     }
 
@@ -122,15 +128,18 @@ export default function EventDetailPage() {
     };
 
     if (loading) return (
-        <div className="min-h-screen bg-secondary flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <div className="min-h-screen bg-secondary flex flex-col items-center justify-center gap-3 px-4">
+            <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" aria-hidden />
+            <p className="text-metadata">Loading event…</p>
         </div>
     )
 
     if (!event) return (
-        <div className="min-h-screen bg-secondary flex flex-col items-center justify-center gap-4 px-4">
-            <p className="text-xl font-bold text-surface-dark">Event not found</p>
-            <Link to="/events" className="text-primary font-bold hover:underline">Back to Events</Link>
+        <div className="min-h-screen bg-secondary flex flex-col items-center justify-center gap-4 px-4 text-center">
+            <p className="text-title text-xl">Event not found</p>
+            <Link to="/events" className="text-body font-semibold text-primary hover:underline">
+                Back to events
+            </Link>
         </div>
     )
 
@@ -147,7 +156,7 @@ export default function EventDetailPage() {
     const isFull = eventMeta.maxParticipants && eventMeta.registeredCount >= eventMeta.maxParticipants;
 
     return (
-        <div className="min-h-screen bg-secondary text-[var(--app-text)] selection:bg-primary/20">
+        <div className="min-h-screen bg-secondary text-surface-body selection:bg-primary/20">
             <Navbar
                 menuOpen={menuOpen}
                 toggleMenu={() => setMenuOpen((v) => !v)}
@@ -155,6 +164,18 @@ export default function EventDetailPage() {
                 navSolid={true}
             />
             <Toast message={toast} onClose={() => setToast('')} />
+
+            <ConfirmationModal
+                isOpen={deleteModalOpen}
+                onClose={() => setDeleteModalOpen(false)}
+                onConfirm={handleConfirmDeleteEvent}
+                title="Delete this event?"
+                message="This removes the event for everyone. Registrations and reminders tied to it will be affected. This cannot be undone."
+                confirmText="Delete event"
+                cancelText="Cancel"
+                isLoading={deleteLoading}
+                loadingText="Deleting…"
+            />
 
             <EventHero
                 title={event.title}
@@ -164,16 +185,17 @@ export default function EventDetailPage() {
                 eventMeta={eventMeta}
             />
 
-            <main className="mx-auto w-full max-w-7xl px-4 py-16">
-                <div className="grid grid-cols-1 gap-16 lg:grid-cols-10">
-                    {/* Left Side (70%) */}
-                    <div className="lg:col-span-7 space-y-16">
+            <main className="mx-auto w-full max-w-7xl px-4 pb-16 pt-8">
+                <BackLink to="/events" text="Events" className="mb-8" />
+                <div className="grid grid-cols-1 gap-12 lg:grid-cols-10 lg:gap-14">
+                    {/* Left column */}
+                    <div className="lg:col-span-7 space-y-12">
                         {isCreator && (
                             <EventAdminBar
                                 communityId={community?.id}
                                 eventId={eventId}
                                 registeredCount={eventMeta.registeredCount}
-                                onDelete={handleDelete}
+                                onDeleteClick={() => setDeleteModalOpen(true)}
                             />
                         )}
 
@@ -181,24 +203,30 @@ export default function EventDetailPage() {
 
                         {eventMeta.whatToExpect && eventMeta.whatToExpect.length > 0 && (
                             <section aria-label="What you'll learn">
-                                <h3 className="text-2xl font-black mb-10 tracking-tight flex items-center gap-4 text-[var(--surface-heading)]">
-                                    What you'll learn
-                                </h3>
-                                <div className="space-y-3">
-                                    {eventMeta.whatToExpect.map((item, idx) => (
-                                        <div key={idx} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-secondary border border-surface-border text-[var(--app-text)] text-sm font-bold">
-                                            <div className="w-2 h-2 rounded-full bg-primary" />
-                                            {item}
-                                        </div>
-                                    ))}
+                                <div className="mb-4 flex items-center gap-3">
+                                    <div className="h-5 w-1 shrink-0 rounded-full bg-primary" aria-hidden />
+                                    <h2 className="text-xl font-semibold tracking-tight text-surface-dark">
+                                        What you&apos;ll learn
+                                    </h2>
                                 </div>
+                                <ul className="space-y-2">
+                                    {eventMeta.whatToExpect.map((item, idx) => (
+                                        <li
+                                            key={idx}
+                                            className="card-border flex items-start gap-3 !py-3 !px-4"
+                                        >
+                                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden />
+                                            <span className="text-body leading-relaxed">{item}</span>
+                                        </li>
+                                    ))}
+                                </ul>
                             </section>
                         )}
 
                         <EventSpeakers speakers={eventMeta.speakers} />
                     </div>
 
-                    {/* Right Side (30%) - Sticky Sidebar */}
+                    {/* Sidebar */}
                     <aside className="lg:col-span-3">
                         <RegistrationSidebar
                             eventMeta={eventMeta}

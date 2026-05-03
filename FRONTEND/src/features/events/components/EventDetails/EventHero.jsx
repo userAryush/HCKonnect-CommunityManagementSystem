@@ -16,46 +16,50 @@ export default function EventHero({ title, image, format, deadlinePassed, eventM
             <div className="absolute inset-0 flex items-end">
                 <div className="mx-auto w-full max-w-7xl px-4 pb-12">
                     <div className="max-w-4xl animate-in fade-in slide-in-from-bottom-6 duration-700">
-                        <div className="flex flex-wrap items-center gap-3 mb-6">
-                            <span className="px-3 py-1 rounded-full bg-primary text-white text-[11px] font-black uppercase tracking-wider shadow-lg shadow-primary/20">
+                        <div className="mb-6 flex flex-wrap items-center gap-2">
+                            <span className="rounded-full bg-primary px-3 py-1 text-xs font-semibold uppercase tracking-wide text-secondary shadow-lg shadow-primary/25">
                                 {format || 'In-Person'}
                             </span>
-                            <span className={`px-3 py-1 rounded-full text-white text-[11px] font-black uppercase tracking-wider border ${deadlinePassed ? 'bg-red-500 border-red-400' : 'bg-white/10 backdrop-blur-md border-white/20'
-                                }`}>
-                                {deadlinePassed ? 'Registration Closed' : 'Upcoming'}
+                            <span
+                                className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide text-secondary ${deadlinePassed ? 'border-red-400 bg-red-600/90' : 'border-white/25 bg-white/10 backdrop-blur-md'
+                                    }`}
+                            >
+                                {deadlinePassed ? 'Registration closed' : 'Upcoming'}
                             </span>
                         </div>
 
-                        <h1 className="text-4xl md:text-6xl font-black text-white mb-8 leading-[1.1] tracking-tight">
+                        <h1 className="mb-8 text-3xl font-bold leading-tight tracking-tight text-white md:text-5xl">
                             {title}
                         </h1>
 
-                        <div className="flex flex-wrap items-center gap-y-4 gap-x-8 text-white/90">
-                            <div className="flex items-center gap-3 group">
-                                <div className="p-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 group-hover:bg-primary/20 transition-colors">
-                                    <Calendar size={20} className="text-primary-light" />
+                        <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
+                            <div className="group flex items-center gap-3">
+                                <div className="rounded-xl border border-white/15 bg-white/10 p-2 backdrop-blur-md transition-colors group-hover:border-primary/40 group-hover:bg-primary/15">
+                                    <Calendar size={20} className="text-primary" strokeWidth={2} />
                                 </div>
-                                <div className="flex flex-col">
-                                    <span className="text-xs font-bold text-white/50 uppercase tracking-wide">Date</span>
-                                    <span className="font-bold">{eventMeta.date}</span>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3 group">
-                                <div className="p-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 group-hover:bg-primary/20 transition-colors">
-                                    <Clock size={20} className="text-primary-light" />
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="text-xs font-bold text-white/50 uppercase tracking-wide">Time</span>
-                                    <span className="font-bold">{eventMeta.time}</span>
+                                <div className="flex flex-col gap-0.5">
+                                    <span className="text-xs font-semibold uppercase tracking-wide text-white/65">Date</span>
+                                    <span className="text-sm font-medium text-white">{eventMeta.date}</span>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-3 group">
-                                <div className="p-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 group-hover:bg-primary/20 transition-colors">
-                                    <MapPin size={20} className="text-primary-light" />
+                            <div className="group flex items-center gap-3">
+                                <div className="rounded-xl border border-white/15 bg-white/10 p-2 backdrop-blur-md transition-colors group-hover:border-primary/40 group-hover:bg-primary/15">
+                                    <Clock size={20} className="text-primary" strokeWidth={2} />
                                 </div>
-                                <div className="flex flex-col">
-                                    <span className="text-xs font-bold text-white/50 uppercase tracking-wide">Location</span>
-                                    <span className="font-bold" title={eventMeta.location}>{eventMeta.location}</span>
+                                <div className="flex flex-col gap-0.5">
+                                    <span className="text-xs font-semibold uppercase tracking-wide text-white/65">Time</span>
+                                    <span className="text-sm font-medium text-white">{eventMeta.time}</span>
+                                </div>
+                            </div>
+                            <div className="group flex items-center gap-3">
+                                <div className="rounded-xl border border-white/15 bg-white/10 p-2 backdrop-blur-md transition-colors group-hover:border-primary/40 group-hover:bg-primary/15">
+                                    <MapPin size={20} className="text-primary" strokeWidth={2} />
+                                </div>
+                                <div className="flex flex-col gap-0.5">
+                                    <span className="text-xs font-semibold uppercase tracking-wide text-white/65">Location</span>
+                                    <span className="text-sm font-medium text-white" title={eventMeta.location}>
+                                        {eventMeta.location}
+                                    </span>
                                 </div>
                             </div>
                         </div>

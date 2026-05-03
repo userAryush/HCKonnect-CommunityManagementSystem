@@ -1,6 +1,6 @@
 import Navbar from './Navbar';
 import BackLink from './BackLink';
-import { Skeleton } from './Skeleton';
+import { DetailPageLayoutSkeleton } from './Skeleton';
 
 /**
  * DetailPageLayout
@@ -18,10 +18,7 @@ export default function DetailPageLayout({ loading, backTo, backText, children }
         return (
             <div className="min-h-screen bg-secondary pt-20">
                 <Navbar navSolid={true} />
-                <div className="max-w-6xl mx-auto px-4">
-                    <Skeleton className="h-60 w-full mb-6" />
-                    <Skeleton className="h-40 w-full" />
-                </div>
+                <DetailPageLayoutSkeleton />
             </div>
         );
     }

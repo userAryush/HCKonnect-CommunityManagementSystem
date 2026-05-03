@@ -8,12 +8,11 @@ import Button from '../../../shared/components/ui/Button'
 import ManagementTable from '../../../shared/components/layout/ManagementTable'
 import AddMemberModal from '../components/AddMemberModal'
 import ConfirmationModal from '../../../shared/components/modals/ConfirmationModal'
-import { UserX, UserCheck, Edit } from 'lucide-react'
+import { UserX, UserCheck, Edit, Loader2 } from 'lucide-react'
 import Dropdown from '../../../shared/components/ui/Dropdown'
 import Badge from '../../../shared/components/ui/Badge'
 import Toast from '../../../shared/components/ui/Toast'
 import Footer from '../../../shared/components/layout/Footer'
-import { TableSkeleton } from '../../../shared/components/layout/Skeleton'
 
 export default function MemberManagement() {
   const { id } = useParams()
@@ -198,7 +197,10 @@ export default function MemberManagement() {
           </PageHeader>
 
           {loadingMembers ? (
-            <TableSkeleton rows={7} columns={6} />
+            <div className="flex min-h-[240px] items-center justify-center rounded-2xl border border-surface-border/10 bg-[var(--surface-card)] py-16">
+              <Loader2 className="h-10 w-10 animate-spin text-primary" aria-hidden />
+              <span className="sr-only">Loading members</span>
+            </div>
           ) : errorMembers ? (
             <div className="p-12 text-center text-red-600">{errorMembers}</div>
           ) : (
