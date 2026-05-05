@@ -8,19 +8,20 @@ import FinalCTA from '../components/FinalCTA'
 import Navbar from '../../../shared/components/layout/Navbar'
 
 function Landing() {
-  return (<div className="theme-original">
-    <Navbar />
-    <HeroSection />
-    <Communities />
-    <Feature />
-    <HowItWorks />
-    <Testimonals />
-    <FinalCTA />
-    <Footer />
-  </div>
+  return (
+    <div className="min-h-screen bg-white text-surface-dark antialiased">
+      <Navbar />
+      <main className="flex flex-col">
+        <HeroSection />
+        <Communities />
+        <Feature />
+        <HowItWorks />
+        <Testimonals />
+        <FinalCTA />
+      </main>
+      <Footer />
+    </div>
   )
 }
 
 export default Landing
-
-//

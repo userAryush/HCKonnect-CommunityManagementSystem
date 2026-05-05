@@ -108,6 +108,8 @@ function Navbar({ menuOpen = false, toggleMenu = () => { }, closeMenu = () => { 
   const baseStyles = 'fixed inset-x-0 top-0 z-50 transition-all duration-300 backdrop-blur-md border-b'
   const transparent = 'bg-transparent border-transparent'
   const solid = 'bg-white/90 border-surface-border shadow-sm'
+  /* Landing hero is primary-tinted; transparent bar makes wordmark + Join read as one green smear */
+  const headerSurface = navSolid || isLanding ? solid : transparent
 
   let navLinks = studentLinks
   if (user?.role === 'community') {
@@ -117,7 +119,7 @@ function Navbar({ menuOpen = false, toggleMenu = () => { }, closeMenu = () => { 
   }
 
   return (
-    <header className={`${baseStyles} ${navSolid ? solid : transparent}`}>
+    <header className={`${baseStyles} ${headerSurface}`}>
   <div className="mx-auto w-full max-w-6xl px-4 py-3">
 
     {/* MAIN FLEX */}

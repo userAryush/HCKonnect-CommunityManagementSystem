@@ -1,75 +1,131 @@
 import { useEffect, useState } from 'react'
-import axios from 'axios'
+import { Link } from 'react-router-dom'
+import apiClient from '../../../shared/services/apiClient'
+import { getInitials } from '../../../utils/userUtils'
+import { ArrowUpRight } from 'lucide-react'
+import SectionHeading from './SectionHeading'
+import Reveal from './Reveal'
 
-const API_BASE_URL = 'http://localhost:8000'
-
+function shortDescription(text, max = 140) {
+  if (!text || typeof text !== 'string') return ''
+  const t = text.trim()
+  if (t.length <= max) return t
+  return `${t.slice(0, max).trim()}…`
+}
 
 function CommunityShowcase() {
-
   const [communities, setCommunities] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    axios
-      .get(`${API_BASE_URL}/communities/communities-list/`)
+    let mounted = true
+    setLoading(true)
+    setError('')
+    apiClient
+      .get('/communities/communities-list/')
       .then((res) => {
-        setCommunities(res.data?.communities || res.data || [])
+        if (!mounted) return
+        const raw = res.data
+        const list = Array.isArray(raw) ? raw : raw?.communities ?? []
+        setCommunities(list)
       })
-      .finally(() => setLoading(false))
+      .catch(() => {
+        if (!mounted) return
+        setError('Could not load communities right now.')
+      })
+      .finally(() => {
+        if (!mounted) return
+        setLoading(false)
+      })
+    return () => {
+      mounted = false
+    }
   }, [])
+
   return (
-    <section id="communities" className="bg-[#f5f8f2] px-4 py-20">
+    <section id="communities" className="relative bg-[#f3f7ef] px-5 py-20 sm:px-8">
       <div className="mx-auto w-full max-w-6xl">
-        <header className="text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[#75C043]">Community showcase</p>
-          <h2 className="mt-3 text-3xl font-semibold text-[#0d1f14] sm:text-4xl">
-            Built for every type of student-led group.
-          </h2>
-        </header>
-        <div className="mt-12 grid gap-6 md:grid-cols-2">
+        <Reveal>
+          <SectionHeading
+            label="Community showcase"
+            title="Spaces that are already live on HCKonnect."
+            description="Logo, name, and a short blurb—straight from the directory. Tap a row to open the public profile."
+          />
+        </Reveal>
+
+        {error && (
+          <p className="mt-8 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </p>
+        )}
+
+        <Reveal className="mt-12" delay={0.08}>
           {loading ? (
-            <p className="mt-12 text-center text-sm text-[#4b4b4b]">Loading communities…</p>
+            <ul className="flex flex-col gap-3">
+              {[1, 2, 3, 4].map((i) => (
+                <li
+                  key={i}
+                  className="h-[4.75rem] animate-pulse rounded-2xl bg-white/60 ring-1 ring-surface-border/60"
+                />
+              ))}
+            </ul>
+          ) : communities.length === 0 ? (
+            <p className="rounded-2xl border border-dashed border-surface-border bg-white/50 px-6 py-14 text-center text-sm text-surface-body">
+              No communities to show yet. Check back soon.
+            </p>
           ) : (
-            communities.map((c) => (
-              <article
-                key={c.id}
-                className="flex flex-col justify-between rounded-3xl border border-[#e2e8d8] bg-white/80 p-6 shadow-xl shadow-[#000]/5 transition hover:-translate-y-1"
-              >
-                <div>
-                  <div className="inline-flex h-14 w-14 items-center justify-center rounded-full border border-[#75C043] bg-white shadow-sm">
-                    {c.community_logo ? (
-                      <img
-                        src={c.community_logo}
-                        alt={c.community_name}
-                        className="h-10 w-10 rounded-full object-contain"
-                      />
-                    ) : (
-                      <span className="text-sm font-bold text-[#75C043]">
-                        {(c.community_name || '??').slice(0, 2).toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-
-                  <h3 className="mt-6 text-2xl font-semibold text-[#0f1f15]">
-                    {c.community_name || 'Unnamed Community'}
-                  </h3>
-
-                  <p className="mt-2 text-sm text-[#4b4b4b]">
-                    {c.community_description || 'No description available.'}
-                  </p>
-                </div>
-
-                <button className="mt-6 w-max rounded-full border border-[#0f1f15]/10 px-5 py-2 text-sm font-semibold text-[#0f1f15] transition hover:border-[#75C043] hover:text-[#75C043]">
-                  View Community
-                </button>
-              </article>
-
-            )))}
-        </div>
+            <ul className="grid gap-3 sm:grid-cols-2">
+              {communities.map((c) => {
+                const name = c.community_name || c.username || 'Community'
+                const desc = shortDescription(c.community_description)
+                return (
+                  <li key={c.id}>
+                    <Link
+                      to={`/community/${c.id}`}
+                      className="group flex items-start gap-4 rounded-2xl border border-surface-border/80 bg-white p-4 shadow-sm transition hover:border-primary/35 hover:shadow-md"
+                    >
+                      <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl border border-surface-border bg-surface-muted-bg">
+                        {c.community_logo ? (
+                          <img
+                            src={c.community_logo}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-sm font-bold text-primary">
+                            {getInitials(name)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1 pt-0.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="font-display text-base font-semibold text-surface-dark group-hover:text-primary">
+                            {name}
+                          </h3>
+                          <ArrowUpRight
+                            className="mt-0.5 h-4 w-4 flex-shrink-0 text-surface-muted opacity-0 transition group-hover:opacity-100"
+                            aria-hidden
+                          />
+                        </div>
+                        {desc ? (
+                          <p className="mt-1.5 text-sm leading-relaxed text-surface-body line-clamp-2">
+                            {desc}
+                          </p>
+                        ) : (
+                          <p className="mt-1.5 text-sm italic text-surface-muted">No description yet.</p>
+                        )}
+                      </div>
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </Reveal>
       </div>
     </section>
   )
 }
 
 export default CommunityShowcase
-

@@ -1,43 +1,47 @@
+import SectionHeading from './SectionHeading'
+import Reveal from './Reveal'
+
 const testimonials = [
   {
     name: 'Maya I.',
-    role: 'Community Lead, Tech Club',
-    quote: 'We replaced six apps with HCKonnect. Engagement doubled in one semester.',
+    role: 'Community lead · Tech club',
+    quote: 'We retired a patchwork of chats and forms. HCKonnect is the one link we share at fairs now.',
   },
   {
     name: 'Ravi S.',
-    role: 'Student Council President',
-    quote: 'Communication feels effortless—events fill up faster and everyone stays informed.',
+    role: 'Student council',
+    quote: 'Announcements and RSVPs finally live together—fewer “did you see the doc?” moments.',
   },
   {
     name: 'Elena V.',
-    role: 'Events Club Coordinator',
-    quote: 'From RSVPs to post-event feedback, everything runs smoother on one dashboard.',
+    role: 'Events coordinator',
+    quote: 'Post-event feedback sits next to the event itself. Reporting back to faculty is painless.',
   },
 ]
 
 function TestimonialsSection() {
   return (
-    <section id="contact" className="bg-white px-4 py-20">
+    <section id="voices" className="bg-[#f3f7ef] px-5 py-20 sm:px-8">
       <div className="mx-auto w-full max-w-6xl">
-        <header className="text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[#75C043]">Trusted voices</p>
-          <h2 className="mt-4 text-3xl font-semibold text-[#0d1f14] sm:text-4xl">
-            Communities thrive when everything is in one place.
-          </h2>
-        </header>
-        <div className="mt-12 grid gap-6 md:grid-cols-3">
-          {testimonials.map((testimonial) => (
-            <article
-              key={testimonial.name}
-              className="rounded-3xl border border-[#e5e7eb] bg-[#fdfdfc] p-6 text-left shadow-lg shadow-black/5"
-            >
-              <p className="text-lg italic text-[#0d1f14]/80">“{testimonial.quote}”</p>
-              <div className="mt-6">
-                <p className="text-base font-semibold text-[#0d1f14]">{testimonial.name}</p>
-                <p className="text-sm text-[#4b4b4b]">{testimonial.role}</p>
-              </div>
-            </article>
+        <Reveal>
+          <SectionHeading label="Voices from campus" title="Less tool-switching, more momentum." />
+        </Reveal>
+
+        <div className="mt-14 columns-1 gap-5 md:columns-2 lg:columns-3">
+          {testimonials.map((t, i) => (
+            <Reveal key={t.name} className="mb-5 break-inside-avoid" delay={0.06 + i * 0.07}>
+              <figure className="rounded-2xl border border-surface-border/80 bg-white p-6 shadow-sm">
+                <blockquote>
+                  <p className="text-[15px] leading-relaxed text-surface-dark/90">
+                    “{t.quote}”
+                  </p>
+                </blockquote>
+                <figcaption className="mt-5 border-t border-surface-border/60 pt-4">
+                  <p className="text-sm font-semibold text-surface-dark">{t.name}</p>
+                  <p className="mt-0.5 text-xs text-surface-body">{t.role}</p>
+                </figcaption>
+              </figure>
+            </Reveal>
           ))}
         </div>
       </div>
@@ -46,5 +50,3 @@ function TestimonialsSection() {
 }
 
 export default TestimonialsSection
-
-
