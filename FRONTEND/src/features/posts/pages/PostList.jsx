@@ -59,11 +59,10 @@ export default function PostList() {
                         title="Community Posts"
                         subtitle="Shared stories and updates from your college."
                         backLinkTo={`/feed`}
-            backLinkText="Feeds"
                     >
                     </PageHeader>
 
-                    {/* Create Post Bar */}
+                  
                     <Card className="p-4 mb-6 !rounded-2xl">
                         <div className="flex gap-4 items-center">
                             <div className="h-10 w-10 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-600 font-bold shrink-0">

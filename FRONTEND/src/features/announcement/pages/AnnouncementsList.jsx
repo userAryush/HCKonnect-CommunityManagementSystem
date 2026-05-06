@@ -105,7 +105,7 @@ export default function AnnouncementsList() {
                             <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
                                 <div>
                                     <div className="mb-1">
-                                        <BackLink to="/feed" text="Feeds" />
+                                        <BackLink to="/feed" />
                                     </div>
                                     <h1 className="text-2xl font-bold tracking-tight text-surface-dark sm:text-3xl">All Announcements</h1>
                                     <p className="text-sm text-surface-muted">Be updated with every announcement.</p>

@@ -20,24 +20,21 @@ function CommunityShowcase() {
 
   useEffect(() => {
     let mounted = true
-    setLoading(true)
-    setError('')
-    apiClient
-      .get('/communities/communities-list/')
-      .then((res) => {
+    ;(async () => {
+      try {
+        const res = await apiClient.get('/communities/communities-list/')
         if (!mounted) return
         const raw = res.data
         const list = Array.isArray(raw) ? raw : raw?.communities ?? []
         setCommunities(list)
-      })
-      .catch(() => {
+        setError('')
+      } catch {
         if (!mounted) return
         setError('Could not load communities right now.')
-      })
-      .finally(() => {
-        if (!mounted) return
-        setLoading(false)
-      })
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    })()
     return () => {
       mounted = false
     }
@@ -50,7 +47,7 @@ function CommunityShowcase() {
           <SectionHeading
             label="Community showcase"
             title="Spaces that are already live on HCKonnect."
-            description="Logo, name, and a short blurb—straight from the directory. Tap a row to open the public profile."
+            description="Explore active communities on HCKonnect. Tap any listing to view its full public profile, discover what they’re building, and see how you can get involved."
           />
         </Reveal>
 

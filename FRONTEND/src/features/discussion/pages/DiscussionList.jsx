@@ -56,7 +56,6 @@ export default function DiscussionList() {
                         title="Community Discussions"
                         subtitle="Deep dives, debates, and detailed conversations."
                         backLinkTo={`/feed`}
-                        backLinkText="Feeds"
                     >
                         <CreateButton onClick={() => setIsCreateModalOpen(true)}>
                             New Discussion

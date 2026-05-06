@@ -115,7 +115,7 @@ export default function VacancyApplicantsPage() {
             <div className="min-h-screen bg-[#f8f9fa] flex flex-col items-center justify-center p-4 text-center">
                 <AlertCircle size={48} className="text-red-500 mb-4" />
                 <h2 className="text-xl font-bold mb-4">{error}</h2>
-                <BackLink to={`/community/${id}/dashboard`} text="Back to Dashboard" className="mb-4" />
+                <BackLink to={`/community/${id}/dashboard`} className="mb-4" />
             </div>
         );
     }
@@ -128,7 +128,6 @@ export default function VacancyApplicantsPage() {
                     title="Applications"
                     subtitle={`Reviewing candidates for the ${vacancy?.title} role at ${communityName}.`}
                     backLinkTo={`/community/${id}/dashboard`}
-                    backLinkText="Dashboard"
                 >
                     <div className="flex items-center gap-4">
                         <Button

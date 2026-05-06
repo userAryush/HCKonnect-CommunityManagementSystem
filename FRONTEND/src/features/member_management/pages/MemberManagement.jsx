@@ -184,7 +184,6 @@ export default function MemberManagement() {
             title="Manage Members"
             subtitle="View and manage community members and roles"
             backLinkTo={`/community/${id}/dashboard`}
-            backLinkText="Dashboard"
           >
             <div className="flex justify-end gap-3">
               <Button variant="primary" onClick={() => setAddModalOpen(true)}>

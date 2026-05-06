@@ -52,7 +52,7 @@ export default function DiscussionDetail() {
     if (!discussion && !loading) return null;
 
     return (
-        <DetailPageLayout loading={loading} backTo="/feed" backText="Feed">
+        <DetailPageLayout loading={loading} backTo="/feed">
             <div className="mb-10">
                 <DiscussionCard
                     item={discussion}

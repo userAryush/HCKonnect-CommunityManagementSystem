@@ -162,7 +162,7 @@ export default function VacanciesPage() {
               <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
                 <div>
                   <div className="mb-1">
-                  <BackLink to={`/community/${id}/dashboard`} text="Dashboard" />
+                  <BackLink to={`/community/${id}/dashboard`} />
                   </div>
                   <h1 className="text-2xl font-bold tracking-tight text-surface-dark sm:text-3xl">Manage Vacancies</h1>
                   <p className="text-sm text-surface-muted">Review, sort, and manage all job vacancies for your community.</p>

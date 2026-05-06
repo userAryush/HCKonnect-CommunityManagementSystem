@@ -11,6 +11,7 @@ import RegistrationSidebar from '../components/EventDetails/RegistrationSidebar'
 import Footer from '../../../shared/components/layout/Footer';
 import BackLink from '../../../shared/components/layout/BackLink';
 import ConfirmationModal from '../../../shared/components/modals/ConfirmationModal';
+import EventRegistrationModal from '../components/shared/EventRegistrationModal';
 
 export default function EventDetailPage() {
     const { eventId } = useParams()
@@ -22,6 +23,7 @@ export default function EventDetailPage() {
     const [currentUser, setCurrentUser] = useState(null)
     const [deleteModalOpen, setDeleteModalOpen] = useState(false)
     const [deleteLoading, setDeleteLoading] = useState(false)
+    const [registrationModalOpen, setRegistrationModalOpen] = useState(false)
 
     useEffect(() => {
         const userStr = localStorage.getItem('user');
@@ -124,7 +126,19 @@ export default function EventDetailPage() {
             navigate('/login');
             return;
         }
-        navigate(`/events/${eventId}/register`);
+        setRegistrationModalOpen(true);
+    };
+
+    const handleRegistered = () => {
+        setToast('Registration successful!');
+        setEvent((prev) => ({
+            ...prev,
+            eventMeta: {
+                ...prev.eventMeta,
+                isRegistered: true,
+                registeredCount: prev.eventMeta.registeredCount + 1,
+            },
+        }));
     };
 
     if (loading) return (
@@ -176,6 +190,15 @@ export default function EventDetailPage() {
                 isLoading={deleteLoading}
                 loadingText="Deleting…"
             />
+            <EventRegistrationModal
+                isOpen={registrationModalOpen}
+                onClose={() => setRegistrationModalOpen(false)}
+                eventId={eventId}
+                event={event}
+                currentUser={currentUser}
+                onRegistered={handleRegistered}
+                onError={setToast}
+            />
 
             <EventHero
                 title={event.title}
@@ -186,7 +209,7 @@ export default function EventDetailPage() {
             />
 
             <main className="mx-auto w-full max-w-7xl px-4 pb-16 pt-8">
-                <BackLink to="/events" text="Events" className="mb-8" />
+                <BackLink to="/events" className="mb-8" />
                 <div className="grid grid-cols-1 gap-12 lg:grid-cols-10 lg:gap-14">
                     {/* Left column */}
                     <div className="lg:col-span-7 space-y-12">

@@ -95,10 +95,9 @@ export default function EventsList() {
                 navSolid={true}
             />
             <main className="pt-24 pb-16">
-                <div className="mx-auto w-full max-w-4xl px-4">
+                <div className="mx-auto w-full max-w-6xl px-4">
                     <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
                         <div>
-                            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[#75C043]">Discussion</p>
                             <h1 className="mt-2 text-3xl font-bold">Upcoming Events</h1>
                             <div className="flex gap-4 mt-4 text-sm text-[#4b4b4b]">
                                 <span><strong>{stats.upcoming_events}</strong> Upcoming</span>

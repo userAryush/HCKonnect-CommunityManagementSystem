@@ -10,6 +10,7 @@ import { exportToCSV } from '../../../utils/exportUtils';
 import ManagementToolbar from '../../../shared/components/layout/ManagementToolbar';
 import { useToast } from '../../../shared/components/ui/ToastContext';
 import AddParticipantModal from '../components/shared/AddParticipantModal';
+import BackLink from '../../../shared/components/layout/BackLink';
 
 export default function EventParticipantsPage() {
     const { id, eventId } = useParams();
@@ -207,8 +208,9 @@ export default function EventParticipantsPage() {
     };
 
     if (loading) return (
-        <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center">
-            <div className="animate-spin h-8 w-8 border-4 border-[#75C043] border-t-transparent rounded-full"></div>
+        <div className="min-h-screen bg-secondary flex flex-col items-center justify-center gap-3 px-4">
+            <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" aria-hidden />
+            <p className="text-metadata">Loading event...</p>
         </div>
     );
 
@@ -216,7 +218,7 @@ export default function EventParticipantsPage() {
         <div className="min-h-screen bg-[#f8f9fa] flex flex-col items-center justify-center p-4 text-center">
             <XCircle size={48} className="text-red-500 mb-4" />
             <h2 className="text-2xl font-bold text-gray-800 mb-2">{error}</h2>
-            <BackLink to={`/events/${eventId}`} text="Back to Event" className="mb-4" />
+            <BackLink to={`/events/${eventId}`} className="mb-4" />
         </div>
     );
 
@@ -228,7 +230,6 @@ export default function EventParticipantsPage() {
                     title="Participants Management"
                     subtitle={`${event?.title} • ${participants.length} Total Registered`}
                     backLinkTo={`/events/${eventId}`}
-                    backLinkText="Event"
                 >
                     <div className="flex items-center gap-3 flex-wrap">
                         <Button

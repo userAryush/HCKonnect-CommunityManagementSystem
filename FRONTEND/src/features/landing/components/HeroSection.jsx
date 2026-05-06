@@ -67,11 +67,11 @@ function HeroSection() {
               <span className="bg-gradient-to-r from-lime-200 to-white bg-clip-text text-transparent">
                 <TypeAnimation
                   sequence={[
-                    'Every club & council.',
+                    'Communities & Students',
                     2000,
-                    'Events & meetups.',
+                    'Events & Management',
                     2000,
-                    'Discussions & updates.',
+                    'Discussions & Updates',
                     2000,
                   ]}
                   wrapper="span"

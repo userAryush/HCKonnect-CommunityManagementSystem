@@ -52,7 +52,7 @@ export default function PostDetail() {
     if (!post && !loading) return null;
 
     return (
-        <DetailPageLayout loading={loading} backTo="/feed" backText="Feed">
+        <DetailPageLayout loading={loading} backTo="/feed">
             <div className="mb-8">
                 <PostCard
                     post={post}
