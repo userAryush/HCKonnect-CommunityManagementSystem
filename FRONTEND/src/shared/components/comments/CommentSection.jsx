@@ -28,6 +28,7 @@ export default function CommentSection({
     onLoadMore = null,
     loadingMore = false,
     loadMoreError = null,
+    hideComposer = false,
 }) {
     const authContext = useAuth();
     const authUser = authContext?.user ?? null;
@@ -108,11 +109,13 @@ export default function CommentSection({
                 loadingText="Deleting..."
             />
 
-            <CommentComposer
-                viewerUser={viewerUser}
-                onPostComment={onPostComment}
-                submitInFlight={submitInFlight}
-            />
+            {!hideComposer && (
+                <CommentComposer
+                    viewerUser={viewerUser}
+                    onPostComment={onPostComment}
+                    submitInFlight={submitInFlight}
+                />
+            )}
 
             <div>
                 {comments?.length > 0 ? (
