@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CheckCircle, XCircle } from 'lucide-react';
 import Card from '../../../shared/components/card/Card';
 import CardHeader from '../../../shared/components/card/CardHeader';
@@ -7,12 +8,34 @@ import Button from '../../../shared/components/ui/Button';
 import { useAuth } from '../../authentication/components/AuthContext';
 
 export default function VacancyCard({ vacancy, onApply, isAdmin = false, onManage }) {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const isMemberOfCommunity = user && user.role === 'student' && !!user.membership;
-  const { title, description, is_open } = vacancy;
+  const { title, description, is_open, community_id, id } = vacancy;
+  const detailHref =
+    community_id && id ? `/community/${community_id}/vacancies/${id}` : null;
+
+  const handleCardNavigate = () => {
+    if (detailHref) navigate(detailHref);
+  };
 
   return (
-    <Card className="group relative flex flex-col">
+    <Card
+      className={`group relative flex flex-col ${detailHref ? 'cursor-pointer transition-shadow hover:shadow-md' : ''}`}
+      onClick={handleCardNavigate}
+      role={detailHref ? 'link' : undefined}
+      tabIndex={detailHref ? 0 : undefined}
+      onKeyDown={
+        detailHref
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleCardNavigate();
+              }
+            }
+          : undefined
+      }
+    >
       <CardHeader item={vacancy}>
         <Badge variant="orange">Vacancy</Badge>
         <Badge variant={is_open ? 'success' : 'red'} className="flex items-center gap-1">
@@ -33,7 +56,7 @@ export default function VacancyCard({ vacancy, onApply, isAdmin = false, onManag
           <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-1">
             Open position
           </p>
-          <h3 className="text-base font-semibold text-surface-dark leading-snug transition-colors duration-200 capitalize">
+          <h3 className="text-base font-semibold text-surface-dark leading-snug transition-colors duration-200 capitalize group-hover:text-primary">
             {title}
           </h3>
         </div>
@@ -42,7 +65,10 @@ export default function VacancyCard({ vacancy, onApply, isAdmin = false, onManag
         </p>
       </div>
 
-      <div className="mt-4 flex flex-col gap-4 border-t border-gray-50 pt-4">
+      <div
+        className="mt-4 flex flex-col gap-4 border-t border-gray-50 pt-4"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center gap-2">
           {is_open && !isAdmin && (
             <Button

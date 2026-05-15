@@ -13,6 +13,8 @@ class CommunityVacancySerializer(ModelSerializer):
     created_at = DateTimeField(read_only=True)
     updated_at = DateTimeField(read_only=True)
 
+    community_focus = SerializerMethodField()
+
     class Meta:
         model = CommunityVacancy
         fields = [
@@ -24,12 +26,29 @@ class CommunityVacancySerializer(ModelSerializer):
             "is_open",
             "community_id",
             "community_name",
+            "community_focus",
             "has_applied",
             "applicant_count",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "community_id", "community_name", "has_applied", "applicant_count", "created_at", "updated_at"]
+        read_only_fields = [
+            "id",
+            "community_id",
+            "community_name",
+            "community_focus",
+            "has_applied",
+            "applicant_count",
+            "created_at",
+            "updated_at",
+        ]
+
+    def get_community_focus(self, obj):
+        community = getattr(obj, "community", None)
+        if not community:
+            return ""
+        desc = getattr(community, "community_description", None) or ""
+        return str(desc).strip()
 
     def to_internal_value(self, data):
         mutable_data = data.copy()
@@ -120,6 +139,10 @@ class VacancyApplicationSerializer(ModelSerializer):
         # 4. Prevent double application to the same vacancy
         if VacancyApplication.objects.filter(user=user, vacancy=vacancy).exists():
             raise ValidationError("You have already applied for this vacancy.")
+
+        request = self.context.get("request")
+        if request and not request.FILES.get("resume") and not data.get("resume"):
+            raise ValidationError({"resume": "A resume file is required."})
 
         return data
 

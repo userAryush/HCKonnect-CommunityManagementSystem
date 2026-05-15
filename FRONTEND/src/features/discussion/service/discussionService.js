@@ -32,6 +32,22 @@ const discussionService = {
         }
     },
 
+    /**
+     * Polish discussion body using topic as context (same endpoint as application assist).
+     * Body: topic, content, action_type (improve|grammar|concise|… — see vacancy AI assist).
+     */
+    enhanceDiscussionText: async ({ topic, content, action_type = 'improve' }) => {
+        const t = typeof topic === 'string' ? topic.trim() : '';
+        const c = typeof content === 'string' ? content.trim() : '';
+        const text = `Discussion topic (context):\n${t}\n\nDraft body:\n${c}`;
+        const response = await apiClient.post('/api/ai/application-text-enhance/', {
+            text,
+            action_type,
+            domain: 'discussion',
+        });
+        return response.data;
+    },
+
     // Create a new discussion
     createDiscussion: async (data) => {
         try {

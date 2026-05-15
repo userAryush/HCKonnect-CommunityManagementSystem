@@ -10,6 +10,25 @@ const vacancyService = {
   },
 
   /**
+   * Generate vacancy description with AI.
+   * Body: community_id, role_title, optional_ai_instructions?, tone?
+   * Legacy: community_name, member_role, contribution_areas?, community_context (no community_id).
+   */
+  generateJobDescription: async (data) => {
+    const response = await apiClient.post('/api/ai/job-description/', data);
+    return response.data;
+  },
+
+  /**
+   * AI writing assistant — rewrite current description.
+   * Body: community_id, text, action_type (improve|professional|academic|friendly|grammar|concise|expand|engaging)
+   */
+  enhanceVacancyText: async (data) => {
+    const response = await apiClient.post('/api/ai/text-enhance/', data);
+    return response.data;
+  },
+
+  /**
    * Get all vacancies. Can filter by community_id.
    * Students see only open ones. Communities see their own (even closed).
    */
@@ -31,6 +50,35 @@ const vacancyService = {
    */
   getVacancy: async (vacancyId) => {
     const response = await apiClient.get(`/communities/vacancies/${vacancyId}/`);
+    return response.data;
+  },
+
+  /** Public read-by-id (student detail page). */
+  getVacancyPublic: async (vacancyId) => {
+    const response = await apiClient.get(`/communities/vacancies/browse/${vacancyId}/`);
+    return response.data;
+  },
+
+  /** AI cover letter draft. Body: profile (object), job_description, optional_ai_instructions? */
+  generateCoverLetter: async (data) => {
+    const response = await apiClient.post('/api/ai/cover-letter/', data);
+    return response.data;
+  },
+
+  /** AI assist on application message. Body: text, action_type */
+  enhanceApplicationText: async (data) => {
+    const response = await apiClient.post('/api/ai/application-text-enhance/', data);
+    return response.data;
+  },
+
+  /**
+   * AI application analysis vs role + community context.
+   * Body: role_description, community_focus?, resume_text, cover_letter
+   * Returns: base_score, penalties[{kind,reason,deduction}], final_score, match_score (mirror),
+   * strengths, improvement_areas, missing_skills_or_traits, suggestions, overall_summary
+   */
+  analyzeApplication: async (data) => {
+    const response = await apiClient.post('/api/ai/application-analysis/', data);
     return response.data;
   },
 

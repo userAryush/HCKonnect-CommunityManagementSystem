@@ -250,8 +250,7 @@ export default function VacanciesPage() {
         isOpen={isCreateVacancyModalOpen}
         onClose={() => setCreateVacancyModalOpen(false)}
         communityId={id}
-        onVacancyCreated={() => {
-        }}
+        onVacancyCreated={reloadVacancies}
       />
 
       <ConfirmationModal

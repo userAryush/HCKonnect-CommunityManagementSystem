@@ -51,6 +51,16 @@ class ManageCommunityVacancyView(RetrieveUpdateDestroyAPIView):
         serializer = self.get_serializer(vacancy)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+class PublicVacancyDetailView(RetrieveAPIView):
+    """
+    Read a single vacancy by id (for public detail page). Open or closed; serializer exposes is_open.
+    """
+
+    queryset = CommunityVacancy.objects.select_related("community").all()
+    serializer_class = CommunityVacancySerializer
+    permission_classes = [AllowAny]
+
+
 class ListCommunityVacanciesView(ListAPIView):
     serializer_class = CommunityVacancySerializer
     pagination_class = StandardPagination

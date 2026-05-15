@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import Navbar from '../../../shared/components/layout/Navbar'
 import EventCard from '../components/shared/EventCard'
+import CreateEventModal from '../components/CreateEventModal'
 import eventService from '../service/eventService'
 import { FeedItemSkeleton } from '../../feed/components/FeedItem'
-import { useNavigate, useSearchParams, useParams } from 'react-router-dom'
+import { useSearchParams, useParams } from 'react-router-dom'
 import Pagination from '../../../shared/components/pagination/Pagination'
 
 export default function EventsList() {
@@ -14,7 +15,8 @@ export default function EventsList() {
     const [page, setPage] = useState(1)
     const [itemsPerPage, setItemsPerPage] = useState(20)
     const [totalCount, setTotalCount] = useState(0)
-    const navigate = useNavigate()
+    const [createEventModalOpen, setCreateEventModalOpen] = useState(false)
+    const [eventsRefreshKey, setEventsRefreshKey] = useState(0)
     const { id } = useParams()
     const [searchParams] = useSearchParams()
     const communityId = id || searchParams.get('community_id')
@@ -79,7 +81,7 @@ export default function EventsList() {
             }
         }
         fetchData()
-    }, [communityId, page, itemsPerPage])
+    }, [communityId, page, itemsPerPage, eventsRefreshKey])
 
     const handleItemsPerPageChange = (newItemsPerPage) => {
         setItemsPerPage(newItemsPerPage)
@@ -107,10 +109,11 @@ export default function EventsList() {
                         </div>
                         {canCreate && (
                             <button
+                                type="button"
                                 onClick={() => {
                                     const targetCommunityId = communityId || (user.role === 'community' ? user.id : user.membership?.community);
                                     if (targetCommunityId) {
-                                        navigate(`/community/${targetCommunityId}/manage/events/create`);
+                                        setCreateEventModalOpen(true);
                                     } else {
                                         alert("Could not determine community ID. Please go to your dashboard.");
                                     }
@@ -154,6 +157,21 @@ export default function EventsList() {
                     )}
                 </div>
             </main>
+
+            {canCreate && (communityId || user.role === 'community' || user.membership?.community) && (
+                <CreateEventModal
+                    isOpen={createEventModalOpen}
+                    onClose={() => setCreateEventModalOpen(false)}
+                    communityId={
+                        communityId ||
+                        (user.role === 'community' ? user.id : user.membership?.community)
+                    }
+                    onCreated={() => {
+                        setCreateEventModalOpen(false);
+                        setEventsRefreshKey((k) => k + 1);
+                    }}
+                />
+            )}
         </div>
     )
 }

@@ -16,19 +16,16 @@ export default function Feed() {
   const { showToast } = useToast()
 
   const [selectedVacancy, setSelectedVacancy] = useState(null)
-  const [isApplying, setIsApplying] = useState(false)
   const [isDiscussionModalOpen, setIsDiscussionModalOpen] = useState(false)
   const [isPostModalOpen, setIsPostModalOpen] = useState(false)
   const handleApplyClick = (vacancy, event) => {
     event.stopPropagation();
     event.preventDefault();
     setSelectedVacancy(vacancy);
-    setIsApplying(true);
   };
 
   const handleApplicationSuccess = (message) => {
     showToast(message, 'success');
-    setIsApplying(false);
     setSelectedVacancy(null);
   };
 

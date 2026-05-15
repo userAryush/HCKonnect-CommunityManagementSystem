@@ -49,6 +49,25 @@ const eventService = {
         }
     },
 
+    /** AI rewrite for event description or expectation draft. domain: event_description | event_expectations */
+    enhanceEventText: async ({ text, action_type, domain }) => {
+        const response = await apiClient.post('/api/ai/application-text-enhance/', {
+            text,
+            action_type,
+            domain,
+        });
+        return response.data;
+    },
+
+    /**
+     * AI draft from context. target: description | what_to_expect
+     * Optional: date, start_time, end_time, format, location, description, existing_expectations, optional_ai_instructions
+     */
+    generateEventCopy: async (payload) => {
+        const response = await apiClient.post('/api/ai/event-generate/', payload);
+        return response.data;
+    },
+
     updateEvent: async (id, eventData) => {
         try {
             const config = {};

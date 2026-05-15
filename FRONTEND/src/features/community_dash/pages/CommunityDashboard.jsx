@@ -8,6 +8,7 @@ import apiClient from '../../../shared/services/apiClient';
 import { CommunityDashboardSkeleton } from '../../../shared/components/layout/Skeleton';
 import MetricCard from '../components/MetricCardDashboard';
 import CreateVacancyModal from '../../vacancy/components/CreateVacancyModal';
+import CreateEventModal from '../../events/components/CreateEventModal';
 import {
     Calendar,
     Users,
@@ -47,6 +48,7 @@ export default function CommunityDashboard() {
     const [vacancyActionLoadingId, setVacancyActionLoadingId] = useState(null);
     const [vacancyToClose, setVacancyToClose] = useState(null);
     const [isCreateVacancyModalOpen, setCreateVacancyModalOpen] = useState(false);
+    const [isCreateEventModalOpen, setCreateEventModalOpen] = useState(false);
 
     const quickActions = [
         {
@@ -58,7 +60,8 @@ export default function CommunityDashboard() {
         },
         {
             label: 'Schedule Event',
-            path: `/community/${id}/manage/events/create`,
+            path: '#',
+            onClick: () => setCreateEventModalOpen(true),
             icon: <Calendar size={20} />,
             colorIcon: 'text-emerald-500',
             hoverClass: 'hover:border-emerald-500 hover:bg-emerald-50/50 group-hover:bg-emerald-500',
@@ -177,6 +180,24 @@ export default function CommunityDashboard() {
             showToast('Failed to refresh vacancies.', 'error');
         } finally {
             setVacanciesLoading(false);
+        }
+    };
+
+    const reloadDashboardEvents = async () => {
+        try {
+            const [eventsData, eventStats] = await Promise.all([
+                eventService.getEvents(id),
+                eventService.getEventStats(id),
+            ]);
+            setDashboardEvents(eventsData.results || []);
+            setStats((prev) => ({
+                ...prev,
+                events: eventStats.total_events,
+                upcomingEvents: eventStats.upcoming_events,
+            }));
+        } catch (err) {
+            console.error('Failed to refresh events', err);
+            showToast('Could not refresh events list.', 'error');
         }
     };
 
@@ -328,6 +349,13 @@ export default function CommunityDashboard() {
             </main>
 
             <Footer />
+
+            <CreateEventModal
+                isOpen={isCreateEventModalOpen}
+                onClose={() => setCreateEventModalOpen(false)}
+                communityId={id}
+                onCreated={reloadDashboardEvents}
+            />
 
             <CreateVacancyModal
                 isOpen={isCreateVacancyModalOpen}

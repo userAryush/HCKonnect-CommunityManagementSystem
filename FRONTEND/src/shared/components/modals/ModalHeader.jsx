@@ -4,7 +4,7 @@ import Button from '../ui/Button';
 
 const ModalHeader = ({ title, subtitle, onClose }) => {
     return (
-        <div className="flex items-start justify-between border-b border-surface-border px-8 py-6 rounded-t-3xl">
+        <div className="relative flex items-start justify-between border-b border-surface-border px-8 py-6 rounded-t-3xl">
             <div>
                 <h2 className="text-title text-2xl">{title}</h2>
                 {subtitle && <p className="mt-1 text-sm text-surface-body">{subtitle}</p>}

@@ -2,6 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { MoreVertical } from 'lucide-react';
 
+/** Above ModalWrapper (z-[120]) so portaled menus stack on top of dialogs */
+const DROPDOWN_MENU_Z = 'z-[130]'
+
 const Dropdown = ({ actions, align = 'right', trigger }) => {
   const [isOpen, setIsOpen] = useState(false);
   const triggerRef = useRef(null);
@@ -12,12 +15,10 @@ const Dropdown = ({ actions, align = 'right', trigger }) => {
     e.stopPropagation();
     if (triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
-      const newTop = window.scrollY + rect.bottom + 4; // 4px gap
-      let newLeft = window.scrollX + rect.left;
-      if (align === 'right') {
-        // Adjust based on a typical dropdown width (w-56 is 224px)
-        newLeft = window.scrollX + rect.right - 224;
-      }
+      // fixed positioning: use viewport coordinates from getBoundingClientRect()
+      const newTop = rect.bottom + 4;
+      const newLeft =
+        align === 'right' ? rect.right - 224 : rect.left;
       setPosition({ top: newTop, left: newLeft });
     }
     setIsOpen(!isOpen);
@@ -25,7 +26,10 @@ const Dropdown = ({ actions, align = 'right', trigger }) => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (isOpen && dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      if (!isOpen || !dropdownRef.current) return;
+      const inMenu = dropdownRef.current.contains(event.target);
+      const inTrigger = triggerRef.current?.contains(event.target);
+      if (!inMenu && !inTrigger) {
         setIsOpen(false);
       }
     };
@@ -52,7 +56,7 @@ const Dropdown = ({ actions, align = 'right', trigger }) => {
         <div
           ref={dropdownRef}
           style={{ top: `${position.top}px`, left: `${position.left}px` }}
-          className={`absolute z-50 mt-1 w-56 rounded-xl bg-white border border-surface-border shadow-lg py-1.5 transition-all animate-in fade-in zoom-in-95 duration-200`}
+          className={`fixed ${DROPDOWN_MENU_Z} w-56 rounded-xl bg-white border border-surface-border shadow-lg py-1.5 transition-all animate-in fade-in zoom-in-95 duration-200`}
           onClick={(e) => e.stopPropagation()}
         >
           {actions.map((action, index) => (

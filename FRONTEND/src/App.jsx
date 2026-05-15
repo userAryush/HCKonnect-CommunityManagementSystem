@@ -12,6 +12,7 @@ import CommunitiesList from './features/community_dash/pages/CommunitiesList'
 import CreateVacancy from './features/vacancy/pages/CreateVacancy';
 import VacancyPage from './features/vacancy/pages/VacancyPage';
 import VacancyApplicantsPage from './features/vacancy/pages/VacancyApplicantsPage';
+import VacancyDetailPage from './features/vacancy/pages/VacancyDetailPage';
 import EventDetailPage from './features/events/pages/EventDetailPage'
 import CreateEvent from './features/events/pages/CreateEvent'
 import EditEvent from './features/events/pages/EditEvent'
@@ -55,6 +56,7 @@ function App() {
         <Route path="/discussions/:id" element={<DiscussionDetail />} />
         <Route path="/posts" element={<PostList />} />
         <Route path="/posts/:id" element={<PostDetail />} />
+        <Route path="/community/:communityId/vacancies/:vacancyId" element={<VacancyDetailPage />} />
 
         {/* Admin / Management Routes */}
         <Route path="/community/:id/dashboard" element={<CommunityDashboard />} />
