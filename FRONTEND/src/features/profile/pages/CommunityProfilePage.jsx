@@ -17,6 +17,9 @@ import vacancyService from '../../vacancy/service/vacancyService';
 import VacancyApplicationModal from '../../vacancy/components/VacancyApplicationModal';
 import EditProfileModal from '../components/shared/EditProfileModal';
 import { CommunityProfileSkeleton } from '../../../shared/components/layout/Skeleton';
+import { isPlatformCommunity, filterCommunityTabs } from '../../../utils/communityUtils';
+
+const ALL_TABS = ['Overview', 'Posts', 'Events', 'Discussions', 'Resources', 'Vacancies', 'Members'];
 
 export default function CommunityProfilePage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -43,7 +46,7 @@ export default function CommunityProfilePage() {
   const [loadingTab, setLoadingTab] = useState(false)
   const [error, setError] = useState('')
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-  const tabs = ['Overview', 'Posts', 'Events', 'Discussions', 'Resources', 'Vacancies', 'Members'] // Add Vacancies tab
+  const tabs = filterCommunityTabs(ALL_TABS, communityData);
 
   const handleJoinRequest = () => {
     setMembershipStatus('pending')
@@ -64,6 +67,15 @@ export default function CommunityProfilePage() {
     fetchCommunity()
   }, [id])
 
+  useEffect(() => {
+    if (!communityData) return
+    const visible = filterCommunityTabs(ALL_TABS, communityData)
+    if (!visible.includes(activeTab)) {
+      setActiveTab('Overview')
+      setSearchParams({ tab: 'Overview' })
+    }
+  }, [communityData, activeTab, setSearchParams])
+
   // Fetching real data dynamically based on the active tab
   useEffect(() => {
     if (!id) return;
@@ -71,16 +83,17 @@ export default function CommunityProfilePage() {
       setLoadingTab(true);
       try {
         if (activeTab === 'Overview') {
+          const platform = isPlatformCommunity(communityData);
           const [evs, anns, vacs] = await Promise.all([
             eventService.getEvents(id, 1),
             announcementService.getAnnouncements(1, id),
-            vacancyService.getVacancies(id)
+            platform ? Promise.resolve({ results: [] }) : vacancyService.getVacancies(id),
           ]);
           setTabData(prev => ({
             ...prev,
             events: mapEvents(evs.results || []),
             announcements: mapAnnouncements(anns.results || []),
-            vacancies: vacs.results || vacs || []
+            vacancies: platform ? [] : (vacs.results || vacs || []),
           }));
         } else if (activeTab === 'Events') {
           const res = await eventService.getEvents(id, 1);
@@ -97,11 +110,11 @@ export default function CommunityProfilePage() {
         } else if (activeTab === 'Resources') { // Add fetch logic for Resources
           const res = await apiClient.get(`/contents/resources/?community_id=${id}`);
           setTabData(prev => ({ ...prev, resources: res.data.results || [] }));
-        } else if (activeTab === 'Members') {
+        } else if (activeTab === 'Members' && !isPlatformCommunity(communityData)) {
           const res = await apiClient.get(`/communities/${id}/members/`);
           const membersArray = res.data.results ? res.data.results : res.data;
           setTabData(prev => ({ ...prev, members: membersArray || [] }));
-        } else if (activeTab === 'Vacancies') {
+        } else if (activeTab === 'Vacancies' && !isPlatformCommunity(communityData)) {
           const res = await vacancyService.getVacancies(id, { status: 'OPEN' });
           setTabData(prev => ({ ...prev, vacancies: res.results || res || [] }));
         }

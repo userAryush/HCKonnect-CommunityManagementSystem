@@ -7,9 +7,11 @@ import ModalHeader from '../../../shared/components/modals/ModalHeader';
 
 export default function CreateAnnouncementModal({ isOpen, onClose, onCreated }) {
     const { showToast } = useToast();
+    const user = JSON.parse(localStorage.getItem('user') || 'null');
+    const isPlatform = Boolean(user?.is_platform_community);
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
-    const [visibility, setVisibility] = useState('private');
+    const [visibility, setVisibility] = useState(isPlatform ? 'public' : 'private');
     const [image, setImage] = useState(null);
     const [loading, setLoading] = useState(false);
 
@@ -17,7 +19,7 @@ export default function CreateAnnouncementModal({ isOpen, onClose, onCreated }) 
         if (!isOpen) {
             setTitle('');
             setDescription('');
-            setVisibility('private');
+            setVisibility(isPlatform ? 'public' : 'private');
             setImage(null);
             setLoading(false);
         }
@@ -51,7 +53,7 @@ export default function CreateAnnouncementModal({ isOpen, onClose, onCreated }) 
     };
 
     return (
-        <ModalWrapper isOpen={isOpen} onClose={onClose}>
+        <ModalWrapper isOpen={isOpen} onClose={onClose} className="max-w-6xl">
             <ModalHeader
                 title="Create Announcement"
                 subtitle="Share important updates with your community."
@@ -91,17 +93,19 @@ export default function CreateAnnouncementModal({ isOpen, onClose, onCreated }) 
                     />
                 </div>
 
-                <div>
-                    <label className="mb-2 block text-body text-surface-dark">Visibility</label>
-                    <select
-                        value={visibility}
-                        onChange={(e) => setVisibility(e.target.value)}
-                        className="w-full input-standard"
-                    >
-                        <option value="private">Private (Community Only)</option>
-                        <option value="public">Public</option>
-                    </select>
-                </div>
+                {!isPlatform && (
+                    <div>
+                        <label className="mb-2 block text-body text-surface-dark">Visibility</label>
+                        <select
+                            value={visibility}
+                            onChange={(e) => setVisibility(e.target.value)}
+                            className="w-full input-standard"
+                        >
+                            <option value="private">Private (Community Only)</option>
+                            <option value="public">Public</option>
+                        </select>
+                    </div>
+                )}
 
                 <div className="flex items-center justify-end gap-4 border-t border-surface-border pt-4">
                     <Button type="button" variant="secondary" onClick={onClose} disabled={loading}>

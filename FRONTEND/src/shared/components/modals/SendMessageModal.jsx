@@ -48,7 +48,7 @@ export default function SendMessageModal({
   };
 
   return (
-    <ModalWrapper isOpen={isOpen} onClose={handleClose} className="max-w-3xl">
+    <ModalWrapper isOpen={isOpen} onClose={handleClose} className="max-w-6xl">
       <ModalHeader
         title="Send a Message"
         subtitle={`To: ${communityName}`}

@@ -76,12 +76,27 @@ class User(AbstractUser, BaseModel):
     community_description = models.TextField(null=True, blank=True)
     community_logo = models.ImageField(upload_to='community_logos/', null=True, blank=True)
     community_tag = models.CharField(max_length=255, null=True, blank=True)
+    is_platform_community = models.BooleanField(
+        default=False,
+        help_text="Official platform organization (e.g. Herald DevCorps). Only one allowed system-wide.",
+    )
 
     must_change_password = models.BooleanField(default=True)
     
     #credentials
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'role']
+
+    def clean(self):
+        super().clean()
+        if self.is_platform_community:
+            from communities.platform import validate_single_platform_community
+            validate_single_platform_community(self)
+
+    def save(self, *args, **kwargs):
+        if self.is_platform_community and self.role != "community":
+            self.is_platform_community = False
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.username} ({self.role})   - {self.email}"

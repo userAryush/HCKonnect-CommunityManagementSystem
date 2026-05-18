@@ -19,7 +19,8 @@ const DISCUSSION_AI_ACTIONS = [
 export default function CreateDiscussionModal({ isOpen, onClose, onCreated }) {
     const { showToast } = useToast();
     const user = JSON.parse(localStorage.getItem('user') || 'null');
-    const hasMembership = user && (
+    const isPlatform = Boolean(user?.is_platform_community);
+    const hasMembership = !isPlatform && user && (
         user.role === 'community' ||
         (user.membership && ['representative', 'member'].includes(user.membership.role))
     );
@@ -103,7 +104,7 @@ export default function CreateDiscussionModal({ isOpen, onClose, onCreated }) {
     };
 
     return (
-        <ModalWrapper isOpen={isOpen} onClose={onClose}>
+        <ModalWrapper isOpen={isOpen} onClose={onClose} className="max-w-6xl">
             <ModalHeader
                 title="Start Discussion"
                 subtitle="Create a new conversation for your community."
@@ -157,20 +158,22 @@ export default function CreateDiscussionModal({ isOpen, onClose, onCreated }) {
                     </div>
                 </div>
 
-                <div>
-                    <label className="mb-2 block text-body text-surface-dark">Visibility</label>
-                    <select
-                        name="visibility"
-                        value={formData.visibility}
-                        onChange={handleChange}
-                        className="w-full input-standard"
-                    >
-                        <option value="public">Public</option>
-                        <option value="private" disabled={!hasMembership}>
-                            Private (Community Only) {!hasMembership ? '(Membership Required)' : ''}
-                        </option>
-                    </select>
-                </div>
+                {!isPlatform && (
+                    <div>
+                        <label className="mb-2 block text-body text-surface-dark">Visibility</label>
+                        <select
+                            name="visibility"
+                            value={formData.visibility}
+                            onChange={handleChange}
+                            className="w-full input-standard"
+                        >
+                            <option value="public">Public</option>
+                            <option value="private" disabled={!hasMembership}>
+                                Private (Community Only) {!hasMembership ? '(Membership Required)' : ''}
+                            </option>
+                        </select>
+                    </div>
+                )}
 
                 <div className="flex items-center justify-end gap-4 border-t border-surface-border pt-4">
                     <Button type="button" variant="secondary" onClick={onClose} disabled={loading || aiBusy}>

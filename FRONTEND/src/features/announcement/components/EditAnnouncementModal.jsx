@@ -46,7 +46,7 @@ export default function EditAnnouncementModal({ isOpen, onClose, announcement, o
     };
 
     return (
-        <ModalWrapper isOpen={isOpen} onClose={onClose}>
+        <ModalWrapper isOpen={isOpen} onClose={onClose} className="max-w-6xl">
             <ModalHeader
                 title="Edit Announcement"
                 subtitle="Update announcement details."

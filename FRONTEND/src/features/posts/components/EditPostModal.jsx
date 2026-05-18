@@ -39,7 +39,7 @@ export default function EditPostModal({ isOpen, onClose, post, onUpdated }) {
     };
 
     return (
-        <ModalWrapper isOpen={isOpen} onClose={onClose} className="max-w-2xl">
+        <ModalWrapper isOpen={isOpen} onClose={onClose} className="max-w-6xl">
             <ModalHeader
                 title="Edit Post"
                 subtitle="Update your post content."

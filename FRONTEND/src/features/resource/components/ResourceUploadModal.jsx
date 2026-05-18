@@ -6,6 +6,8 @@ import ModalHeader from '../../../shared/components/modals/ModalHeader';
 import Button from '../../../shared/components/ui/Button';
 
 export default function ResourceUploadModal({ communityId, resource, isOpen, onClose, onSuccess }) {
+    const user = JSON.parse(localStorage.getItem('user') || 'null');
+    const isPlatform = Boolean(user?.is_platform_community);
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -109,18 +111,20 @@ export default function ResourceUploadModal({ communityId, resource, isOpen, onC
                     />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <label className="text-body">Visibility</label>
-                        <select
-                            value={formData.visibility}
-                            onChange={(e) => setFormData({ ...formData, visibility: e.target.value })}
-                            className="w-full input-standard"
-                        >
-                            <option value="public">Public</option>
-                            <option value="private">Private</option>
-                        </select>
-                    </div>
+                <div className={`grid gap-4 ${isPlatform ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                    {!isPlatform && (
+                        <div className="space-y-2">
+                            <label className="text-body">Visibility</label>
+                            <select
+                                value={formData.visibility}
+                                onChange={(e) => setFormData({ ...formData, visibility: e.target.value })}
+                                className="w-full input-standard"
+                            >
+                                <option value="public">Public</option>
+                                <option value="private">Private</option>
+                            </select>
+                        </div>
+                    )}
 
                     <div className="space-y-2">
                         <label className="text-body">Category</label>

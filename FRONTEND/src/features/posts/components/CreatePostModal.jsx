@@ -54,7 +54,7 @@ export default function CreatePostModal({ isOpen, onClose, onCreated }) {
     };
 
     return (
-        <ModalWrapper isOpen={isOpen} onClose={onClose} className="max-w-2xl">
+        <ModalWrapper isOpen={isOpen} onClose={onClose} className="max-w-6xl">
             <ModalHeader
                 title="Create Post"
                 subtitle="Share your thoughts with the community."

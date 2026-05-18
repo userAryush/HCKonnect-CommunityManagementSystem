@@ -8,7 +8,7 @@ import Badge from '../../../../shared/components/ui/Badge';
 import Button from '../../../../shared/components/ui/Button';
 import ConfirmationModal from '../../../../shared/components/modals/ConfirmationModal';
 
-export default function EventCard({ item, onDelete }) {
+export default function EventCard({ item, onDelete, onEdit }) {
   const navigate = useNavigate();
   const { eventMeta, id } = item;
   const user = JSON.parse(localStorage.getItem('user') || 'null');
@@ -40,6 +40,10 @@ export default function EventCard({ item, onDelete }) {
 
   const handleEdit = (e) => {
     if (e) e.stopPropagation();
+    if (onEdit) {
+      onEdit(item);
+      return;
+    }
     const communityId = item.community?.id || item.community;
     navigate(`/community/${communityId}/manage/events/${item.id}/edit`);
   };

@@ -1,6 +1,10 @@
 from rest_framework import serializers
 from .models import DiscussionPanel, DiscussionReply, Reaction
 from django.utils.timesince import timesince
+from communities.platform import is_platform_community, enforce_public_visibility
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
 
@@ -20,6 +24,15 @@ class DiscussionCreateSerializer(serializers.ModelSerializer):
             "visibility",
             "is_pinned",
         ]
+
+    def validate(self, data):
+        community = data.get("community")
+        visibility = data.get("visibility", "public")
+        if community:
+            enforce_public_visibility(community, visibility)
+            if is_platform_community(community):
+                data["visibility"] = "public"
+        return data
 
     def create(self, validated_data):
         validated_data["created_by"] = self.context["request"].user

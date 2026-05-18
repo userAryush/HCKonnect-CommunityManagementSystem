@@ -1,6 +1,7 @@
 from rest_framework.serializers import ModelSerializer, PrimaryKeyRelatedField, ValidationError, CharField, EmailField, ImageField, IntegerField, SerializerMethodField, DateTimeField, UUIDField
 from django.contrib.auth import get_user_model
 from .models import CommunityMembership,CommunityVacancy,VacancyApplication
+from .platform import is_platform_community
 from datetime import timedelta
 from django.utils import timezone
 User = get_user_model()
@@ -75,10 +76,14 @@ class CommunityVacancySerializer(ModelSerializer):
             raise ValidationError("Authentication required.")
 
         if user.role == "community":
+            if is_platform_community(user):
+                raise ValidationError("Platform communities cannot manage vacancies.")
             return data
 
         membership = getattr(user, "membership", None)
         if user.role == "student" and membership and membership.role == "representative":
+            if is_platform_community(membership.community):
+                raise ValidationError("Platform communities cannot manage vacancies.")
             return data
 
         raise ValidationError("You do not have permission to manage vacancies.")
@@ -120,14 +125,21 @@ class VacancyApplicationSerializer(ModelSerializer):
         user = self.context["request"].user
         vacancy = data.get("vacancy")
 
-        # 1. Only students can apply
-        if user.role != "student":
-            raise ValidationError("Only students can apply to vacancies.")
+        if not user.is_authenticated:
+            raise ValidationError("Authentication required.")
 
-        # 2. EXCLUSIVITY CHECK: Must not be in any community
-        # This checks if a membership record exists for this student
+        # 1. Only unaffiliated students can apply
+        if user.role != "student":
+            raise ValidationError(
+                "Only students who are not in a community can apply. "
+                "Community accounts and existing members cannot apply."
+            )
+
+        # 2. Must not belong to any community (member or representative)
         if CommunityMembership.objects.filter(user=user).exists():
-            raise ValidationError("You are already a member of a community and cannot apply to new vacancies.")
+            raise ValidationError(
+                "You are already a member of a community and cannot apply to vacancies."
+            )
 
         # 3. Vacancy must be open and not past deadline
         if vacancy.status != CommunityVacancy.STATUS_OPEN:
@@ -146,6 +158,15 @@ class VacancyApplicationSerializer(ModelSerializer):
 
         return data
 
+    def create(self, validated_data):
+        user = self.context["request"].user
+        if user.role != "student":
+            raise ValidationError("Only students can apply to vacancies.")
+        if CommunityMembership.objects.filter(user=user).exists():
+            raise ValidationError(
+                "You are already a member of a community and cannot apply to vacancies."
+            )
+        return VacancyApplication.objects.create(user=user, **validated_data)
 
 
 class CommunityMembershipCreateSerializer(ModelSerializer):
@@ -172,6 +193,9 @@ class CommunityMembershipCreateSerializer(ModelSerializer):
         # It ensures that only a user with the 'community' role can execute this serializer.
         if request_user.role != "community":
             raise ValidationError("Only community accounts can add members.")
+
+        if is_platform_community(request_user):
+            raise ValidationError("Platform communities do not support member management.")
 
         #                       DUPLICATE CHECK (Internal)
         # Prevents the same community from adding the same student twice.
@@ -232,7 +256,10 @@ class CommunityListSerializer(ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id","community_name","community_description","community_logo","community_tag","member_count"]
+        fields = [
+            "id", "community_name", "community_description", "community_logo",
+            "community_tag", "member_count", "is_platform_community",
+        ]
         
 # community account dashboard
 class CommunityDashboardSerializer(ModelSerializer):
@@ -240,13 +267,23 @@ class CommunityDashboardSerializer(ModelSerializer):
     is_community_owner = SerializerMethodField()
     new_members_this_month = SerializerMethodField()
     recent_activity = SerializerMethodField()
+    vacancies_open = SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             "id", "community_name", "community_description", "community_logo", "email",
-            "member_count", "is_community_owner", "new_members_this_month", "recent_activity"
+            "member_count", "is_community_owner", "new_members_this_month", "recent_activity",
+            "is_platform_community", "vacancies_open",
         ]
+
+    def get_vacancies_open(self, obj):
+        if is_platform_community(obj):
+            return False
+        return CommunityVacancy.objects.filter(
+            community=obj,
+            status=CommunityVacancy.STATUS_OPEN,
+        ).exists()
 
     def get_is_community_owner(self, obj):
         request = self.context.get('request')
@@ -266,6 +303,8 @@ class CommunityDashboardSerializer(ModelSerializer):
         ).exists()
 
     def get_new_members_this_month(self, obj):
+        if is_platform_community(obj):
+            return 0
         now = timezone.now()
         start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         return obj.members.filter(created_at__gte=start_of_month).count()

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import Navbar from '../../../shared/components/layout/Navbar'
 import EventCard from '../components/shared/EventCard'
 import CreateEventModal from '../components/CreateEventModal'
+import EditEventModal from '../components/EditEventModal'
 import eventService from '../service/eventService'
 import { FeedItemSkeleton } from '../../feed/components/FeedItem'
 import { useSearchParams, useParams } from 'react-router-dom'
@@ -16,6 +17,8 @@ export default function EventsList() {
     const [itemsPerPage, setItemsPerPage] = useState(20)
     const [totalCount, setTotalCount] = useState(0)
     const [createEventModalOpen, setCreateEventModalOpen] = useState(false)
+    const [editEventModalOpen, setEditEventModalOpen] = useState(false)
+    const [editingEventId, setEditingEventId] = useState(null)
     const [eventsRefreshKey, setEventsRefreshKey] = useState(0)
     const { id } = useParams()
     const [searchParams] = useSearchParams()
@@ -135,7 +138,15 @@ export default function EventsList() {
                         <>
                             <div className="flex flex-col gap-4 text-left">
                                 {events.map(event => (
-                                    <EventCard key={event.id} item={event} />
+                                    <EventCard
+                                        key={event.id}
+                                        item={event}
+                                        onEdit={(item) => {
+                                            setEditingEventId(item.id)
+                                            setEditEventModalOpen(true)
+                                        }}
+                                        onDelete={() => setEventsRefreshKey((k) => k + 1)}
+                                    />
                                 ))}
                             </div>
 
@@ -172,6 +183,20 @@ export default function EventsList() {
                     }}
                 />
             )}
+
+            <EditEventModal
+                isOpen={editEventModalOpen}
+                eventId={editingEventId}
+                onClose={() => {
+                    setEditEventModalOpen(false)
+                    setEditingEventId(null)
+                }}
+                onUpdated={() => {
+                    setEditEventModalOpen(false)
+                    setEditingEventId(null)
+                    setEventsRefreshKey((k) => k + 1)
+                }}
+            />
         </div>
     )
 }

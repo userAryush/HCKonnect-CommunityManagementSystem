@@ -67,6 +67,9 @@ export const getRoleLabel = (user) => {
   const communityName = user.community_name || user.author_community_name || user.author_community;
   
   if (role === 'community') {
+    if (user.is_platform_community || user.author_is_platform_community) {
+      return 'Platform Organization';
+    }
     return 'Community Admin';
   }
   

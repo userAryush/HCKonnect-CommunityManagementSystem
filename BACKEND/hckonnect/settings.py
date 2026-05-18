@@ -39,14 +39,14 @@ AUTH_USER_MODEL = 'accounts.User'
 # Application definition
 
 INSTALLED_APPS = [
-    'cloudinary_storage',
-    'django.contrib.staticfiles',
-    'cloudinary',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'cloudinary_storage',
+    'django.contrib.staticfiles',
+    'cloudinary',
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',  # Add this
@@ -205,6 +205,7 @@ USE_TZ = True
 # Static files (frontend assets)
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # for collectstatic in production
+# STATICFILES_DIRS = [BASE_DIR / 'static']
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
     'API_KEY': os.getenv('CLOUDINARY_API_KEY'),

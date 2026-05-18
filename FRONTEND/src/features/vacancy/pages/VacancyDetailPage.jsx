@@ -11,6 +11,7 @@ import VacancyApplicationModal from '../components/VacancyApplicationModal'
 import getApiErrorMessage from '../../../utils/getApiErrorMessage'
 import { useAuth } from '../../authentication/components/AuthContext'
 import { useToast } from '../../../shared/components/ui/ToastContext'
+import { canApplyToVacancy, vacancyApplyBlockedReason } from '../../../utils/vacancyUtils'
 
 export default function VacancyDetailPage() {
   const { communityId, vacancyId } = useParams()
@@ -47,11 +48,10 @@ export default function VacancyDetailPage() {
     }
   }, [vacancyId])
 
-  const isStudent = user?.role === 'student'
-  const isMember = isStudent && !!user?.membership
+  const mayApply = canApplyToVacancy(user)
+  const blockedReason = vacancyApplyBlockedReason(user)
   const canApply =
-    isStudent &&
-    !isMember &&
+    mayApply &&
     vacancy?.is_open &&
     !vacancy?.has_applied
 
@@ -128,7 +128,7 @@ export default function VacancyDetailPage() {
               </div>
 
               <div className="mt-10 flex flex-wrap gap-3 border-t border-surface-border pt-8">
-                {vacancy.is_open && isStudent && (
+                {vacancy.is_open && mayApply && (
                   <Button
                     onClick={() => setApplyOpen(true)}
                     disabled={!canApply}
@@ -136,15 +136,11 @@ export default function VacancyDetailPage() {
                       !canApply ? 'cursor-not-allowed opacity-60' : ''
                     }
                   >
-                    {vacancy.has_applied
-                      ? 'Already applied'
-                      : isMember
-                        ? 'Already a community member'
-                        : 'Apply now'}
+                    {vacancy.has_applied ? 'Already applied' : 'Apply now'}
                   </Button>
                 )}
-                {!isStudent && vacancy.is_open && (
-                  <p className="text-sm text-surface-muted">Sign in as a student to apply.</p>
+                {vacancy.is_open && !mayApply && blockedReason && (
+                  <p className="text-sm text-surface-muted">{blockedReason}</p>
                 )}
                 <Link to={communityId ? `/community/${communityId}` : '/feed'}>
                   <Button variant="secondary" type="button">

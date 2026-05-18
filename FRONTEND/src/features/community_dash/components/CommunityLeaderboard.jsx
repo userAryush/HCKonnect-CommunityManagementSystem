@@ -1,12 +1,17 @@
 import { Activity, BarChart3 } from 'lucide-react';
 import Badge from '../../../shared/components/ui/Badge';
 
-export default function CommunityLeaderboard({ leaderboardData, analyticsLoading, maxLeaderScore }) {
+export default function CommunityLeaderboard({
+    leaderboardData,
+    analyticsLoading,
+    maxLeaderScore,
+    title = 'Communities Engagement Leaderboard',
+}) {
     return (
         <div className="card-border !p-0 overflow-hidden flex-1">
             <div className="flex items-center justify-between px-6 py-4 border-b border-surface-border">
                 <div className="flex items-center gap-2">
-                    <h3 className="text-title">Communities Engagement Leaderboard</h3>
+                    <h3 className="text-title">{title}</h3>
                     <Badge variant="primary" className="!rounded-full">
                         Global Rankings
                     </Badge>

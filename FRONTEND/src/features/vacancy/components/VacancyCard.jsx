@@ -6,11 +6,13 @@ import CardHeader from '../../../shared/components/card/CardHeader';
 import Badge from '../../../shared/components/ui/Badge';
 import Button from '../../../shared/components/ui/Button';
 import { useAuth } from '../../authentication/components/AuthContext';
+import { canApplyToVacancy, vacancyApplyBlockedReason } from '../../../utils/vacancyUtils';
 
 export default function VacancyCard({ vacancy, onApply, isAdmin = false, onManage }) {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isMemberOfCommunity = user && user.role === 'student' && !!user.membership;
+  const mayApply = canApplyToVacancy(user);
+  const blockedReason = vacancyApplyBlockedReason(user);
   const { title, description, is_open, community_id, id } = vacancy;
   const detailHref =
     community_id && id ? `/community/${community_id}/vacancies/${id}` : null;
@@ -70,17 +72,23 @@ export default function VacancyCard({ vacancy, onApply, isAdmin = false, onManag
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-2">
-          {is_open && !isAdmin && (
+          {is_open && !isAdmin && mayApply && (
             <Button
               onClick={(e) => onApply(vacancy, e)}
-              disabled={vacancy.has_applied || isMemberOfCommunity}
-              className={`w-full ${vacancy.has_applied || isMemberOfCommunity
+              disabled={vacancy.has_applied}
+              className={`w-full ${vacancy.has_applied
                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none hover:bg-gray-100'
                 : ''
                 }`}
             >
-              {vacancy.has_applied ? 'Applied' : isMemberOfCommunity ? 'Already a Member' : 'Apply Now'}
+              {vacancy.has_applied ? 'Applied' : 'Apply Now'}
             </Button>
+          )}
+
+          {is_open && !isAdmin && !mayApply && blockedReason && (
+            <p className="w-full text-center text-xs text-surface-muted px-2 py-2">
+              {blockedReason}
+            </p>
           )}
 
           {isAdmin && (

@@ -3,6 +3,7 @@ import { Calendar, Users, FolderKanban, Briefcase } from 'lucide-react';
 import { formatTimeAgo } from '../../../../utils/timeFormatter';
 import Button from '../../../../shared/components/ui/Button';
 import { Skeleton } from '../../../../shared/components/layout/Skeleton';
+import { isPlatformCommunity } from '../../../../utils/communityUtils';
 
 // Reusable Soft Container Component
 const SoftContainer = ({ children, className = '' }) => (
@@ -12,6 +13,8 @@ const SoftContainer = ({ children, className = '' }) => (
 );
 
 export default function OverviewTab({ communityData, tabData, loadingTab, canManageContent, handleTabChange }) {
+    const platform = isPlatformCommunity(communityData);
+
     return (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {/* LEFT: Primary Content (70%) */}
@@ -84,7 +87,7 @@ export default function OverviewTab({ communityData, tabData, loadingTab, canMan
                     </div>
                 </SoftContainer>
 
-                {/* Open Vacancies Section */}
+                {!platform && (
                 <SoftContainer>
                     <div className="flex items-center justify-between mb-6 border-b border-surface-border/60 pb-3">
                         <h2 className="text-lg font-semibold text-surface-dark">Open Vacancies</h2>
@@ -133,6 +136,7 @@ export default function OverviewTab({ communityData, tabData, loadingTab, canMan
                         )}
                     </div>
                 </SoftContainer>
+                )}
             </div>
 
             {/* RIGHT: Sidebar (30%) */}
@@ -184,14 +188,16 @@ export default function OverviewTab({ communityData, tabData, loadingTab, canMan
                         Quick Actions
                     </h3>
                     <div className="flex flex-col space-y-2">
-                        <Button
-                            variant="outline"
-                            onClick={() => handleTabChange('Members')}
-                            className="w-full !justify-start !py-2.5 !px-4"
-                        >
-                            <Users size={16} className="mr-3 text-primary" />
-                            View Members
-                        </Button>
+                        {!platform && (
+                            <Button
+                                variant="outline"
+                                onClick={() => handleTabChange('Members')}
+                                className="w-full !justify-start !py-2.5 !px-4"
+                            >
+                                <Users size={16} className="mr-3 text-primary" />
+                                View Members
+                            </Button>
+                        )}
                         <Button
                             variant="outline"
                             onClick={() => handleTabChange('Resources')}
@@ -200,14 +206,16 @@ export default function OverviewTab({ communityData, tabData, loadingTab, canMan
                             <FolderKanban size={16} className="mr-3 text-primary" />
                             Access Resources
                         </Button>
-                        <Button
-                            variant="outline"
-                            onClick={() => handleTabChange('Vacancies')}
-                            className="w-full !justify-start !py-2.5 !px-4"
-                        >
-                            <Briefcase size={16} className="mr-3 text-[#75C043]" />
-                            Explore Vacancies
-                        </Button>
+                        {!platform && (
+                            <Button
+                                variant="outline"
+                                onClick={() => handleTabChange('Vacancies')}
+                                className="w-full !justify-start !py-2.5 !px-4"
+                            >
+                                <Briefcase size={16} className="mr-3 text-[#75C043]" />
+                                Explore Vacancies
+                            </Button>
+                        )}
                     </div>
                 </SoftContainer>
             </aside>

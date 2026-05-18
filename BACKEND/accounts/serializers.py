@@ -285,9 +285,9 @@ class UserProfileSerializer(ModelSerializer):
             "profile_image", "course", "interests",
             "bio", "linkedin_link", "github_link", "university_id", "membership",
             "community_name", "community_description", "community_logo", "community_tag",
-            "must_change_password", "theme"
+            "is_platform_community", "must_change_password", "theme"
         ]
-        read_only_fields = ["id", "email", "role"]
+        read_only_fields = ["id", "email", "role", "is_platform_community"]
 
     def get_membership(self, obj):
         if hasattr(obj, 'membership'):
@@ -310,7 +310,8 @@ class UserProfileDetailSerializer(ModelSerializer):
             "id", "username", "first_name", "last_name", "role",
             "profile_image", "course", "interests", "bio",
             "linkedin_link", "github_link", "membership", "posted_content",
-            "community_name", "community_description", "community_logo", "community_tag"
+            "community_name", "community_description", "community_logo", "community_tag",
+            "is_platform_community",
         ]
 
     def get_membership(self, obj):

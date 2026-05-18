@@ -1,4 +1,8 @@
 from rest_framework.permissions import BasePermission
+from communities.platform import is_platform_community
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
 class CanCreateDiscussion(BasePermission):
@@ -15,17 +19,23 @@ class CanCreateDiscussion(BasePermission):
         if visibility == "public":
             return True
 
-        # PRIVATE → only community, representative, or member
+        # PRIVATE → only community, representative, or member (not platform communities)
         if visibility == "private":
             community_id = request.data.get("community")
+            community = User.objects.filter(id=community_id, role="community").first()
+            if community and is_platform_community(community):
+                return False
 
             if user.role in ["community", "admin"]:
+                if is_platform_community(user):
+                    return False
                 return str(user.id) == str(community_id)
 
             membership = getattr(user, "membership", None)
             if membership and membership.role in ["representative", "member"]:
+                if is_platform_community(membership.community):
+                    return False
                 return str(membership.community_id) == str(community_id)
-
 
         return False
 

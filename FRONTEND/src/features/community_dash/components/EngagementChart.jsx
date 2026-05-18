@@ -16,14 +16,20 @@ export default function EngagementChart({
     analyticsLoading,
     analyticsError,
     hasEngagement,
+    title = 'Engagement Comparison',
+    badgeLabel = 'By Content',
+    emptyTitle = 'No engagement data yet',
+    emptyDescription = 'Start posting announcements or events to see your stats.',
+    tooltipLabel,
+    rotateLabels = false,
 }) {
     return (
         <div className="card-border !p-0 overflow-hidden flex-1">
             <div className="flex items-center justify-between px-6 py-4 border-b border-surface-border">
                 <div className="flex items-center gap-2">
-                    <h3 className="text-title">Engagement Comparison</h3>
+                    <h3 className="text-title">{title}</h3>
                     <Badge variant="primary" className="!rounded-full">
-                        By Content
+                        {badgeLabel}
                     </Badge>
                 </div>
                 <BarChart3 size={18} className="text-surface-muted" />
@@ -50,10 +56,8 @@ export default function EngagementChart({
                 ) : !hasEngagement ? (
                     <div className="w-full h-full flex flex-col items-center justify-center text-center opacity-40">
                         <Activity size={40} className="mb-3 text-surface-muted" />
-                        <p className="font-semibold text-surface-dark">No engagement data yet</p>
-                        <p className="text-xs max-w-[220px] mt-1">
-                            Start posting announcements or events to see your stats.
-                        </p>
+                        <p className="font-semibold text-surface-dark">{emptyTitle}</p>
+                        <p className="text-xs max-w-[220px] mt-1">{emptyDescription}</p>
                     </div>
                 ) : (
                     <ResponsiveContainer width="100%" height="100%">
@@ -66,10 +70,19 @@ export default function EngagementChart({
                                 dataKey="name"
                                 axisLine={false}
                                 tickLine={false}
-                                tick={{ fontSize: 11, fontWeight: 600, fill: '#888' }}
+                                interval={0}
+                                angle={rotateLabels ? -35 : 0}
+                                textAnchor={rotateLabels ? 'end' : 'middle'}
+                                height={rotateLabels ? 56 : 30}
+                                tick={{ fontSize: rotateLabels ? 10 : 11, fontWeight: 600, fill: '#888' }}
                             />
                             <YAxis hide />
                             <Tooltip
+                                formatter={
+                                    tooltipLabel
+                                        ? (value) => [value, tooltipLabel]
+                                        : undefined
+                                }
                                 contentStyle={{
                                     backgroundColor: '#fff',
                                     borderRadius: 12,

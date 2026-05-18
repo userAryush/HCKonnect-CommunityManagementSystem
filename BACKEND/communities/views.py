@@ -9,7 +9,8 @@ from contents.permissions import CanCreateCommunityContent
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db.models import Q, Count, Sum, F
-from .permissions import IsCommunityAccount, CanManageVacancy
+from .permissions import IsCommunityAccount, CanManageVacancy, IsNotPlatformCommunity, CanApplyToVacancy
+from .platform import is_platform_community
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from datetime import timedelta
@@ -31,7 +32,7 @@ User = get_user_model()
 class CreateCommunityVacancyView(CreateAPIView):
     queryset = CommunityVacancy.objects.all()
     serializer_class = CommunityVacancySerializer
-    permission_classes = [CanCreateCommunityContent]
+    permission_classes = [CanCreateCommunityContent, IsNotPlatformCommunity]
 
 class ManageCommunityVacancyView(RetrieveUpdateDestroyAPIView):
     queryset = CommunityVacancy.objects.all()
@@ -71,8 +72,10 @@ class ListCommunityVacanciesView(ListAPIView):
         status_filter = self.request.query_params.get('status', 'ALL').upper()
         sort_by = self.request.query_params.get('sort', '-created_at') # Default to newest
 
-        # Base queryset for all vacancies
-        queryset = CommunityVacancy.objects.select_related("community")
+        # Base queryset for all vacancies (exclude platform communities)
+        queryset = CommunityVacancy.objects.select_related("community").filter(
+            community__is_platform_community=False
+        )
 
         # Filter by status if not 'ALL'
         if status_filter in {CommunityVacancy.STATUS_OPEN, CommunityVacancy.STATUS_CLOSED}:
@@ -114,13 +117,10 @@ class ListCommunityVacanciesView(ListAPIView):
 
 class ApplyVacancyView(CreateAPIView):
     serializer_class = VacancyApplicationSerializer
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [CanApplyToVacancy]
 
     def perform_create(self, serializer):
-        user = self.request.user
-        if user.role != "student":
-            raise PermissionDenied("Only students can apply to vacancies.")
-        serializer.save(user=user)
+        serializer.save(user=self.request.user)
 
 class ListVacancyApplicationsView(ListAPIView):
     serializer_class = VacancyApplicationSerializer
@@ -164,9 +164,9 @@ class ListCommunityMembersView(ListAPIView):
         community_id = self.request.query_params.get('community_id') or self.kwargs.get('community_id')
         
         if community_id:
-            # PUBLIC VIEW: Anyone logged in can see members of a specific community 
-            # if they provide that community's ID.
-            # .select_related('user') here to join the Student profile data in ONE query.
+            community = User.objects.filter(id=community_id, role="community").first()
+            if community and is_platform_community(community):
+                return CommunityMembership.objects.none()
             return CommunityMembership.objects.filter(community_id=community_id).select_related('user')
         
         # If no specific ID is requested, we check if the logged-in user is a Community account.
@@ -179,10 +179,10 @@ class ListCommunityMembersView(ListAPIView):
 
 class AddCommunityMemberView(CreateAPIView):
     serializer_class = CommunityMembershipCreateSerializer
-    permission_classes = [IsCommunityAccount]
-    
+    permission_classes = [IsCommunityAccount, IsNotPlatformCommunity]
+
 class UpdateCommunityMemberRoleView(APIView):
-    permission_classes = [IsCommunityAccount]
+    permission_classes = [IsCommunityAccount, IsNotPlatformCommunity]
 
     def patch(self, request, membership_id):
         # We find the membership by ID AND ensure it belongs to the logged-in community
@@ -204,7 +204,7 @@ class UpdateCommunityMemberRoleView(APIView):
         return Response({"message": "Role updated successfully."}, status=200)
     
 class RemoveCommunityMemberView(APIView):
-    permission_classes = [ IsCommunityAccount]
+    permission_classes = [IsCommunityAccount, IsNotPlatformCommunity]
     
     def delete(self, request, membership_id):
         # We don't just search by 'id=membership_id'. 
@@ -267,14 +267,108 @@ class CommunityAnalyticsView(APIView):
     """
     Optimized API to fetch analytics for the community dashboard.
     Returns engagement metrics, member activity, and activity trends.
+    Platform communities receive system-wide overview metrics.
     """
     permission_classes = [IsCommunityAccount]
+
+    def _build_activity_trend(self, start_date, last_7_days, querysets):
+        trend_map = {date: 0 for date in last_7_days}
+        for qs in querysets:
+            for entry in qs:
+                trend_map[entry['created_at__date']] += entry['count']
+        posts_last_7_days = [
+            {"date": d.strftime("%Y-%m-%d"), "count": trend_map[d]}
+            for d in last_7_days
+        ]
+        return posts_last_7_days, sum(trend_map.values())
+
+    def _get_platform_analytics(self, request, community, now, start_date, last_7_days):
+        student_communities = User.objects.filter(
+            role='community', status='active', is_platform_community=False
+        )
+        total_students = User.objects.filter(role='student', status='active').count()
+        total_communities = student_communities.count()
+
+        posts_last_7_days, total_engagements = self._build_activity_trend(
+            start_date,
+            last_7_days,
+            [
+                Post.objects.filter(created_at__date__gte=start_date).values('created_at__date').annotate(count=Count('id')),
+                DiscussionPanel.objects.filter(created_at__date__gte=start_date).values('created_at__date').annotate(count=Count('id')),
+                Announcement.objects.filter(created_at__date__gte=start_date).values('created_at__date').annotate(count=Count('id')),
+                Event.objects.filter(created_at__date__gte=start_date).values('created_at__date').annotate(count=Count('id')),
+                PostComment.objects.filter(created_at__date__gte=start_date).values('created_at__date').annotate(count=Count('id')),
+                DiscussionReply.objects.filter(created_at__date__gte=start_date).values('created_at__date').annotate(count=Count('id')),
+                PostReaction.objects.filter(created_at__date__gte=start_date).values('created_at__date').annotate(count=Count('id')),
+                DiscussionReaction.objects.filter(created_at__date__gte=start_date).values('created_at__date').annotate(count=Count('id')),
+            ],
+        )
+
+        comparison_qs = student_communities.annotate(
+            a_count=Count('community_announcements', distinct=True),
+            e_count=Count('events', distinct=True),
+            d_count=Count('community_discussions', distinct=True),
+        ).annotate(
+            score=F('a_count') + F('e_count') + F('d_count')
+        ).order_by('-score')[:10]
+
+        comparison_data = [
+            {
+                "name": c.community_name or c.username,
+                "score": c.score,
+                "isCurrent": False,
+            }
+            for c in comparison_qs
+        ]
+
+        member_counts_qs = student_communities.annotate(
+            member_count=Count('members', distinct=True),
+        ).order_by('-member_count', 'community_name')[:12]
+
+        community_member_counts = [
+            {
+                "name": c.community_name or c.username,
+                "value": c.member_count,
+            }
+            for c in member_counts_qs
+        ]
+
+        daily_limit = now - timedelta(hours=24)
+        weekly_limit = now - timedelta(days=7)
+        member_activity = User.objects.filter(role='student', status='active').aggregate(
+            daily=Count('id', filter=Q(last_login__gte=daily_limit)),
+            weekly=Count('id', filter=Q(last_login__lt=daily_limit, last_login__gte=weekly_limit)),
+            rare=Count('id', filter=Q(last_login__lt=weekly_limit) | Q(last_login__isnull=True)),
+        )
+
+        return Response({
+            "is_platform_analytics": True,
+            "platform_overview": {
+                "total_students": total_students,
+                "total_communities": total_communities,
+            },
+            "engagement": {
+                "announcements": Announcement.objects.count(),
+                "events": Event.objects.count(),
+                "posts": Post.objects.count(),
+                "discussions": DiscussionPanel.objects.count(),
+            },
+            "member_activity": member_activity,
+            "top_members": [],
+            "posts_last_7_days": posts_last_7_days,
+            "total_engagements": total_engagements,
+            "comparison": comparison_data,
+            "community_member_counts": community_member_counts,
+        })
 
     def get(self, request, pk):
         community = get_object_or_404(User, id=pk, role="community")
         now = timezone.now()
         start_date = (now - timedelta(days=6)).date()
         last_7_days = [start_date + timedelta(days=i) for i in range(7)]
+
+        if is_platform_community(community):
+            return self._get_platform_analytics(request, community, now, start_date, last_7_days)
 
         # 1. Engagement counts (Announcements, Events, Discussions)
         # Using a single query with subqueries or simple counts
@@ -324,24 +418,25 @@ class CommunityAnalyticsView(APIView):
         daily_p_reactions = PostReaction.objects.filter(user_id__in=all_eligible_authors, created_at__date__gte=start_date).values('created_at__date').annotate(count=Count('id'))
         daily_d_reactions = DiscussionReaction.objects.filter(user_id__in=all_eligible_authors, created_at__date__gte=start_date).values('created_at__date').annotate(count=Count('id'))
 
-        # Merge counts into trend array
-        trend_map = {date: 0 for date in last_7_days}
-        for qs in [daily_posts, daily_discussions, daily_announcements, daily_events, 
-                   daily_p_comments, daily_d_replies, daily_p_reactions, daily_d_reactions]:
-            for entry in qs:
-                trend_map[entry['created_at__date']] += entry['count']
-
-        posts_last_7_days = [
-            {"date": d.strftime("%Y-%m-%d"), "count": trend_map[d]} 
-            for d in last_7_days
-        ]
-
-        # 4. Total Engagements (Sync with Trend Chart - Last 7 Days)
-        total_engagements = sum(trend_map.values())
+        posts_last_7_days, total_engagements = self._build_activity_trend(
+            start_date,
+            last_7_days,
+            [
+                daily_posts,
+                daily_discussions,
+                daily_announcements,
+                daily_events,
+                daily_p_comments,
+                daily_d_replies,
+                daily_p_reactions,
+                daily_d_reactions,
+            ],
+        )
 
         # 5. Global Community Comparison (Top 5 + Current)
-        # Aggregating base activity: Announcements + Events + Discussions
-        comparison = User.objects.filter(role='community', status='active').annotate(
+        comparison = User.objects.filter(
+            role='community', status='active', is_platform_community=False
+        ).annotate(
             a_count=Count('community_announcements', distinct=True),
             e_count=Count('events', distinct=True),
             d_count=Count('community_discussions', distinct=True)

@@ -3,7 +3,7 @@ from rest_framework.serializers import ModelSerializer, ValidationError, CharFie
 from django.contrib.auth import get_user_model
 from .models import Announcement, Post, PostComment, PostReaction, Resource
 from django.utils.timesince import timesince
- 
+from communities.platform import is_platform_community, enforce_public_visibility, get_content_community
 
 User = get_user_model()
 
@@ -14,21 +14,27 @@ class AnnouncementCreateSerializer(ModelSerializer):
         model = Announcement
         fields = ["title", "description", "image", "visibility"]
 
-    def create(self, validated_data):
-        user = self.context["request"].user # current user
+    def validate(self, data):
+        user = self.context["request"].user
+        community = get_content_community(user)
+        if not community:
+            raise ValidationError("Unauthorized role.")
+        visibility = data.get("visibility", "public")
+        enforce_public_visibility(community, visibility)
+        if is_platform_community(community):
+            data["visibility"] = "public"
+        return data
 
-        # Posted by community
+    def create(self, validated_data):
+        user = self.context["request"].user
+
         if user.role == "community":
             community = user
-            created_by_user = None # because its community itself
-        
-        # Posted by representative
+            created_by_user = None
         elif user.role == "student":
-            membership = getattr(user, 'membership', None) # checking if this user has membership
-            # Ensure they are a member AND have the representative role
+            membership = getattr(user, 'membership', None)
             if not membership or membership.role != "representative":
                 raise ValidationError("Only community representatives can post announcements.")
-            
             community = membership.community
             created_by_user = user
         else:
@@ -65,6 +71,14 @@ class AnnouncementUpdateSerializer(ModelSerializer):
     class Meta:
         model = Announcement
         fields = ["title", "description", "image", "visibility"]
+
+    def validate(self, data):
+        community = self.instance.community
+        visibility = data.get("visibility", self.instance.visibility)
+        enforce_public_visibility(community, visibility)
+        if is_platform_community(community):
+            data["visibility"] = "public"
+        return data
 
 
 
@@ -141,6 +155,7 @@ class PostReadSerializer(ModelSerializer):
     author_role = SerializerMethodField()
     author_image = SerializerMethodField()
     author_community = SerializerMethodField()
+    author_is_platform_community = SerializerMethodField()
 
     class Meta:
         model = Post
@@ -156,6 +171,9 @@ class PostReadSerializer(ModelSerializer):
 
     def get_author_role(self, obj):
         return getattr(obj.author, 'role', 'student') if obj.author else 'student'
+
+    def get_author_is_platform_community(self, obj):
+        return is_platform_community(obj.author) if obj.author else False
 
     def get_author_image(self, obj):
         user = obj.author
@@ -281,6 +299,14 @@ class ResourceCreateUpdateSerializer(ModelSerializer):
                 raise ValidationError({"file": "File is required for this category."})
             if video_url:
                 raise ValidationError({"video_url": "Video URL is only for video category."})
+
+        user = self.context["request"].user
+        community = get_content_community(user)
+        if community:
+            visibility = data.get("visibility", getattr(self.instance, "visibility", "public"))
+            enforce_public_visibility(community, visibility)
+            if is_platform_community(community):
+                data["visibility"] = "public"
 
         return data
 

@@ -1,5 +1,6 @@
-import { Edit2, Mail } from 'lucide-react';
+﻿import { Edit2, Mail } from 'lucide-react';
 import SendMessageModal from '../../../../shared/components/modals/SendMessageModal';
+import { isPlatformCommunity } from '../../../../utils/communityUtils';
 
 export default function CommunityHeader({
     communityData,
@@ -11,11 +12,13 @@ export default function CommunityHeader({
     setIsMessageModalOpen,
     onEditProfile,
 }) {
+    const platform = isPlatformCommunity(communityData);
+    const vacanciesOpen = communityData.vacancies_open ?? communityData.vacanciesOpen;
+
     return (
         <header className="rounded-2xl border border-surface-border/10 bg-[var(--surface-card)] p-8 overflow-hidden">
             <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-
                     {communityData.community_logo ? (
                         <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-xl border border-surface-border/70 bg-[var(--surface-card)] overflow-hidden">
                             <img
@@ -30,23 +33,27 @@ export default function CommunityHeader({
                         </div>
                     )}
 
-                    {/* Info */}
                     <div className="text-center sm:text-left mt-1">
                         <h1 className="text-2xl font-bold text-surface-dark">
                             {communityData.community_name}
                         </h1>
-                        <div className="mt-3 flex items-center justify-center sm:justify-start gap-3">
-                            <span className="text-xs font-medium text-surface-muted">
-                                {Number(communityData.member_count || 0).toLocaleString()} members
-                            </span>
-
-                        </div>
+                        {!platform && (
+                            <div className="mt-3 flex items-center justify-center sm:justify-start gap-3">
+                                <span className="text-xs font-medium text-surface-muted">
+                                    {Number(communityData.member_count || 0).toLocaleString()} members
+                                </span>
+                            </div>
+                        )}
+                        {platform && (
+                            <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-primary">
+                                Official Platform Organization
+                            </p>
+                        )}
                     </div>
                 </div>
 
-                {/* Actions */}
                 <div className="flex flex-wrap justify-center sm:justify-end gap-3">
-                    {(isProfileOwner === true) && (
+                    {isProfileOwner === true && (
                         <button
                             type="button"
                             onClick={onEditProfile}
@@ -57,8 +64,7 @@ export default function CommunityHeader({
                         </button>
                     )}
 
-                    {/* Send Message Button */}
-                    {(isProfileOwner === false) && currentUser && (
+                    {isProfileOwner === false && currentUser && (
                         <button
                             onClick={() => setIsMessageModalOpen(true)}
                             className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-2 text-sm font-bold text-primary transition hover:bg-primary/10"
@@ -68,14 +74,15 @@ export default function CommunityHeader({
                         </button>
                     )}
 
-                    {communityData.vacanciesOpen && (
+                    {!platform && vacanciesOpen && (
                         <button
                             onClick={handleJoinRequest}
                             disabled={membershipStatus === 'pending'}
-                            className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${membershipStatus === 'pending'
-                                ? 'bg-secondary/60 border border-surface-border/70 text-surface-muted cursor-not-allowed'
-                                : 'bg-primary text-white hover:bg-primary/90'
-                                }`}
+                            className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+                                membershipStatus === 'pending'
+                                    ? 'bg-secondary/60 border border-surface-border/70 text-surface-muted cursor-not-allowed'
+                                    : 'bg-primary text-white hover:bg-primary/90'
+                            }`}
                         >
                             {membershipStatus === 'pending' ? 'Request Sent' : 'Request to Join'}
                         </button>

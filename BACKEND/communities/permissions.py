@@ -1,5 +1,23 @@
 from rest_framework import permissions
 from rest_framework.permissions import BasePermission
+from .platform import is_platform_community
+
+
+class IsNotPlatformCommunity(BasePermission):
+    """Block membership and recruitment features for platform communities."""
+    message = "This action is not available for platform communities."
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not user.is_authenticated:
+            return False
+        if user.role == "community" and is_platform_community(user):
+            return False
+        membership = getattr(user, "membership", None)
+        if membership and is_platform_community(membership.community):
+            return False
+        return True
+
 
 class IsCommunityAccount(BasePermission):
     message = "Only community accounts can perform this action."
@@ -20,8 +38,10 @@ class IsCommunityManager(BasePermission):
         if str(request.user.id) == str(obj.id) and request.user.role == "community":
             return True
             
+        if is_platform_community(obj):
+            return str(request.user.id) == str(obj.id) and request.user.role == "community"
+
         # 2. Is the user a representative of THIS community?
-        # We check the CommunityMembership model
         from .models import CommunityMembership
         return CommunityMembership.objects.filter(
             user=request.user, 
@@ -73,6 +93,25 @@ class IsCommunityRepresentativeOrReadOnly(permissions.BasePermission):
             str(request.user.membership.community.id) == str(obj.community.id)
         )
 
+class CanApplyToVacancy(BasePermission):
+    """
+    Only students with no community membership may apply to vacancies.
+    Blocks community accounts, admins, representatives, and members.
+    """
+    message = "Only students who are not already in a community can apply to vacancies."
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not user.is_authenticated:
+            return False
+        if user.role != "student":
+            return False
+        from .models import CommunityMembership
+        if CommunityMembership.objects.filter(user=user).exists():
+            return False
+        return True
+
+
 class CanManageVacancy(BasePermission):
     """
     Permission to manage a specific vacancy.
@@ -81,6 +120,9 @@ class CanManageVacancy(BasePermission):
     def has_object_permission(self, request, view, obj):
         user = request.user
         if not user.is_authenticated:
+            return False
+
+        if is_platform_community(obj.community):
             return False
 
         # Community owner

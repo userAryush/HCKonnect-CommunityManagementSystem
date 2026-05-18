@@ -46,7 +46,7 @@ export default function EditDiscussionModal({ isOpen, onClose, discussion, onUpd
     };
 
     return (
-        <ModalWrapper isOpen={isOpen} onClose={onClose}>
+        <ModalWrapper isOpen={isOpen} onClose={onClose} className="max-w-6xl">
             <ModalHeader
                 title="Edit Discussion"
                 subtitle="Update your discussion details."

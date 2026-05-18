@@ -121,7 +121,7 @@ export default function EditProfileModal({ isOpen, onClose, profileId, onSaved }
   };
 
   return (
-    <ModalWrapper isOpen={isOpen} onClose={onClose} className="max-w-3xl">
+    <ModalWrapper isOpen={isOpen} onClose={onClose} className="max-w-6xl">
       <ModalHeader
         title={formData.role === 'community' ? 'Edit Community Profile' : 'Edit Profile'}
         subtitle="Update your profile information."

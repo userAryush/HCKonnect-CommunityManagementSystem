@@ -8,6 +8,7 @@ import ModalHeader from '../../../shared/components/modals/ModalHeader'
 import getApiErrorMessage from '../../../utils/getApiErrorMessage'
 import { useAuth } from '../../authentication/components/AuthContext'
 import { useToast } from '../../../shared/components/ui/ToastContext'
+import { canApplyToVacancy, vacancyApplyBlockedReason } from '../../../utils/vacancyUtils'
 
 const AI_ASSIST_ACTIONS = [
   { action_type: 'improve', label: 'Improve writing' },
@@ -282,6 +283,11 @@ export default function VacancyApplicationModal({ vacancy, onClose, onSuccess })
     }
     if (!resume) {
       setError('Resume is required (PDF or DOC, max 5MB).')
+      return
+    }
+
+    if (!canApplyToVacancy(user)) {
+      setError(vacancyApplyBlockedReason(user) || 'You cannot apply to this vacancy.')
       return
     }
 

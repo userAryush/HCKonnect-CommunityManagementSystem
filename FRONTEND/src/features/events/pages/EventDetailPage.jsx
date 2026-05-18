@@ -12,6 +12,7 @@ import Footer from '../../../shared/components/layout/Footer';
 import BackLink from '../../../shared/components/layout/BackLink';
 import ConfirmationModal from '../../../shared/components/modals/ConfirmationModal';
 import EventRegistrationModal from '../components/shared/EventRegistrationModal';
+import EditEventModal from '../components/EditEventModal';
 
 export default function EventDetailPage() {
     const { eventId } = useParams()
@@ -24,6 +25,38 @@ export default function EventDetailPage() {
     const [deleteModalOpen, setDeleteModalOpen] = useState(false)
     const [deleteLoading, setDeleteLoading] = useState(false)
     const [registrationModalOpen, setRegistrationModalOpen] = useState(false)
+    const [editModalOpen, setEditModalOpen] = useState(false)
+
+    const reloadEvent = async () => {
+        if (!eventId) return
+        try {
+            const data = await eventService.getEvent(eventId)
+            const normalizedCommunityId = data.community?.id ?? data.community
+            setEvent({
+                ...data,
+                eventMeta: {
+                    date: data.date,
+                    time: data.start_time,
+                    location: data.location,
+                    format: data.format,
+                    whatToExpect: data.what_to_expect,
+                    speakers: data.speakers,
+                    registrationDeadline: data.registration_deadline,
+                    maxParticipants: data.max_participants,
+                    registeredCount: data.registered_count,
+                    isRegistered: !!data.is_registered,
+                },
+                community: {
+                    id: normalizedCommunityId,
+                    name: data.community_name,
+                    logo: data.community_logo,
+                    logoText: (data.community_name || 'CO').substring(0, 2).toUpperCase(),
+                },
+            })
+        } catch (error) {
+            console.error('Failed to refresh event', error)
+        }
+    }
 
     useEffect(() => {
         const userStr = localStorage.getItem('user');
@@ -31,41 +64,13 @@ export default function EventDetailPage() {
             setCurrentUser(JSON.parse(userStr));
         }
 
-        const fetchEvent = async () => {
-            try {
-                const data = await eventService.getEvent(eventId);
-                const normalizedCommunityId = data.community?.id ?? data.community;
-                setEvent({
-                    ...data,
-                    eventMeta: {
-                        date: data.date,
-                        time: data.start_time,
-                        location: data.location,
-                        format: data.format,
-                        whatToExpect: data.what_to_expect,
-                        speakers: data.speakers,
-                        registrationDeadline: data.registration_deadline,
-                        maxParticipants: data.max_participants,
-                        registeredCount: data.registered_count,
-                        isRegistered: !!data.is_registered
-                    },
-                    community: {
-                        id: normalizedCommunityId,
-                        name: data.community_name,
-                        logo: data.community_logo,
-                        logoText: (data.community_name || 'CO').substring(0, 2).toUpperCase()
-                    }
-                });
-            } catch (error) {
-                console.error("Failed to fetch event", error);
-                setToast("Failed to load event details.");
-            } finally {
-                setLoading(false);
-            }
-        };
-
+        setLoading(true)
         if (eventId) {
-            fetchEvent();
+            reloadEvent()
+                .catch(() => setToast('Failed to load event details.'))
+                .finally(() => setLoading(false))
+        } else {
+            setLoading(false)
         }
     }, [eventId]);
 
@@ -200,6 +205,13 @@ export default function EventDetailPage() {
                 onError={setToast}
             />
 
+            <EditEventModal
+                isOpen={editModalOpen}
+                eventId={eventId}
+                onClose={() => setEditModalOpen(false)}
+                onUpdated={reloadEvent}
+            />
+
             <EventHero
                 title={event.title}
                 image={event.image}
@@ -219,6 +231,7 @@ export default function EventDetailPage() {
                                 eventId={eventId}
                                 registeredCount={eventMeta.registeredCount}
                                 onDeleteClick={() => setDeleteModalOpen(true)}
+                                onEditClick={() => setEditModalOpen(true)}
                             />
                         )}
 
