@@ -1,5 +1,6 @@
 from django.urls import path
 from .views import CommunityListView, CreateCommunityVacancyView, ManageCommunityVacancyView, ApplyVacancyView,AddCommunityMemberView, CommunityDashboardView,RemoveCommunityMemberView, StudentListView, ListCommunityMembersView, ListCommunityVacanciesView, ListVacancyApplicationsView, UpdateCommunityMemberRoleView, CommunityAnalyticsView, SendCommunityMessageView, PublicVacancyDetailView
+from .dashboard_summary import CommunityDashboardSummaryView
 
 
 
@@ -13,6 +14,8 @@ urlpatterns = [
     path("communities-list/",CommunityListView.as_view(),name="community-list"),
     path('dashboard/<uuid:pk>/', CommunityDashboardView.as_view(), name='community-dashboard'),
     path('analytics/<uuid:pk>/', CommunityAnalyticsView.as_view(), name='community-analytics'),
+    # Aggregated dashboard (same cache keys as dashboard + analytics + events + announcements + vacancies)
+    path('<uuid:community_id>/summary/', CommunityDashboardSummaryView.as_view(), name='community-dashboard-summary'),
     
     # 1. Global & Specific Browsing
     #  use this to see ALL open vacancies: /../vacancies/

@@ -17,13 +17,15 @@ export default function FeedList({
   hiddenTypes = EMPTY_ARRAY,
   hiddenCommunities = EMPTY_ARRAY,
   onApplyClick = () => { },
+  initialFeed = null,
+  isFeedLoading = false,
 }) {
   const PAGE_SIZE = 20
   const [items, setItems] = useState([])
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
-  const [isFetching, setIsFetching] = useState(true)
   const [isFetchingNext, setIsFetchingNext] = useState(false)
+  const [isFetchingFiltered, setIsFetchingFiltered] = useState(false)
   const [fetchError, setFetchError] = useState(null)
   const { ref: sentinelRef, inView } = useInView({
     rootMargin: '220px 0px',
@@ -41,8 +43,8 @@ export default function FeedList({
   const fetchPage = useCallback(async (targetPage, isNextPage = false) => {
     if (isNextPage) {
       setIsFetchingNext(true)
-    } else {
-      setIsFetching(true)
+    } else if (filter !== 'all') {
+      setIsFetchingFiltered(true)
     }
     setFetchError(null)
 
@@ -63,25 +65,42 @@ export default function FeedList({
     } finally {
       if (isNextPage) {
         setIsFetchingNext(false)
-      } else {
-        setIsFetching(false)
+      } else if (filter !== 'all') {
+        setIsFetchingFiltered(false)
       }
     }
   }, [filter])
 
   useEffect(() => {
+    if (filter === 'all' && isFeedLoading) {
+      return
+    }
+
+    if (filter === 'all' && initialFeed) {
+      setItems(initialFeed.results || [])
+      setHasMore(initialFeed.next !== null)
+      setPage(initialFeed.current_page || 1)
+      setFetchError(null)
+      return
+    }
+
     setItems([])
     setPage(1)
     setHasMore(true)
     fetchPage(1, false)
-  }, [filter, fetchPage])
+  }, [filter, initialFeed, isFeedLoading, fetchPage])
 
   useEffect(() => {
-    if (!inView || !hasMore || isFetching || isFetchingNext || fetchError) return
+    if (!inView || !hasMore || isFetchingNext || fetchError) return
+    if (filter === 'all' && isFeedLoading) return
     fetchPage(page + 1, true)
-  }, [inView, hasMore, isFetching, isFetchingNext, fetchError, page, fetchPage])
+  }, [inView, hasMore, isFetchingNext, fetchError, page, fetchPage, filter, isFeedLoading])
 
-  if (isFetching && items.length === 0) {
+  const showInitialSkeleton =
+    (isFeedLoading && filter === 'all' && items.length === 0) ||
+    (isFetchingFiltered && items.length === 0)
+
+  if (showInitialSkeleton) {
     return (
       <div className="flex flex-col gap-4">
         {Array.from({ length: PAGE_SIZE }).map((_, idx) => (

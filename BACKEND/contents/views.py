@@ -2,6 +2,14 @@ from rest_framework.generics import CreateAPIView, ListAPIView, UpdateAPIView, D
 from rest_framework.views import APIView
 from rest_framework.exceptions import ValidationError as DRFValidationError
 from .models import Announcement, Post, PostComment, PostReaction, Resource
+from services.cache import invalidate_community_page_caches, invalidate_post_caches
+from services.cache.community_page_cache import (
+    build_paginated_list_payload,
+    dashboard_page_params_match,
+    get_cached_community_page,
+)
+from .feed_cache import apply_user_likes_to_feed, get_cached_community_feed
+from services.cache.cache_trace import log_uncached_fetch
 from rest_framework.permissions import AllowAny
 from django.db.models import Q
 from .serializers import (
@@ -42,6 +50,42 @@ class FeedListView(GenericAPIView):
 
     def get(self, request, *args, **kwargs):
         content_type = request.query_params.get("type", "all")
+        community_id = request.query_params.get("community_id")
+
+        if not community_id and content_type == "all":
+            from .feed_summary import _fetch_timeline_page
+
+            try:
+                page = max(int(request.query_params.get("page", "1")), 1)
+                page_size = max(min(int(request.query_params.get("page_size", "20")), 100), 1)
+            except (TypeError, ValueError):
+                page, page_size = 1, 20
+            # Redis key: user_feed:timeline:u{user_id}:p{page}:ps{page_size}
+            return Response(_fetch_timeline_page(request, page, page_size))
+
+        if community_id and content_type == "all":
+            cached_items = get_cached_community_feed(
+                community_id,
+                lambda: self._build_feed_items(request, community_id, content_type),
+                request=request,
+            )
+            items = apply_user_likes_to_feed(cached_items, request.user)
+            page = self.paginate_queryset(items)
+            return self.get_paginated_response(page)
+
+        log_uncached_fetch(
+            "community_feed",
+            community_id=community_id or "none",
+            type=content_type,
+            page=request.query_params.get("page", "1"),
+            page_size=request.query_params.get("page_size", "20"),
+            reason="cache_disabled",
+        )
+        items = self._build_feed_items(request, community_id, content_type)
+        page = self.paginate_queryset(items)
+        return self.get_paginated_response(page)
+
+    def _build_feed_items(self, request, community_id, content_type):
         user = request.user
         items = []
 
@@ -49,16 +93,20 @@ class FeedListView(GenericAPIView):
             announcements_qs = Announcement.objects.filter(visibility="public")
             if user.is_authenticated:
                 if user.role == "community":
-                    announcements_qs = announcements_qs | Announcement.objects.filter(visibility="private", community=user)
+                    announcements_qs = announcements_qs | Announcement.objects.filter(
+                        visibility="private", community=user
+                    )
                 elif user.role == "student":
                     membership = getattr(user, "membership", None)
                     if membership:
                         announcements_qs = announcements_qs | Announcement.objects.filter(
                             visibility="private", community=membership.community
                         )
+            if community_id:
+                announcements_qs = announcements_qs.filter(community_id=community_id)
 
             announcements = AnnouncementReadSerializer(
-                announcements_qs.select_related("community").distinct(),
+                announcements_qs.select_related("community", "created_by_user").distinct(),
                 many=True,
                 context={"request": request},
             ).data
@@ -67,15 +115,35 @@ class FeedListView(GenericAPIView):
             items.extend(announcements)
 
         if content_type in {"all", "post"}:
-            posts = PostReadSerializer(
+            posts_qs = (
                 Post.objects.all()
                 .select_related("author", "author__membership__community")
                 .annotate(
                     _comment_count_total=Count("comments", distinct=True),
                     _reaction_count_total=Count("reactions", distinct=True),
-                ),
+                )
+            )
+            if community_id:
+                posts_qs = posts_qs.filter(
+                    Q(author_id=community_id)
+                    | Q(author__membership__community_id=community_id)
+                )
+
+            post_page = list(posts_qs)
+            post_context = {"request": request, "omit_nested_comments": True}
+            if user.is_authenticated and post_page:
+                post_context["liked_post_ids"] = set(
+                    PostReaction.objects.filter(
+                        user=user,
+                        post_id__in=[p.pk for p in post_page],
+                        comment__isnull=True,
+                    ).values_list("post_id", flat=True)
+                )
+
+            posts = PostReadSerializer(
+                post_page,
                 many=True,
-                context={"request": request, "omit_nested_comments": True},
+                context=post_context,
             ).data
             for item in posts:
                 item["type"] = "post"
@@ -92,6 +160,8 @@ class FeedListView(GenericAPIView):
                     if membership:
                         visibility_filter |= Q(community=membership.community)
             discussions_qs = discussions_qs.filter(visibility_filter)
+            if community_id:
+                discussions_qs = discussions_qs.filter(community_id=community_id)
 
             discussions = DiscussionReadSerializer(
                 discussions_qs.select_related(
@@ -109,8 +179,11 @@ class FeedListView(GenericAPIView):
             items.extend(discussions)
 
         if content_type in {"all", "event"}:
+            events_qs = Event.objects.all().select_related("community", "created_by")
+            if community_id:
+                events_qs = events_qs.filter(community_id=community_id)
             events = EventSerializer(
-                Event.objects.all().select_related("community"),
+                events_qs,
                 many=True,
                 context={"request": request},
             ).data
@@ -119,7 +192,11 @@ class FeedListView(GenericAPIView):
             items.extend(events)
 
         if content_type in {"all", "vacancy"}:
-            vacancies_qs = CommunityVacancy.objects.select_related("community").filter(status=CommunityVacancy.STATUS_OPEN)
+            vacancies_qs = CommunityVacancy.objects.select_related("community").filter(
+                status=CommunityVacancy.STATUS_OPEN
+            )
+            if community_id:
+                vacancies_qs = vacancies_qs.filter(community_id=community_id)
             vacancies = CommunityVacancySerializer(
                 vacancies_qs,
                 many=True,
@@ -130,17 +207,40 @@ class FeedListView(GenericAPIView):
             items.extend(vacancies)
 
         items.sort(key=lambda x: x.get("created_at") or "", reverse=True)
-        page = self.paginate_queryset(items)
-        return self.get_paginated_response(page)
+        return items
 
 class AnnouncementCreateView(CreateAPIView):
     serializer_class = AnnouncementCreateSerializer
     permission_classes = [CanCreateCommunityContent]
 
+    def perform_create(self, serializer):
+        announcement = serializer.save()
+        if announcement.community_id:
+            invalidate_community_page_caches(announcement.community_id)
+
+
 class AnnouncementListView(ListAPIView):
     serializer_class = AnnouncementReadSerializer
     permission_classes = [AllowAny]
     pagination_class = StandardPagination
+
+    def list(self, request, *args, **kwargs):
+        community_id = request.query_params.get("community_id")
+        if community_id and dashboard_page_params_match(request):
+            user_id = (
+                request.user.id
+                if request.user.is_authenticated
+                else "anonymous"
+            )
+            suffix = f"announcements:p1:ps20:u{user_id}"
+            data = get_cached_community_page(
+                community_id,
+                suffix,
+                lambda: build_paginated_list_payload(self),
+                log_label="announcements",
+            )
+            return Response(data)
+        return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
         user = self.request.user
@@ -172,32 +272,54 @@ class AnnouncementListView(ListAPIView):
 
 class AnnouncementStatsView(ListAPIView):
     permission_classes = [AllowAny]
-    
-    def get(self, request, *args, **kwargs):
+
+    def _build_stats(self, community_id=None):
         qs = Announcement.objects.all()
-        community_id = request.query_params.get("community_id")
         if community_id:
             qs = qs.filter(community_id=community_id)
+        return {"total_announcements": qs.count()}
 
-        total_announcements = qs.count()
-        return Response({
-            "total_announcements": total_announcements
-        })
+    def get(self, request, *args, **kwargs):
+        community_id = request.query_params.get("community_id")
+        if community_id:
+            data = get_cached_community_page(
+                community_id,
+                "announcements:stats",
+                lambda: self._build_stats(community_id),
+                log_label="announcements_stats",
+            )
+            return Response(data)
+        return Response(self._build_stats())
 
 class AnnouncementUpdateView(UpdateAPIView):
     queryset = Announcement.objects.all()
     serializer_class = AnnouncementUpdateSerializer
     permission_classes = [CanEditContent]
 
+    def perform_update(self, serializer):
+        announcement = serializer.save()
+        if announcement.community_id:
+            invalidate_community_page_caches(announcement.community_id)
+
 # Delete announcement
 class AnnouncementDeleteView(DestroyAPIView):
     queryset = Announcement.objects.all()
     permission_classes = [CanEditContent]
 
+    def perform_destroy(self, instance):
+        community_id = instance.community_id
+        instance.delete()
+        if community_id:
+            invalidate_community_page_caches(community_id)
+
 
 class PostCreateView(CreateAPIView):
     serializer_class = PostCreateUpdateSerializer
-   
+
+    def perform_create(self, serializer):
+        post = serializer.save()
+        invalidate_post_caches(post)
+
 
 class PostListView(ListAPIView):
     serializer_class = PostReadSerializer
@@ -224,6 +346,12 @@ class PostListView(ListAPIView):
         return ctx
 
     def list(self, request, *args, **kwargs):
+        log_uncached_fetch(
+            "post_list",
+            user_id=request.query_params.get("user_id", "all"),
+            page=request.query_params.get("page", "1"),
+            page_size=request.query_params.get("page_size", "12"),
+        )
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -260,6 +388,10 @@ class PostListView(ListAPIView):
 class PostDetailView(RetrieveAPIView):
     serializer_class = PostReadSerializer
 
+    def retrieve(self, request, *args, **kwargs):
+        log_uncached_fetch("post_detail", post_id=kwargs.get("pk"))
+        return super().retrieve(request, *args, **kwargs)
+
     def get_queryset(self):
         # Comments load via PostCommentListView (cursor). Skip embedding + comments prefetch here.
         return (
@@ -282,6 +414,14 @@ class PostUpdateDeleteView(RetrieveUpdateDestroyAPIView):
     queryset = Post.objects.all()
     serializer_class = PostCreateUpdateSerializer
     permission_classes = [IsPostOwnerOrAdmin]
+
+    def perform_update(self, serializer):
+        post = serializer.save()
+        invalidate_post_caches(post)
+
+    def perform_destroy(self, instance):
+        invalidate_post_caches(instance)
+        instance.delete()
 
 class PostReactionToggleView(CreateAPIView):
     serializer_class = PostReactionSerializer
@@ -335,6 +475,13 @@ class PostCommentListView(APIView):
 
         limit = parse_limit(request.query_params.get("limit"), default=22)
         cursor = request.query_params.get("cursor") or None
+
+        log_uncached_fetch(
+            "post_comments",
+            post_id=post_id,
+            cursor=cursor or "none",
+            limit=limit,
+        )
 
         try:
             grandchild_qs = (

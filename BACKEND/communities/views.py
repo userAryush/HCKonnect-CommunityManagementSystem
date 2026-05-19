@@ -21,6 +21,13 @@ from utils.email_utils import send_branded_email
 from notifications.models import Notification
 from django.conf import settings
 from utils.pagination import StandardPagination
+from services.cache import invalidate_membership_caches, invalidate_vacancy_caches
+from services.cache.community_page_cache import (
+    build_paginated_list_payload,
+    dashboard_page_params_match,
+    get_cached_community_page,
+)
+from .dashboard_cache import get_cached_dashboard
 
 User = get_user_model()
 
@@ -34,21 +41,31 @@ class CreateCommunityVacancyView(CreateAPIView):
     serializer_class = CommunityVacancySerializer
     permission_classes = [CanCreateCommunityContent, IsNotPlatformCommunity]
 
+    def perform_create(self, serializer):
+        vacancy = serializer.save()
+        invalidate_vacancy_caches(vacancy)
+
 class ManageCommunityVacancyView(RetrieveUpdateDestroyAPIView):
     queryset = CommunityVacancy.objects.all()
     serializer_class = CommunityVacancySerializer
     permission_classes = [CanManageVacancy]
 
+    def perform_update(self, serializer):
+        vacancy = serializer.save()
+        invalidate_vacancy_caches(vacancy)
+
     def destroy(self, request, *args, **kwargs):
         vacancy = self.get_object()
         # If the vacancy is already closed, a DELETE request will now permanently delete it.
         if vacancy.status == CommunityVacancy.STATUS_CLOSED:
+            invalidate_vacancy_caches(vacancy)
             vacancy.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         
         # If it's open, a DELETE request will close it (existing behavior).
         vacancy.status = CommunityVacancy.STATUS_CLOSED
         vacancy.save(update_fields=["status", "is_open", "updated_at"])
+        invalidate_vacancy_caches(vacancy)
         serializer = self.get_serializer(vacancy)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -66,6 +83,25 @@ class ListCommunityVacanciesView(ListAPIView):
     serializer_class = CommunityVacancySerializer
     pagination_class = StandardPagination
     # permission_classes = [IsAuthenticated]
+
+    def list(self, request, *args, **kwargs):
+        community_id = request.query_params.get("community_id")
+        status_filter = request.query_params.get("status", "ALL").upper()
+        sort_by = request.query_params.get("sort", "-created_at")
+        if (
+            community_id
+            and status_filter == "ALL"
+            and sort_by in ("-created_at", "newest")
+            and dashboard_page_params_match(request)
+        ):
+            data = get_cached_community_page(
+                community_id,
+                "vacancies:ALL:-created_at",
+                lambda: build_paginated_list_payload(self),
+                log_label="vacancies",
+            )
+            return Response(data)
+        return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
         community_id = self.request.query_params.get('community_id')
@@ -181,6 +217,10 @@ class AddCommunityMemberView(CreateAPIView):
     serializer_class = CommunityMembershipCreateSerializer
     permission_classes = [IsCommunityAccount, IsNotPlatformCommunity]
 
+    def perform_create(self, serializer):
+        serializer.save()
+        invalidate_membership_caches(self.request.user.id)
+
 class UpdateCommunityMemberRoleView(APIView):
     permission_classes = [IsCommunityAccount, IsNotPlatformCommunity]
 
@@ -212,6 +252,7 @@ class RemoveCommunityMemberView(APIView):
         # This prevents Community A from deleting a member from Community B by guessing their ID.
         membership = get_object_or_404(CommunityMembership, id=membership_id, community=request.user)
         membership.delete()
+        invalidate_membership_caches(request.user.id)
         return Response({"message": "Member removed."}, status=204)
 
 class StudentListView(ListAPIView):
@@ -254,13 +295,25 @@ class CommunityDashboardView(RetrieveAPIView):
     # permission_classes = [AllowAny]
 
     def get_object(self):
-        # Fetch community account by ID from URL
         community_id = self.kwargs.get("pk")
-        user = User.objects.filter(id=community_id, role="community").first()
+        user = (
+            User.objects.filter(id=community_id, role="community")
+            .prefetch_related("members")
+            .first()
+        )
         if not user:
-            
             raise NotFound("Community not found.")
         return user
+
+    def retrieve(self, request, *args, **kwargs):
+        community_id = self.kwargs.get("pk")
+
+        def fetch_dashboard_from_db():
+            instance = self.get_object()
+            return self.get_serializer(instance).data
+
+        data = get_cached_dashboard(community_id, request, fetch_dashboard_from_db)
+        return Response(data)
 
 
 class CommunityAnalyticsView(APIView):
@@ -341,7 +394,7 @@ class CommunityAnalyticsView(APIView):
             rare=Count('id', filter=Q(last_login__lt=weekly_limit) | Q(last_login__isnull=True)),
         )
 
-        return Response({
+        return {
             "is_platform_analytics": True,
             "platform_overview": {
                 "total_students": total_students,
@@ -359,21 +412,14 @@ class CommunityAnalyticsView(APIView):
             "total_engagements": total_engagements,
             "comparison": comparison_data,
             "community_member_counts": community_member_counts,
-        })
+        }
 
-    def get(self, request, pk):
-        community = get_object_or_404(User, id=pk, role="community")
-        now = timezone.now()
-        start_date = (now - timedelta(days=6)).date()
-        last_7_days = [start_date + timedelta(days=i) for i in range(7)]
-
-        if is_platform_community(community):
-            return self._get_platform_analytics(request, community, now, start_date, last_7_days)
+    def _build_community_analytics_data(
+        self, request, community, now, start_date, last_7_days
+    ):
+        community_id = community.id
 
         # 1. Engagement counts (Announcements, Events, Discussions)
-        # Using a single query with subqueries or simple counts
-        community_id = community.id
-        
         announcements_count = Announcement.objects.filter(community_id=community_id).count()
         events_count = Event.objects.filter(community_id=community_id).count()
         discussions_count = DiscussionPanel.objects.filter(community_id=community_id).count()
@@ -477,7 +523,7 @@ class CommunityAnalyticsView(APIView):
             } for m in top_memberships
         ]
 
-        return Response({
+        return {
             "engagement": {
                 "announcements": announcements_count,
                 "events": events_count,
@@ -489,8 +535,34 @@ class CommunityAnalyticsView(APIView):
             "posts_last_7_days": posts_last_7_days,
             "total_engagements": total_engagements,
             "comparison": comparison_data
-        })
+        }
 
+    def build_analytics_data(self, request, pk):
+        """
+        Cached analytics payload shared by this view and CommunityDashboardSummaryView.
+        Redis key: community_page:{pk}:analytics:v{version}
+          or community_page:{pk}:analytics:platform:v{version}
+        """
+        community = get_object_or_404(User, id=pk, role="community")
+        now = timezone.now()
+        start_date = (now - timedelta(days=6)).date()
+        last_7_days = [start_date + timedelta(days=i) for i in range(7)]
+
+        if is_platform_community(community):
+            suffix = "analytics:platform"
+            fetch = lambda: self._get_platform_analytics(
+                request, community, now, start_date, last_7_days
+            )
+        else:
+            suffix = "analytics"
+            fetch = lambda: self._build_community_analytics_data(
+                request, community, now, start_date, last_7_days
+            )
+
+        return get_cached_community_page(pk, suffix, fetch, log_label="analytics")
+
+    def get(self, request, pk):
+        return Response(self.build_analytics_data(request, pk))
 
 
 class SendCommunityMessageView(APIView):

@@ -33,6 +33,27 @@ const discussionService = {
     },
 
     /**
+     * Consolidated thread payload for initial room load.
+     * Returns shape expected by useComments fetchBootstrapFn.
+     */
+    getThreadSummary: async (topicId, { cursor = null, limit = 14 } = {}) => {
+        const params = new URLSearchParams({ limit: String(limit) });
+        if (cursor) params.set('cursor', cursor);
+        const response = await apiClient.get(
+            `/discussions/thread-summary/${topicId}/?${params.toString()}`
+        );
+        const data = response.data;
+        return {
+            item: data.detail,
+            commentsPage: {
+                comments: data.replies?.results ?? [],
+                next_cursor: data.replies?.next ?? null,
+                has_more: data.replies?.has_more ?? Boolean(data.replies?.next),
+            },
+        };
+    },
+
+    /**
      * Polish discussion body using topic as context (same endpoint as application assist).
      * Body: topic, content, action_type (improve|grammar|concise|… — see vacancy AI assist).
      */

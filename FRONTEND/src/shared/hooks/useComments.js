@@ -7,11 +7,13 @@ export const COMMENT_PAGE_SIZE = 14;
  * useComments — cursor-paginated comments with infinite scroll support.
  *
  * @param {function} config.fetchCommentsFn - (resourceId, { cursor, limit }) => Promise<{ comments, next_cursor, has_more }>
+ * @param {function} [config.fetchBootstrapFn] - (resourceId) => Promise<{ item, commentsPage }> single-call initial load
  */
 export function useComments({
     id,
     fetchItemFn,
     fetchCommentsFn,
+    fetchBootstrapFn = null,
     createCommentFn,
     deleteCommentFn,
     updateCommentFn,
@@ -33,25 +35,33 @@ export function useComments({
     const loadMoreLockedRef = useRef(false);
 
     const normalizePage = useCallback((data) => ({
-        list: data?.comments ?? [],
-        cursor: data?.next_cursor ?? null,
-        more: !!data?.has_more,
+        list: data?.comments ?? data?.results ?? [],
+        cursor: data?.next_cursor ?? data?.next ?? null,
+        more: data?.has_more ?? Boolean(data?.next_cursor ?? data?.next),
     }), []);
 
     // ── Fetch parent item + first page of comments (mount) ──
     const fetchItem = useCallback(async () => {
         setLoading(true);
         try {
-            // Parallel: parent payload + first comment page (two round-trips in one wall-clock wait).
-            const [data, firstPage] = await Promise.all([
-                fetchItemFn(id),
-                fetchCommentsFn(id, { cursor: null, limit: pageLimit }),
-            ]);
-            setItem(data);
-            const { list, cursor, more } = normalizePage(firstPage);
-            setComments(list);
-            setNextCursor(cursor);
-            setHasMore(more);
+            if (fetchBootstrapFn) {
+                const { item, commentsPage } = await fetchBootstrapFn(id);
+                setItem(item);
+                const { list, cursor, more } = normalizePage(commentsPage);
+                setComments(list);
+                setNextCursor(cursor);
+                setHasMore(more);
+            } else {
+                const [data, firstPage] = await Promise.all([
+                    fetchItemFn(id),
+                    fetchCommentsFn(id, { cursor: null, limit: pageLimit }),
+                ]);
+                setItem(data);
+                const { list, cursor, more } = normalizePage(firstPage);
+                setComments(list);
+                setNextCursor(cursor);
+                setHasMore(more);
+            }
             setLoadMoreError(null);
         } catch (error) {
             console.error('Failed to fetch item', error);
@@ -59,7 +69,7 @@ export function useComments({
         } finally {
             setLoading(false);
         }
-    }, [id, fetchItemFn, fetchCommentsFn, normalizePage, pageLimit]);
+    }, [id, fetchItemFn, fetchCommentsFn, fetchBootstrapFn, normalizePage, pageLimit]);
 
     // ── Reset to first page (after create / delete / edit) ──
     const fetchComments = useCallback(async () => {

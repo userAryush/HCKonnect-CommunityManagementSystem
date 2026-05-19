@@ -1,11 +1,13 @@
 from django.urls import path
 from .views import AnnouncementCreateView, AnnouncementListView, AnnouncementUpdateView, AnnouncementDeleteView, AnnouncementStatsView, PostCreateView, PostListView, PostDetailView, PostUpdateDeleteView, PostReactionToggleView, PostCommentCreateView, PostCommentUpdateView, PostCommentDeleteView, PostCommentListView, ResourceCreateView, ResourceListView, ResourceUpdateDeleteView, FeedListView
+from .feed_summary import UserFeedSummaryView
 
 
 
 
 urlpatterns = [
     path("feed/", FeedListView.as_view(), name="feed-list"),
+    path("feed-summary/", UserFeedSummaryView.as_view(), name="feed-summary"),
 
     path("announcements/stats/", AnnouncementStatsView.as_view(), name="announcement-stats"),
     path("announcements/", AnnouncementListView.as_view(), name="announcement-list"),

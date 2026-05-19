@@ -37,7 +37,9 @@ export default function DiscussionDetail() {
         loadMore,
     } = useComments({
         id,
-        fetchItemFn:      (id) => discussionService.getDiscussion(id),
+        fetchBootstrapFn: (topicId) =>
+            discussionService.getThreadSummary(topicId, { cursor: null, limit: COMMENT_PAGE_SIZE }),
+        fetchItemFn:      (topicId) => discussionService.getDiscussion(topicId),
         fetchCommentsFn:  (resourceId, opts) => discussionService.getReplies(resourceId, opts),
         createCommentFn:  (payload) => discussionService.createReply(payload),
         deleteCommentFn:  (replyId) => discussionService.deleteReply(replyId),

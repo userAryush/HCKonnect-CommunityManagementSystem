@@ -1,5 +1,6 @@
 from django.urls import path
 from .views import *
+from .thread_summary import DiscussionThreadSummaryView
 
 urlpatterns = [
 
@@ -7,6 +8,11 @@ urlpatterns = [
     path("list/", DiscussionListView.as_view()),
     path("create/", DiscussionCreateView.as_view()),
     path("discussion-detail/<uuid:pk>/", DiscussionDetailView.as_view()),
+    path(
+        "thread-summary/<uuid:topic_id>/",
+        DiscussionThreadSummaryView.as_view(),
+        name="discussion-thread-summary",
+    ),
     path("<uuid:pk>/update/", DiscussionUpdateView.as_view()),
     path("<uuid:pk>/delete/", DiscussionDeleteView.as_view()),
 

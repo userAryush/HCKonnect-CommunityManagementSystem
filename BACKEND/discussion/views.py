@@ -4,18 +4,21 @@ from rest_framework.views import APIView
 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied, ValidationError as DRFValidationError
-from django.db.models import Prefetch, Q, Count
+from django.db.models import Q, Count
 
 from .models import DiscussionPanel, DiscussionReply, Reaction
 from .serializers import DiscussionCreateSerializer,DiscussionReadSerializer,DiscussionUpdateSerializer,ReplyCreateSerializer,ReplyReadSerializer,ReactionSerializer
 from .permissions import CanCreateDiscussion, CanAccessDiscussion, IsOwner
-from utils.pagination import StandardPagination
-from utils.comment_cursor import (
-    apply_comment_cursor_filter,
-    collect_discussion_reply_tree_ids,
-    cursor_paginated_comment_response,
-    parse_limit,
+from services.cache import invalidate_community_page_caches, invalidate_discussion_reply_caches
+from .reply_cache import (
+    apply_user_likes_to_replies,
+    get_cached_discussion_replies,
+    paginate_serialized_replies,
 )
+from .thread_summary import get_cached_discussion_detail
+from utils.pagination import StandardPagination
+from utils.comment_cursor import parse_limit
+from services.cache.cache_trace import log_uncached_fetch
 
 
 # =====================================================
@@ -25,6 +28,11 @@ from utils.comment_cursor import (
 class DiscussionCreateView(CreateAPIView):
     serializer_class = DiscussionCreateSerializer
     permission_classes = [CanCreateDiscussion]
+
+    def perform_create(self, serializer):
+        discussion = serializer.save()
+        if discussion.community_id:
+            invalidate_community_page_caches(discussion.community_id)
 
 
 class DiscussionListView(ListAPIView):
@@ -53,6 +61,12 @@ class DiscussionListView(ListAPIView):
         return ctx
 
     def list(self, request, *args, **kwargs):
+        log_uncached_fetch(
+            "discussion_list",
+            community_id=request.query_params.get("community_id", "all"),
+            page=request.query_params.get("page", "1"),
+            page_size=request.query_params.get("page_size", "12"),
+        )
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -103,6 +117,11 @@ class DiscussionDetailView(RetrieveAPIView):
     serializer_class = DiscussionReadSerializer
     permission_classes = [IsAuthenticated, CanAccessDiscussion]
 
+    def retrieve(self, request, *args, **kwargs):
+        topic_id = kwargs.get("pk")
+        data = get_cached_discussion_detail(request, topic_id)
+        return Response(data)
+
     def get_queryset(self):
         # Replies are loaded by ReplyListView (cursor API). Avoid deep prefetch + nested serialization here.
         return (
@@ -143,8 +162,8 @@ class ReplyCreateView(CreateAPIView):
             
             raise PermissionDenied("You cannot reply to this discussion.")
 
-        serializer.save(created_by=self.request.user)
-
+        reply = serializer.save(created_by=self.request.user)
+        invalidate_discussion_reply_caches(reply)
 
 
 class ReplyUpdateView(UpdateAPIView):
@@ -152,11 +171,18 @@ class ReplyUpdateView(UpdateAPIView):
     serializer_class = ReplyCreateSerializer
     permission_classes = [IsAuthenticated, IsOwner]
 
+    def perform_update(self, serializer):
+        reply = serializer.save()
+        invalidate_discussion_reply_caches(reply)
 
 
 class ReplyDeleteView(DestroyAPIView):
     queryset = DiscussionReply.objects.all()
     permission_classes = [IsAuthenticated, IsOwner]
+
+    def perform_destroy(self, instance):
+        invalidate_discussion_reply_caches(instance)
+        instance.delete()
 
 class ReplyListView(APIView):
     """
@@ -173,45 +199,21 @@ class ReplyListView(APIView):
         limit = parse_limit(request.query_params.get("limit"), default=12)
         cursor = request.query_params.get("cursor") or None
 
+        # Cache trace: discussion_replies (hit/miss/set) logged in reply_cache.get_cached_discussion_replies
         try:
-            grandchild_qs = (
-                DiscussionReply.objects.select_related("created_by", "created_by__membership__community")
-                .prefetch_related("reactions")
-                .order_by("-created_at", "-id")
+            cached_replies = get_cached_discussion_replies(
+                topic_id, request, ReplyReadSerializer
             )
-            child_qs = (
-                DiscussionReply.objects.select_related("created_by", "created_by__membership__community")
-                .prefetch_related(Prefetch("children", queryset=grandchild_qs), "reactions")
-                .order_by("-created_at", "-id")
+            replies = apply_user_likes_to_replies(cached_replies, request.user)
+            page, next_cursor, has_more = paginate_serialized_replies(
+                replies, cursor, limit
             )
-            qs = (
-                DiscussionReply.objects.filter(topic_id=topic_id, parent_reply__isnull=True)
-                .select_related("created_by", "topic", "created_by__membership__community")
-                .prefetch_related(Prefetch("children", queryset=child_qs), "reactions")
-                .order_by("-created_at", "-id")
-            )
-            qs = apply_comment_cursor_filter(qs, cursor)
-
-            def like_context(page_objs, req):
-                if not req.user.is_authenticated or not page_objs:
-                    return {}
-                ids = collect_discussion_reply_tree_ids(page_objs)
-                if not ids:
-                    return {}
-                return {
-                    "liked_reply_ids": set(
-                        Reaction.objects.filter(user=req.user, reply_id__in=ids).values_list(
-                            "reply_id", flat=True
-                        )
-                    )
+            return Response(
+                {
+                    "comments": page,
+                    "next_cursor": next_cursor,
+                    "has_more": has_more,
                 }
-
-            return cursor_paginated_comment_response(
-                qs,
-                ReplyReadSerializer,
-                request,
-                limit=limit,
-                extra_context_callback=like_context,
             )
         except DRFValidationError as e:
             return Response({"detail": e.detail}, status=400)

@@ -18,6 +18,12 @@ from contents.permissions import CanCreateCommunityContent
 from utils.pagination import StandardPagination
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from services.cache import invalidate_community_page_caches
+from services.cache.community_page_cache import (
+    build_paginated_list_payload,
+    dashboard_page_params_match,
+    get_cached_community_page,
+)
 
 
 class IsEventCreator(BasePermission):
@@ -42,6 +48,18 @@ class EventListView(ListAPIView):
     permission_classes = [AllowAny]
     pagination_class = StandardPagination
 
+    def list(self, request, *args, **kwargs):
+        community_id = request.query_params.get("community_id")
+        if community_id and dashboard_page_params_match(request):
+            data = get_cached_community_page(
+                community_id,
+                "events:p1:ps20",
+                lambda: build_paginated_list_payload(self),
+                log_label="events",
+            )
+            return Response(data)
+        return super().list(request, *args, **kwargs)
+
     def get_queryset(self):
         community_id = self.request.query_params.get("community_id")
         qs = Event.objects.all().select_related("community")
@@ -52,25 +70,37 @@ class EventListView(ListAPIView):
 
 class EventStatsView(ListAPIView):
     permission_classes = [AllowAny]
-    
-    def get(self, request, *args, **kwargs):
-        community_id = request.query_params.get("community_id")
+
+    def _build_stats(self, community_id=None):
         qs = Event.objects.all()
         if community_id:
             qs = qs.filter(community_id=community_id)
+        return {
+            "total_events": qs.count(),
+            "upcoming_events": qs.filter(date__gte=timezone.now().date()).count(),
+        }
 
-        total_events = qs.count()
-        upcoming_events = qs.filter(date__gte=timezone.now().date()).count()
-        
-        return Response({
-            "total_events": total_events,
-            "upcoming_events": upcoming_events
-        })
+    def get(self, request, *args, **kwargs):
+        community_id = request.query_params.get("community_id")
+        if community_id:
+            data = get_cached_community_page(
+                community_id,
+                "events:stats",
+                lambda: self._build_stats(community_id),
+                log_label="events_stats",
+            )
+            return Response(data)
+        return Response(self._build_stats())
 
 
 class EventCreateView(CreateAPIView):
     serializer_class = EventSerializer
     permission_classes = [CanCreateCommunityContent]
+
+    def perform_create(self, serializer):
+        event = serializer.save()
+        if event.community_id:
+            invalidate_community_page_caches(event.community_id)
 
 
 class EventRetrieveView(GenericAPIView):
@@ -89,11 +119,22 @@ class EventUpdateView(UpdateAPIView):
     serializer_class = EventUpdateSerializer
     permission_classes = [CanCreateCommunityContent]
     queryset = Event.objects.all()
-    
+
+    def perform_update(self, serializer):
+        event = serializer.save()
+        if event.community_id:
+            invalidate_community_page_caches(event.community_id)
+
 
 class EventDeleteView(DestroyAPIView):
     permission_classes = [CanCreateCommunityContent]
     queryset = Event.objects.all()
+
+    def perform_destroy(self, instance):
+        community_id = instance.community_id
+        instance.delete()
+        if community_id:
+            invalidate_community_page_caches(community_id)
 
 
 # --- Registration and Management Views ---

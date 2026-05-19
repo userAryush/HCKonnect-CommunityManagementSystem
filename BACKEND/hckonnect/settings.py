@@ -214,6 +214,36 @@ CLOUDINARY_STORAGE = {
 }
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": os.getenv("REDIS_URL"),
+    }
+}
+
+# Community dashboard API cache TTL (seconds)
+DASHBOARD_CACHE_TIMEOUT = int(os.getenv("DASHBOARD_CACHE_TIMEOUT", "3000"))
+COMMUNITY_PAGE_CACHE_TIMEOUT = int(
+    os.getenv("COMMUNITY_PAGE_CACHE_TIMEOUT", str(DASHBOARD_CACHE_TIMEOUT))
+)
+
+# Community-scoped feed cache TTL (seconds); default 45 (within 30–60s range)
+FEED_CACHE_TIMEOUT = int(os.getenv("FEED_CACHE_TIMEOUT", "1800"))
+
+# Global user feed summary cache TTL (seconds)
+USER_FEED_CACHE_TIMEOUT = int(
+    os.getenv("USER_FEED_CACHE_TIMEOUT", str(DASHBOARD_CACHE_TIMEOUT))
+)
+
+# Discussion thread / replies cache TTL (seconds)
+DISCUSSION_THREAD_CACHE_TIMEOUT = int(
+    os.getenv("DISCUSSION_THREAD_CACHE_TIMEOUT", str(DASHBOARD_CACHE_TIMEOUT))
+)
+DISCUSSION_REPLIES_CACHE_TIMEOUT = int(
+    os.getenv("DISCUSSION_REPLIES_CACHE_TIMEOUT", str(DISCUSSION_THREAD_CACHE_TIMEOUT))
+)
+
+
 # Email settings
 
 
@@ -238,3 +268,20 @@ GOOGLE_GEMINI_MODEL = os.getenv("GOOGLE_GEMINI_MODEL", "gemini-2.5-flash")
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "loggers": {
+        "hckonnect.cache": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}

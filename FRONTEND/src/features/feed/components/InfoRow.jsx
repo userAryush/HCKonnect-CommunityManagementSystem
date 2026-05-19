@@ -1,40 +1,27 @@
 import { Link } from 'react-router-dom'
-import { useState, useEffect } from 'react'
-import announcementService from '../../announcement/service/announcementService'
+import { useMemo } from 'react'
 import MiniProfileCard from './MiniProfileCard'
 import { formatTimeAgo } from '../../../utils/timeFormatter'
 
-export default function InfoRow() {
-    const [announcements, setAnnouncements] = useState([])
-
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [announcementsResponse] = await Promise.all([
-                    announcementService.getAnnouncements()
-                ])
-                const rawAnnouncements = announcementsResponse?.results || (Array.isArray(announcementsResponse) ? announcementsResponse : [])
-                const recent = rawAnnouncements
-                    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-                    .slice(0, 3)
-                setAnnouncements(recent)
-            } catch (err) {
-                console.error("Failed to fetch info row data", err)
-            }
-        }
-        fetchData()
-    }, [])
+export default function InfoRow({
+    announcements: announcementsProp = null,
+    profile = null,
+    isFeedLoading = false,
+}) {
+    const announcements = useMemo(() => {
+        if (!Array.isArray(announcementsProp)) return []
+        return [...announcementsProp]
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+            .slice(0, 3)
+    }, [announcementsProp])
 
     return (
         <div className="flex flex-col gap-4">
-            <MiniProfileCard />
+            <MiniProfileCard profile={profile} isFeedLoading={isFeedLoading} />
 
-            {/* Recent News Card */}
             <div className="bg-white rounded-standard border border-surface-border shadow-sm p-5">
-                {/* Header */}
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                        {/* Green accent bar */}
                         <span className="block rounded-full bg-primary"
                             style={{ width: '3px', height: '16px' }} />
                         <h3 className="text-xs font-bold uppercase tracking-widest text-surface-muted">
@@ -47,9 +34,10 @@ export default function InfoRow() {
                     </Link>
                 </div>
 
-                {/* News items */}
                 <div className="space-y-0.5">
-                    {announcements.length > 0 ? announcements.map((ann, i) => (
+                    {isFeedLoading ? (
+                        <p className="text-metadata italic text-center py-4">Loading announcements…</p>
+                    ) : announcements.length > 0 ? announcements.map((ann) => (
                         <div key={ann.id}
                             className="group flex items-start gap-3 px-3 py-2.5 rounded-xl transition-all hover:bg-primary/10">
                             <div className="min-w-0 flex-1">

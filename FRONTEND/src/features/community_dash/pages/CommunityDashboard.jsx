@@ -2,9 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Navbar from '../../../shared/components/layout/Navbar';
 import ConfirmationModal from '../../../shared/components/modals/ConfirmationModal';
-import eventService from '../../events/service/eventService';
-import announcementService from '../../announcement/service/announcementService';
-import apiClient from '../../../shared/services/apiClient';
+import dashboardService from '../service/dashboardService';
 import { CommunityDashboardSkeleton } from '../../../shared/components/layout/Skeleton';
 import MetricCard from '../components/MetricCardDashboard';
 import CreateVacancyModal from '../../vacancy/components/CreateVacancyModal';
@@ -26,7 +24,6 @@ import CommunityMessagePickerModal from '../../../shared/components/modals/Commu
 import SendMessageModal from '../../../shared/components/modals/SendMessageModal';
 import vacancyService from '../../vacancy/service/vacancyService';
 import { useToast } from '../../../shared/components/ui/ToastContext';
-import analyticsService from '../service/analyticsService';
 import Footer from '../../../shared/components/layout/Footer';
 import DashboardHeader from '../components/DashboardHeader';
 import AnalyticsGrid from '../components/AnalyticsGrid';
@@ -41,14 +38,13 @@ export default function CommunityDashboard() {
     const { showToast } = useToast();
     const [menuOpen, setMenuOpen] = useState(false);
     const [community, setCommunity] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
 
     const [dashboardEvents, setDashboardEvents] = useState([]);
     const [dashboardAnnouncements, setDashboardAnnouncements] = useState([]);
     const [stats, setStats] = useState(null);
     const [analytics, setAnalytics] = useState(null);
-    const [analyticsLoading, setAnalyticsLoading] = useState(true);
     const [analyticsError, setAnalyticsError] = useState(null);
     const [vacancies, setVacancies] = useState([]);
     const [vacanciesLoading, setVacanciesLoading] = useState(false);
@@ -115,98 +111,76 @@ export default function CommunityDashboard() {
         return actions;
     };
 
+    const applySummaryData = (data) => {
+        const communityData = data.dashboard;
+        const platform = isPlatformCommunity(communityData);
+
+        setCommunity(communityData);
+        setDashboardEvents(Array.isArray(data.events) ? data.events : []);
+        setDashboardAnnouncements(Array.isArray(data.announcements) ? data.announcements : []);
+
+        const eventStats = data.events_stats || {};
+        const announcementStats = data.announcements_stats || {};
+
+        setStats({
+            members: platform ? 0 : communityData.member_count,
+            newMembers: platform ? 0 : (communityData.new_members_this_month || 0),
+            announcements: announcementStats.total_announcements ?? 0,
+            events: eventStats.total_events ?? 0,
+            upcomingEvents: eventStats.upcoming_events ?? 0,
+        });
+
+        const analyticsData = data.analytics;
+        if (analyticsData && Object.keys(analyticsData).length > 0) {
+            setAnalytics(analyticsData);
+            setAnalyticsError(null);
+        } else {
+            setAnalytics(null);
+            setAnalyticsError(null);
+        }
+
+        if (platform) {
+            setVacancies([]);
+        } else {
+            setVacancies(Array.isArray(data.vacancies) ? data.vacancies : []);
+        }
+    };
+
     useEffect(() => {
         let mounted = true;
-        setLoading(true);
-        setError('');
 
-        const fetchVacancies = async (platform) => {
-            if (platform) {
-                setVacancies([]);
-                return;
-            }
-            setVacanciesLoading(true);
-            try {
-                const data = await vacancyService.getVacancies(id);
-                if (mounted) setVacancies(data.results || data || []);
-            } catch (err) {
-                console.error('Failed to load vacancies', err);
-                if (mounted) showToast('Failed to load vacancies.', 'error');
-            } finally {
-                if (mounted) setVacanciesLoading(false);
-            }
-        };
-
-        const fetchDashboard = async () => {
-            setAnalyticsLoading(true);
+        const loadDashboard = async () => {
+            setIsLoading(true);
+            setError('');
             setAnalyticsError(null);
+
             try {
-                const [
-                    communityRes,
-                    eventsData,
-                    announcementsData,
-                    eventStats,
-                    announcementStats,
-                    analyticsData,
-                ] = await Promise.all([
-                    apiClient.get(`/communities/dashboard/${id}/`),
-                    eventService.getEvents(id),
-                    announcementService.getAnnouncements(1, id),
-                    eventService.getEventStats(id),
-                    announcementService.getAnnouncementStats(id),
-                    analyticsService.getCommunityAnalytics(id).catch((err) => {
-                        console.error('Community analytics failed', err);
-                        return null;
-                    }),
-                ]);
-
+                const data = await dashboardService.getSummary(id);
                 if (!mounted) return;
-
-                const communityData = communityRes.data;
-                const platform = isPlatformCommunity(communityData);
-                setCommunity(communityData);
-                setDashboardEvents(eventsData.results || []);
-                setDashboardAnnouncements(announcementsData.results || []);
-
-                setStats({
-                    members: platform ? 0 : communityData.member_count,
-                    newMembers: platform ? 0 : (communityData.new_members_this_month || 0),
-                    announcements: announcementStats.total_announcements,
-                    events: eventStats.total_events,
-                    upcomingEvents: eventStats.upcoming_events,
-                });
-
-                if (analyticsData === null) {
-                    setAnalytics(null);
-                    setAnalyticsError('Failed to load analytics data.');
-                } else {
-                    setAnalytics(analyticsData);
-                    setAnalyticsError(null);
-                }
-
-                await fetchVacancies(platform);
+                applySummaryData(data);
             } catch (err) {
                 if (!mounted) return;
                 setError('Failed to load community data.');
-                console.error(err);
+                console.error('Dashboard summary failed', err);
             } finally {
-                if (!mounted) return;
-                setLoading(false);
-                setAnalyticsLoading(false);
+                if (mounted) setIsLoading(false);
             }
         };
 
-        fetchDashboard();
+        loadDashboard();
         return () => {
             mounted = false;
         };
-    }, [id, showToast]);
+    }, [id]);
 
     const reloadVacancies = async () => {
         setVacanciesLoading(true);
         try {
-            const data = await vacancyService.getVacancies(id);
-            setVacancies(data.results || data || []);
+            const data = await dashboardService.getSummary(id);
+            const platform = isPlatformCommunity(data.dashboard);
+            if (!platform) {
+                setVacancies(Array.isArray(data.vacancies) ? data.vacancies : []);
+            }
         } catch (err) {
             console.error('Failed to load vacancies', err);
             showToast('Failed to refresh vacancies.', 'error');
@@ -217,15 +191,13 @@ export default function CommunityDashboard() {
 
     const reloadDashboardEvents = async () => {
         try {
-            const [eventsData, eventStats] = await Promise.all([
-                eventService.getEvents(id),
-                eventService.getEventStats(id),
-            ]);
-            setDashboardEvents(eventsData.results || []);
+            const data = await dashboardService.getSummary(id);
+            setDashboardEvents(Array.isArray(data.events) ? data.events : []);
+            const eventStats = data.events_stats || {};
             setStats((prev) => ({
                 ...prev,
-                events: eventStats.total_events,
-                upcomingEvents: eventStats.upcoming_events,
+                events: eventStats.total_events ?? 0,
+                upcomingEvents: eventStats.upcoming_events ?? 0,
             }));
         } catch (err) {
             console.error('Failed to refresh events', err);
@@ -235,14 +207,14 @@ export default function CommunityDashboard() {
 
     const reloadDashboardAnnouncements = async () => {
         try {
-            const [announcementsData, announcementStats] = await Promise.all([
-                announcementService.getAnnouncements(1, id),
-                announcementService.getAnnouncementStats(id),
-            ]);
-            setDashboardAnnouncements(announcementsData.results || []);
+            const data = await dashboardService.getSummary(id);
+            setDashboardAnnouncements(
+                Array.isArray(data.announcements) ? data.announcements : []
+            );
+            const announcementStats = data.announcements_stats || {};
             setStats((prev) => ({
                 ...prev,
-                announcements: announcementStats.total_announcements,
+                announcements: announcementStats.total_announcements ?? 0,
             }));
         } catch (err) {
             console.error('Failed to refresh announcements', err);
@@ -391,7 +363,7 @@ export default function CommunityDashboard() {
             />
 
             <main className="pt-24 pb-16">
-                {loading ? (
+                {isLoading ? (
                     <CommunityDashboardSkeleton />
                 ) : error ? (
                     <div className="p-10 text-center">
@@ -417,7 +389,7 @@ export default function CommunityDashboard() {
 
                         <AnalyticsGrid
                             engagementData={engagementData}
-                            analyticsLoading={analyticsLoading}
+                            analyticsLoading={isLoading}
                             analyticsError={analyticsError}
                             hasEngagement={hasEngagement}
                             leaderboardData={leaderboardData}

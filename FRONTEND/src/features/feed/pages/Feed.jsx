@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Navbar from '../../../shared/components/layout/Navbar'
 import FeedFilter from '../components/FeedFilter'
 import FeedList from '../components/FeedList'
@@ -9,15 +9,50 @@ import VacancyApplicationModal from '../../vacancy/components/VacancyApplication
 import CreateDiscussionModal from '../../discussion/components/CreateDiscussionModal'
 import CreatePostModal from '../../posts/components/CreatePostModal'
 import { useToast } from '../../../shared/components/ui/ToastContext'
+import { fetchFeedSummary } from '../service/feedApi'
 
 export default function Feed() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [filter, setFilter] = useState('all')
   const { showToast } = useToast()
 
+  const [isFeedLoading, setIsFeedLoading] = useState(true)
+  const [feedError, setFeedError] = useState(null)
+  const [initialFeed, setInitialFeed] = useState(null)
+  const [sidebarAnnouncements, setSidebarAnnouncements] = useState([])
+  const [profile, setProfile] = useState(null)
+
   const [selectedVacancy, setSelectedVacancy] = useState(null)
   const [isDiscussionModalOpen, setIsDiscussionModalOpen] = useState(false)
   const [isPostModalOpen, setIsPostModalOpen] = useState(false)
+
+  useEffect(() => {
+    let mounted = true
+    setIsFeedLoading(true)
+    setFeedError(null)
+
+    fetchFeedSummary({ page: 1, pageSize: 20 })
+      .then((data) => {
+        if (!mounted) return
+        setInitialFeed(data.feed || null)
+        setSidebarAnnouncements(Array.isArray(data.announcements) ? data.announcements : [])
+        setProfile(data.profile && Object.keys(data.profile).length > 0 ? data.profile : null)
+      })
+      .catch((err) => {
+        if (!mounted) return
+        console.error('Feed summary failed', err)
+        setFeedError('Failed to load feed.')
+        showToast('Failed to load feed.', 'error')
+      })
+      .finally(() => {
+        if (mounted) setIsFeedLoading(false)
+      })
+
+    return () => {
+      mounted = false
+    }
+  }, [showToast])
+
   const handleApplyClick = (vacancy, event) => {
     event.stopPropagation();
     event.preventDefault();
@@ -42,7 +77,6 @@ export default function Feed() {
         <div className="mx-auto w-full max-w-6xl px-4">
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
 
-            {/* Main Feed Column */}
             <div className="lg:col-span-8 flex flex-col gap-6">
               <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
                 <div>
@@ -76,22 +110,34 @@ export default function Feed() {
               </div>
 
               <div className="mt-2">
-                <FeedList
-                  key={filter}
-                  filter={filter}
-                  onApplyClick={handleApplyClick}
-                />
+                {feedError && filter === 'all' ? (
+                  <p className="text-center text-sm font-medium text-red-500 py-8">{feedError}</p>
+                ) : (
+                  <FeedList
+                    key={filter}
+                    filter={filter}
+                    onApplyClick={handleApplyClick}
+                    initialFeed={filter === 'all' ? initialFeed : null}
+                    isFeedLoading={filter === 'all' && isFeedLoading}
+                  />
+                )}
               </div>
             </div>
 
-            {/* Sidebar */}
             <aside className="hidden lg:block lg:col-span-4 sticky top-24 self-start">
-              <InfoRow />
+              <InfoRow
+                announcements={sidebarAnnouncements}
+                profile={profile}
+                isFeedLoading={isFeedLoading}
+              />
             </aside>
 
-            {/* Mobile Sidebar */}
             <div className="lg:hidden mt-12 pt-12 border-t border-surface-border">
-              <InfoRow />
+              <InfoRow
+                announcements={sidebarAnnouncements}
+                profile={profile}
+                isFeedLoading={isFeedLoading}
+              />
             </div>
 
           </div>
