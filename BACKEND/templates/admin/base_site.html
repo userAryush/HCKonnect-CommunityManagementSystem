@@ -1,0 +1,76 @@
+{% extends "admin/base.html" %}
+{% load static hck_admin %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | HCKonnect Admin{% endblock %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="icon" type="image/png" href="{% static 'admin/hckonnect/favicon.png' %}">
+{% endblock %}
+
+{% block extrahead %}
+  {{ block.super }}
+  {% if user.is_authenticated %}
+    {% hck_admin_panel_title as panel_title %}
+    {% hck_navbar_user_panel_label as user_panel_label %}
+    {% url 'admin:accounts_user_change' user.pk as user_change_url %}
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        var panelTitle = "{{ panel_title|escapejs }}";
+        var username = "{{ user.username|escapejs }}";
+        var userChangeUrl = "{{ user_change_url|escapejs }}";
+        var navbarLabel = "{{ user_panel_label|escapejs }}";
+
+        var sidebarInfo = document.querySelector("#jazzy-sidebar .user-panel .info");
+        if (sidebarInfo) {
+          sidebarInfo.innerHTML =
+            '<span class="hck-sidebar-panel-title">' + panelTitle + "</span>" +
+            '<a href="' + userChangeUrl + '" class="hck-sidebar-username">' + username + "</a>";
+        }
+
+        var userMenuItem = document.querySelector(
+          "#jazzy-navbar .navbar-nav.ml-auto > .nav-item.dropdown"
+        );
+        if (userMenuItem && navbarLabel && !document.getElementById("hck-navbar-user-panel")) {
+          var li = document.createElement("li");
+          li.id = "hck-navbar-user-panel";
+          li.className = "nav-item d-flex align-items-center hck-navbar-user-panel";
+          li.innerHTML =
+            '<span class="nav-link py-0 mb-0 text-nowrap">' + navbarLabel + "</span>";
+          userMenuItem.parentNode.insertBefore(li, userMenuItem);
+        }
+
+        var userMenu = document.getElementById("jazzy-usermenu");
+        var userEmail = "{{ user.email|escapejs }}";
+        var frontendUrl = "{{ FRONTEND_URL|escapejs }}";
+        if (userMenu && !document.getElementById("hck-view-site-link")) {
+          var header = userMenu.querySelector(".dropdown-header");
+          if (header) {
+            header.className = "dropdown-header hck-usermenu-header";
+            header.innerHTML =
+              '<span class="hck-usermenu-account">Account</span>' +
+              '<span class="hck-usermenu-email">' + userEmail + "</span>";
+          }
+
+          var viewSite = document.createElement("a");
+          viewSite.id = "hck-view-site-link";
+          viewSite.href = frontendUrl;
+          viewSite.className = "dropdown-item";
+          viewSite.target = "_blank";
+          viewSite.rel = "noopener noreferrer";
+          viewSite.innerHTML =
+            '<i class="fas fa-external-link-alt mr-2"></i> View site';
+
+          var changePassword = userMenu.querySelector('a[href*="password"]');
+          if (changePassword) {
+            userMenu.insertBefore(viewSite, changePassword);
+          } else {
+            userMenu.appendChild(viewSite);
+          }
+        }
+      });
+    </script>
+  {% endif %}
+{% endblock %}
+
+{% block nav-global %}{% endblock %}

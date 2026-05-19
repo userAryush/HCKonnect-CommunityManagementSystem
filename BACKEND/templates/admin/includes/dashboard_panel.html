@@ -1,0 +1,140 @@
+{% load i18n %}
+
+<div class="hck-admin-dashboard">
+  <section class="hck-dashboard-stats" aria-label="Platform summary">
+    <div class="hck-stat-grid">
+      {% for stat in dashboard_stats %}
+        <article class="hck-stat-card hck-stat-card--{{ stat.tone }}">
+          <div class="hck-stat-icon-wrap">
+            <i class="{{ stat.icon }}" aria-hidden="true"></i>
+          </div>
+          <div>
+            <p class="hck-stat-value">{{ stat.value }}</p>
+            <p class="hck-stat-label">{{ stat.label }}</p>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="hck-charts-row" aria-label="Community analytics">
+    <article class="hck-panel hck-panel--chart">
+      <header class="hck-panel__header">
+        <div>
+          <h3>Community member counts</h3>
+          <span class="hck-panel__badge">By community</span>
+        </div>
+        <i class="fas fa-chart-bar" aria-hidden="true"></i>
+      </header>
+      <div class="hck-panel__body">
+        {% if member_counts %}
+          <div class="hck-vbar-chart" role="img" aria-label="Member counts per community">
+            {% for item in member_counts %}
+              <div class="hck-vbar-col" title="{{ item.name }}: {{ item.value }} members">
+                <span class="hck-vbar-value">{{ item.value }}</span>
+                <div class="hck-vbar-track">
+                  <div
+                    class="hck-vbar-fill"
+                    data-pct="{{ item.pct }}"
+                    data-color="{{ item.color }}"
+                  ></div>
+                </div>
+                <span class="hck-vbar-label">{{ item.name|truncatechars:14 }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="hck-panel__empty">No community members yet. Counts appear once students join communities.</p>
+        {% endif %}
+      </div>
+    </article>
+
+    <article class="hck-panel hck-panel--leaderboard">
+      <header class="hck-panel__header">
+        <div>
+          <h3>All communities engagement</h3>
+          <span class="hck-panel__badge">Global rankings</span>
+        </div>
+        <i class="fas fa-trophy" aria-hidden="true"></i>
+      </header>
+      <div class="hck-panel__body hck-panel__body--list">
+        {% if engagement_rankings %}
+          <ol class="hck-leaderboard">
+            {% for entry in engagement_rankings %}
+              <li class="hck-leaderboard__row">
+                <span class="hck-leaderboard__rank {% if forloop.counter <= 3 %}hck-leaderboard__rank--top{% endif %}">
+                  {{ forloop.counter }}
+                </span>
+                <span class="hck-leaderboard__name" title="{{ entry.name }}">{{ entry.name|truncatechars:28 }}</span>
+                <div class="hck-leaderboard__track">
+                  <div class="hck-leaderboard__bar" data-pct="{{ entry.pct }}"></div>
+                </div>
+                <span class="hck-leaderboard__score">{{ entry.score }}</span>
+              </li>
+            {% endfor %}
+          </ol>
+        {% else %}
+          <p class="hck-panel__empty">No engagement data yet.</p>
+        {% endif %}
+      </div>
+    </article>
+  </section>
+
+  <section class="hck-panel hck-panel--activity" aria-label="Recent admin activity">
+    <header class="hck-panel__header">
+      <div>
+        <h3>Recent admin activity</h3>
+        <span class="hck-panel__badge hck-panel__badge--muted">Audit log</span>
+      </div>
+      <i class="fas fa-clipboard-list" aria-hidden="true"></i>
+    </header>
+    <div class="hck-panel__body hck-panel__body--flush">
+      {% if recent_admin_logs %}
+        <div class="hck-activity-scroll">
+          <table class="hck-activity-table">
+            <thead>
+              <tr>
+                <th>{% translate "When" %}</th>
+                <th>{% translate "User" %}</th>
+                <th>{% translate "Action" %}</th>
+                <th>{% translate "Object" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for log in recent_admin_logs %}
+                <tr>
+                  <td>{{ log.action_time|date:"M j, Y H:i" }}</td>
+                  <td>{{ log.user.get_username|default:"—" }}</td>
+                  <td>
+                    {% if log.is_addition %}<span class="hck-badge hck-badge--add">Added</span>
+                    {% elif log.is_change %}<span class="hck-badge hck-badge--change">Changed</span>
+                    {% elif log.is_deletion %}<span class="hck-badge hck-badge--delete">Deleted</span>
+                    {% else %}<span class="hck-badge hck-badge--neutral">{{ log.get_action_flag_display }}</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ log.object_repr|truncatechars:60 }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="hck-panel__empty">No admin actions recorded yet.</p>
+      {% endif %}
+    </div>
+  </section>
+</div>
+
+<script>
+  (function () {
+    document.querySelectorAll(".hck-vbar-fill[data-pct]").forEach(function (el) {
+      el.style.height = el.dataset.pct + "%";
+      if (el.dataset.color) {
+        el.style.backgroundColor = el.dataset.color;
+      }
+    });
+    document.querySelectorAll(".hck-leaderboard__bar[data-pct]").forEach(function (el) {
+      el.style.width = el.dataset.pct + "%";
+    });
+  })();
+</script>

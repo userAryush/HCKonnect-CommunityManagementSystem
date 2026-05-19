@@ -357,34 +357,16 @@ class CommunityAnalyticsView(APIView):
             ],
         )
 
-        comparison_qs = student_communities.annotate(
-            a_count=Count('community_announcements', distinct=True),
-            e_count=Count('events', distinct=True),
-            d_count=Count('community_discussions', distinct=True),
-        ).annotate(
-            score=F('a_count') + F('e_count') + F('d_count')
-        ).order_by('-score')[:10]
+        from .platform_analytics import (
+            get_community_engagement_rankings,
+            get_community_member_counts,
+        )
 
         comparison_data = [
-            {
-                "name": c.community_name or c.username,
-                "score": c.score,
-                "isCurrent": False,
-            }
-            for c in comparison_qs
+            {**entry, "isCurrent": entry.pop("is_current", False)}
+            for entry in get_community_engagement_rankings(limit=10)
         ]
-
-        member_counts_qs = student_communities.annotate(
-            member_count=Count('members', distinct=True),
-        ).order_by('-member_count', 'community_name')[:12]
-
-        community_member_counts = [
-            {
-                "name": c.community_name or c.username,
-                "value": c.member_count,
-            }
-            for c in member_counts_qs
-        ]
+        community_member_counts = get_community_member_counts(limit=12)
 
         daily_limit = now - timedelta(hours=24)
         weekly_limit = now - timedelta(days=7)

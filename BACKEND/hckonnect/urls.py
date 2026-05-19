@@ -23,6 +23,7 @@ from accounts.views import UserThemePreferenceView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('tinymce/', include('tinymce.urls')),
     path('api/user/theme/', UserThemePreferenceView.as_view(), name='api-user-theme'),
     path('api/ai/', include('services.ai.urls')),
     path('accounts/', include('accounts.urls')),

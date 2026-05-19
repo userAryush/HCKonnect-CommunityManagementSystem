@@ -1,0 +1,21 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_dashboard hck_admin %}
+
+{% block content %}
+<div class="hck-index-wrap">
+  <section class="hck-dashboard-welcome">
+    {% if user.is_authenticated %}
+      {% hck_admin_role_label as admin_role %}
+      <h2 class="hck-welcome-heading">
+        {% translate "Welcome back" %}, {{ user.username }}
+        <span class="hck-admin-role-inline">({{ admin_role|lower }})</span>
+      </h2>
+    {% else %}
+      <h2>{% translate "Welcome" %}</h2>
+    {% endif %}
+    <p>Manage Herald Community Konnect users, communities, content, and platform activity from this dashboard.</p>
+  </section>
+
+  {% hckonnect_dashboard_stats %}
+</div>
+{% endblock %}

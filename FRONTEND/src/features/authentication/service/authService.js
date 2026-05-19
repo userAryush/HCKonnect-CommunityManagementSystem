@@ -1,4 +1,12 @@
 import apiClient from '../../../shared/services/apiClient';
+import { refreshAccessToken, logoutOnServer, clearStoredTokens } from '../../../shared/services/tokenRefresh';
+import { isTokenExpired } from '../../../shared/utils/jwtUtils';
+
+const storeAccessToken = (access) => {
+    if (access) {
+        localStorage.setItem('access_token', access);
+    }
+};
 
 const authService = {
     register: async (payload) => {
@@ -12,16 +20,13 @@ const authService = {
 
     login: async (email, password) => {
         try {
-            // Backend returns: { msg: "...", data: { token: { access: "...", refresh: "..." } } }
             const response = await apiClient.post('/accounts/login/', { email, password });
-
             const tokenData = response.data?.data?.token;
 
             if (tokenData?.access) {
-                localStorage.setItem('access_token', tokenData.access);
-                if (tokenData.refresh) {
-                    localStorage.setItem('refresh_token', tokenData.refresh);
-                }
+                storeAccessToken(tokenData.access);
+                // Refresh token is stored in an HttpOnly cookie by the backend.
+                localStorage.removeItem('refresh_token');
                 return response.data;
             }
             return response.data;
@@ -40,10 +45,8 @@ const authService = {
             const data = response.data;
 
             if (data?.access) {
-                localStorage.setItem('access_token', data.access);
-                if (data.refresh) {
-                    localStorage.setItem('refresh_token', data.refresh);
-                }
+                storeAccessToken(data.access);
+                localStorage.removeItem('refresh_token');
             }
             return data;
         } catch (error) {
@@ -51,14 +54,27 @@ const authService = {
         }
     },
 
-    logout: () => {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
+    logout: async () => {
+        await logoutOnServer();
+        clearStoredTokens();
+    },
+
+    ensureValidAccessToken: async () => {
+        const accessToken = localStorage.getItem('access_token');
+        if (!accessToken) return false;
+        if (!isTokenExpired(accessToken)) return true;
+
+        try {
+            await refreshAccessToken();
+            return true;
+        } catch {
+            clearStoredTokens();
+            return false;
+        }
     },
 
     getCurrentUser: async () => {
         try {
-            // Using /accounts/profile/ as identified in urls.py
             const response = await apiClient.get('/accounts/profile/');
             return response.data;
         } catch (error) {
@@ -77,7 +93,7 @@ const authService = {
         } catch (error) {
             throw error;
         }
-    }
+    },
 };
 
 export default authService;

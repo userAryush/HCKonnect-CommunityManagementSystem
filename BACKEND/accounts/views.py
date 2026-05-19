@@ -13,7 +13,10 @@ from rest_framework.generics import RetrieveUpdateAPIView, RetrieveAPIView
 from .models import User
 from .services import GoogleAuthService
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+from rest_framework.exceptions import ValidationError as DRFValidationError
 from django.contrib.auth.models import update_last_login
+from .jwt_cookies import set_refresh_cookie, clear_refresh_cookie, REFRESH_TOKEN_COOKIE_NAME
 
 
 """
@@ -55,7 +58,11 @@ class LoginView(APIView):
                 "role": user.role,
                 "theme": user.theme,
             }
-            return Response(token_data, status=status.HTTP_200_OK)
+            response = Response(token_data, status=status.HTTP_200_OK)
+            refresh_token = token_data.get("data", {}).get("token", {}).get("refresh")
+            if refresh_token:
+                set_refresh_cookie(response, refresh_token)
+            return response
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -201,7 +208,7 @@ class GoogleAuthView(APIView):
             refresh = RefreshToken.for_user(user)
             update_last_login(None, user) # Update for Google Auth as well
             
-            return Response({
+            response = Response({
                 'access': str(refresh.access_token),
                 'refresh': str(refresh),
                 'user': {
@@ -212,6 +219,8 @@ class GoogleAuthView(APIView):
                     'theme': getattr(user, 'theme', 'light')
                 }
             }, status=status.HTTP_200_OK)
+            set_refresh_cookie(response, str(refresh))
+            return response
 
         except Exception as e:
             # Handle specific status codes based on the error
@@ -222,6 +231,43 @@ class GoogleAuthView(APIView):
                 return Response({'error': error_msg}, status=status.HTTP_403_FORBIDDEN)
             
             return Response({'error': error_msg}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CookieTokenRefreshView(APIView):
+    """Issue a new access token from the HttpOnly refresh cookie or request body."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        refresh_token = request.COOKIES.get(REFRESH_TOKEN_COOKIE_NAME) or request.data.get('refresh')
+        if not refresh_token:
+            return Response(
+                {'detail': 'Refresh token is required.'},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        serializer = TokenRefreshSerializer(data={'refresh': refresh_token})
+        try:
+            serializer.is_valid(raise_exception=True)
+        except DRFValidationError as exc:
+            return Response(exc.detail, status=status.HTTP_401_UNAUTHORIZED)
+
+        response = Response(serializer.validated_data, status=status.HTTP_200_OK)
+        new_refresh = serializer.validated_data.get('refresh')
+        if new_refresh:
+            set_refresh_cookie(response, new_refresh)
+        return response
+
+
+class LogoutView(APIView):
+    """Clear the HttpOnly refresh cookie (client clears access token locally)."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        response = Response({'message': 'Logged out successfully.'}, status=status.HTTP_200_OK)
+        clear_refresh_cookie(response)
+        return response
 
 
 class ContactUsView(APIView):
