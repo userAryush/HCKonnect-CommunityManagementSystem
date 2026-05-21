@@ -22,10 +22,10 @@ const steps = [
 
 function HowItWorksSection() {
   return (
-    <section id="how-it-works" className="border-y border-surface-border bg-white px-5 py-20 sm:px-8">
+    <section id="how-it-works" className="bg-white px-5 py-20 sm:px-8">
       <div className="mx-auto w-full max-w-6xl">
         <Reveal>
-          <SectionHeading label="How it works" title="From curious visitor to active member." />
+          <SectionHeading accent="how-it-works" label="How It Works" />
         </Reveal>
 
         <Reveal className="relative mx-auto mt-16 max-w-4xl" delay={0.08}>
@@ -44,11 +44,11 @@ function HowItWorksSection() {
                   delay={0.06 + index * 0.08}
                 >
                   <div className="flex flex-shrink-0 md:justify-end">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-surface-border bg-[#f3f7ef] text-primary shadow-sm md:relative md:z-10">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-surface-border bg-secondary text-primary shadow-sm md:relative md:z-10">
                       <Icon className="h-5 w-5" strokeWidth={2} aria-hidden />
                     </span>
                   </div>
-                  <div className="min-w-0 pt-0.5 md:rounded-2xl md:border md:border-surface-border/90 md:bg-[#fafbf8] md:p-6 md:shadow-sm">
+                  <div className="min-w-0 pt-0.5 md:rounded-2xl md:border md:border-surface-border/90 md:bg-secondary md:p-6 md:shadow-sm">
                     <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-surface-muted">
                       Step {String(index + 1).padStart(2, '0')}
                     </p>

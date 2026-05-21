@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import Button from '../../../shared/components/ui/Button';
 import { ExternalLink } from 'lucide-react';
+import { getInitials } from '../../../utils/userUtils';
 
 export default function DashboardHeader({ communityId, community, term = 'Spring 2026' }) {
     const logo = community?.community_logo;
@@ -8,18 +9,18 @@ export default function DashboardHeader({ communityId, community, term = 'Spring
 
     return (
         <header className="mb-8 flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-8">
                 {logo ? (
-                    <div className="flex h-32 w-32 items-center justify-center rounded-full bg-white border border-surface-border shadow-sm">
-                        <img
-                            src={logo}
-                            alt={title}
-                            className="h-28 w-28 rounded-full object-contain"
-                        />
-                    </div>
+                    <img
+                        src={logo}
+                        alt={title}
+                        className="h-24 w-auto max-w-[180px] object-contain"
+                    />
                 ) : (
-                    <div className="flex h-36 w-36 items-center justify-center rounded-full bg-zinc-100 text-4xl font-bold text-zinc-400">
-                        {(title || 'CO').slice(0, 2).toUpperCase()}
+                    <div className="flex h-24 w-36 items-center justify-center rounded-2xl bg-primary/10">
+                        <span className="font-display text-3xl font-bold text-primary">
+                            {getInitials(title || 'Community')}
+                        </span>
                     </div>
                 )}
                 <div>

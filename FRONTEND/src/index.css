@@ -74,6 +74,46 @@
 }
 
 @layer components {
+    /* Landing — bold display section titles (unique color per section) */
+    .landing-section-title {
+        font-size: clamp(1.75rem, 4.5vw, 5.25rem);
+        font-weight: 900;
+        font-family: "Work Sans", ui-sans-serif, system-ui, sans-serif;
+        text-transform: uppercase;
+        line-height: 0.78;
+        letter-spacing: -0.03em;
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: transparent !important;
+        paint-order: stroke fill;
+    }
+
+    .landing-section-title--communities {
+        background-color: rgba(117, 191, 68, 0.88);
+        text-shadow: 0 2.5px 2.5px #fbc524;
+    }
+
+    .landing-section-title--platform {
+        background-color: rgba(113, 113, 122, 0.92);
+        text-shadow: 0 2.5px 2.5px #e4e4e7;
+    }
+
+    .landing-section-title--how-it-works {
+        background-color: rgba(14, 165, 233, 0.88);
+        text-shadow: 0 2.5px 2.5px #84cc16;
+    }
+
+    .landing-section-title--testimonials {
+        background-color: rgba(124, 58, 237, 0.82);
+        text-shadow: 0 2.5px 2.5px #fbc524;
+    }
+
+    .landing-section-title--cta {
+        background-color: var(--color-secondary);
+        text-shadow: 0 2.5px 2.5px var(--color-secondary);
+    }
+
     .community-profile-page .card-border,
     .community-profile-page .community-soft-card,
     .community-profile-page [class*="border-surface-border"] {

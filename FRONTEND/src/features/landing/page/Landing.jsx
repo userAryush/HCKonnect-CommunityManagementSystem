@@ -9,7 +9,7 @@ import Navbar from '../../../shared/components/layout/Navbar'
 
 function Landing() {
   return (
-    <div className="min-h-screen bg-white text-surface-dark antialiased">
+    <div className="min-h-screen bg-[#f3f7ef] text-surface-dark antialiased">
       <Navbar />
       <main className="flex flex-col">
         <HeroSection />

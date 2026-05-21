@@ -1,6 +1,7 @@
 import { Users, CalendarDays, MessageSquare, BookOpen, Zap, BarChart3 } from 'lucide-react'
 import SectionHeading from './SectionHeading'
 import Reveal from './Reveal'
+import sectionBgImage from '../../../assets/bg3.jpg'
 
 const pillars = [
   {
@@ -28,16 +29,23 @@ const modules = [
 
 function FeatureSection() {
   return (
-    <section id="platform" className="relative overflow-hidden bg-surface-dark px-5 py-20 text-white sm:px-8">
-      <div className="pointer-events-none absolute -right-24 top-0 h-96 w-96 rounded-full bg-primary/25 blur-[100px]" />
-      <div className="pointer-events-none absolute -left-32 bottom-0 h-80 w-80 rounded-full bg-primary/15 blur-[90px]" />
+    <section id="platform" className="relative isolate overflow-hidden px-5 py-20 text-white sm:px-8">
+      <div className="absolute inset-0 z-0" aria-hidden>
+        <img
+          src={sectionBgImage}
+          alt=""
+          className="h-full w-full object-cover"
+          decoding="async"
+        />
+        <div className="absolute inset-0 bg-primary/90" />
+      </div>
 
-      <div className="relative mx-auto w-full max-w-6xl">
+      <div className="relative z-10 mx-auto w-full max-w-6xl">
         <Reveal>
           <SectionHeading
             theme="dark"
-            label="Platform power"
-            title="Built for operators, comfortable for every member."
+            accent="platform"
+            label="Platform Features"
             description="From first join to active contribution, the platform is designed to keep momentum high and friction low."
           />
         </Reveal>
@@ -47,12 +55,12 @@ function FeatureSection() {
             const Icon = pillar.icon
             return (
               <Reveal key={pillar.title} delay={0.06 + i * 0.07}>
-                <article className="flex h-full flex-col rounded-2xl border border-white/10 bg-white/[0.06] p-6 shadow-xl shadow-black/20 backdrop-blur-sm transition hover:border-primary/40 hover:bg-white/[0.09]">
-                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/20 text-primary">
+                <article className="flex h-full flex-col rounded-2xl border border-surface-border/80 bg-white p-6 shadow-md shadow-black/5 transition hover:border-primary/30 hover:shadow-lg">
+                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
                     <Icon className="h-5 w-5" strokeWidth={2} aria-hidden />
                   </span>
-                  <h3 className="mt-5 font-display text-lg font-semibold text-white">{pillar.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-white/70">{pillar.desc}</p>
+                  <h3 className="mt-5 font-display text-lg font-semibold text-surface-dark">{pillar.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-surface-body">{pillar.desc}</p>
                 </article>
               </Reveal>
             )
@@ -64,13 +72,13 @@ function FeatureSection() {
             const Icon = mod.icon
             return (
               <Reveal key={mod.title} delay={0.05 + i * 0.05}>
-                <article className="flex h-full gap-4 rounded-2xl border border-white/5 bg-black/20 p-5 transition hover:border-white/15">
-                  <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-white/10 text-white/90">
+                <article className="flex h-full gap-4 rounded-2xl border border-surface-border/80 bg-white p-5 shadow-md shadow-black/5 transition hover:border-primary/30 hover:shadow-lg">
+                  <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                     <Icon className="h-[1.125rem] w-[1.125rem]" strokeWidth={2} aria-hidden />
                   </span>
                   <div>
-                    <h3 className="font-display text-sm font-semibold text-white">{mod.title}</h3>
-                    <p className="mt-1 text-xs leading-relaxed text-white/65">{mod.desc}</p>
+                    <h3 className="font-display text-sm font-semibold text-surface-dark">{mod.title}</h3>
+                    <p className="mt-1 text-xs leading-relaxed text-surface-body">{mod.desc}</p>
                   </div>
                 </article>
               </Reveal>

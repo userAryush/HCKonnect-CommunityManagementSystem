@@ -1,32 +1,41 @@
 import { useNavigate } from 'react-router-dom'
 import SectionHeading from './SectionHeading'
 import Reveal from './Reveal'
+import sectionBgImage from '../../../assets/bg3.jpg'
 
 function FinalCTA() {
   const navigate = useNavigate()
   const isAuthenticated = Boolean(localStorage.getItem('access_token'))
 
   return (
-    <section className="relative overflow-hidden bg-surface-dark px-5 py-16 sm:px-8 sm:py-20">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(117,191,68,0.35),transparent)]" />
+    <section className="relative isolate overflow-hidden px-5 py-16 text-white sm:px-8 sm:py-20">
+      <div className="absolute inset-0 z-0" aria-hidden>
+        <img
+          src={sectionBgImage}
+          alt=""
+          className="h-full w-full object-cover"
+          decoding="async"
+        />
+        <div className="absolute inset-0 bg-primary/90" />
+      </div>
 
       <Reveal>
-        <div className="relative mx-auto flex w-full max-w-6xl flex-col items-center gap-8 rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/[0.08] to-white/[0.02] p-8 text-center shadow-2xl shadow-black/30 backdrop-blur-sm sm:p-10 lg:p-12">
+        <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col items-center gap-8 text-center sm:p-10 lg:p-12">
           <SectionHeading
             theme="dark"
-            label="Start today"
-            title="Your community already has stories worth sharing."
+            accent="cta"
+            label="Start Today"
             description={
               isAuthenticated
                 ? 'Head to your feed or open the directory to keep exploring.'
-                : 'Create an account to follow groups, RSVP to events, and join the conversation.'
+                : 'Create an account to join communities, RSVP to events, and join the conversation.'
             }
           />
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
             <button
               type="button"
               onClick={() => navigate(isAuthenticated ? '/feed' : '/register')}
-              className="rounded-full bg-primary px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-primary/25 transition hover:bg-primary-hover"
+              className="rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-primary shadow-lg shadow-black/10 transition hover:bg-white/90"
             >
               {isAuthenticated ? 'Go to feed' : 'Create account'}
             </button>

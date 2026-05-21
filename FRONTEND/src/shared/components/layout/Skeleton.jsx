@@ -83,17 +83,60 @@ export const CommunityProfileSkeleton = ({ tabPlaceholders = 7 }) => (
     </div>
 );
 
-/** Community directory list rows — same panel + Skeleton bars as profile */
-export const CommunitiesListSkeleton = ({ rows = 4 }) => (
-    <div className="flex flex-col gap-3" aria-busy="true" aria-label="Loading communities">
-        {Array.from({ length: rows }, (_, i) => (
-            <div key={i} className={`${SKELETON_PANEL} flex gap-4 p-5`}>
-                <Skeleton variant="rect" className="h-12 w-12 flex-shrink-0 rounded-xl" />
-                <div className="flex-1 space-y-2 pt-1">
-                    <Skeleton variant="text" className="h-4 w-full" />
+/** Community directory — showcase, platform band, browse list */
+export const CommunitiesListSkeleton = () => (
+    <div aria-busy="true" aria-label="Loading communities">
+        <div className="mx-auto max-w-6xl px-6">
+            <div className="flex flex-col sm:flex-row">
+                <div className="flex flex-shrink-0 flex-col items-center gap-4 bg-surface-muted-bg/50 px-8 py-10 sm:w-72 sm:py-12">
+                    <Skeleton variant="rect" className="h-24 w-36 rounded-2xl" />
+                    <Skeleton variant="text" className="h-4 w-28" />
+                    <Skeleton variant="text" className="h-5 w-16 rounded-full" />
+                </div>
+                <div className="hidden w-px self-stretch bg-surface-border/40 sm:block" />
+                <div className="flex flex-1 flex-col p-6 sm:p-8">
+                    <Skeleton variant="text" className="mb-4 h-3 w-36" />
+                    <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+                        {[1, 2, 3, 4, 5, 6].map((i) => (
+                            <div key={i} className="flex justify-center p-3">
+                                <Skeleton variant="rect" className="h-12 w-16 rounded-xl" />
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
-        ))}
+        </div>
+
+        <section className="mt-10 w-full bg-white py-10 sm:py-12">
+            <div className="mx-auto max-w-6xl px-6">
+                <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-8">
+                    <Skeleton variant="rect" className="h-24 w-36 flex-shrink-0 rounded-2xl" />
+                    <div className="min-w-0 flex-1 space-y-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Skeleton variant="text" className="h-7 w-48 max-w-full" />
+                            <Skeleton variant="text" className="h-5 w-28 rounded-full" />
+                        </div>
+                        <Skeleton variant="text" className="h-4 w-full" />
+                        <Skeleton variant="text" className="h-4 w-full" />
+                        <Skeleton variant="text" className="h-4 w-4/5" />
+                        <Skeleton variant="text" className="mt-2 h-4 w-32" />
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div className="mx-auto mt-10 max-w-6xl space-y-3 px-6">
+            <Skeleton variant="text" className="mb-1 h-3 w-40" />
+            {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center gap-6 py-2">
+                    <Skeleton variant="rect" className="h-12 w-16 flex-shrink-0 rounded-xl" />
+                    <div className="min-w-0 flex-1 space-y-2">
+                        <Skeleton variant="text" className="h-4 w-2/5 max-w-[12rem]" />
+                        <Skeleton variant="text" className="h-3 w-full" />
+                    </div>
+                </div>
+            ))}
+        </div>
     </div>
 );
 

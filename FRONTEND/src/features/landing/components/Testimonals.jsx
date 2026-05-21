@@ -21,10 +21,10 @@ const testimonials = [
 
 function TestimonialsSection() {
   return (
-    <section id="voices" className="bg-[#f3f7ef] px-5 py-20 sm:px-8">
+    <section id="voices" className="bg-secondary px-5 py-20 sm:px-8">
       <div className="mx-auto w-full max-w-6xl">
         <Reveal>
-          <SectionHeading label="Voices from campus" title="Less tool-switching, more momentum." />
+          <SectionHeading accent="testimonials" label="Voices from College" />
         </Reveal>
 
         <div className="mt-14 columns-1 gap-5 md:columns-2 lg:columns-3">

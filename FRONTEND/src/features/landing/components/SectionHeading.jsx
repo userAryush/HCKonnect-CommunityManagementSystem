@@ -1,24 +1,38 @@
 /**
- * Shared landing section title block: centered, consistent type scale.
- * Global base styles force headings to `text-surface-dark`; pass theme="dark" on dark bands.
+ * Shared landing section title block.
+ * `label` (or `title` if provided) renders as the bold display heading; `accent` sets its color.
  */
-function SectionHeading({ label, title, description, theme = 'light', className = '' }) {
+function SectionHeading({
+  label,
+  title,
+  description,
+  theme = 'light',
+  accent = 'communities',
+  className = '',
+}) {
   const isDark = theme === 'dark'
+  const displayTitle = title ?? label
 
   return (
-    <header className={['mx-auto max-w-2xl text-center', className].filter(Boolean).join(' ')}>
-      <p className="text-xs font-semibold uppercase tracking-[0.25em] text-primary">{label}</p>
-      <h2
-        className={`mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl ${
-          isDark ? 'text-white' : 'text-surface-dark'
-        }`}
-      >
-        {title}
+    <header
+      className={['mx-auto w-full max-w-6xl text-center', className].filter(Boolean).join(' ')}
+    >
+      {title && label ? (
+        <p
+          className={`text-xs font-bold uppercase tracking-[0.3em] ${
+            isDark ? 'text-white/85' : 'text-primary'
+          }`}
+        >
+          {label}
+        </p>
+      ) : null}
+      <h2 className={`landing-section-title landing-section-title--${accent} ${title && label ? 'mt-4' : ''}`}>
+        {displayTitle}
       </h2>
       {description ? (
         <p
-          className={`mt-3 text-sm leading-relaxed sm:text-base ${
-            isDark ? 'text-white/70' : 'text-surface-body'
+          className={`mx-auto mt-5 max-w-2xl text-sm leading-relaxed sm:text-base ${
+            isDark ? 'text-white/75' : 'text-surface-body'
           }`}
         >
           {description}
