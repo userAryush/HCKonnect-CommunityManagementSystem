@@ -12,6 +12,9 @@ from .feed_cache import apply_user_likes_to_feed, get_cached_community_feed
 from services.cache.cache_trace import log_uncached_fetch
 from rest_framework.permissions import AllowAny
 from django.db.models import Q
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+import requests
 from .serializers import (
     AnnouncementCreateSerializer, AnnouncementReadSerializer, AnnouncementUpdateSerializer, 
     PostCreateUpdateSerializer, PostReadSerializer, PostReactionSerializer,
@@ -569,7 +572,109 @@ class ResourceListView(ListAPIView):
                        .distinct()\
                        .order_by("-created_at")
 
+def _user_can_view_resource(user, resource):
+    if resource.visibility == "public":
+        return True
+    if not user.is_authenticated:
+        return False
+    if user.role == "community" and resource.community_id == user.id:
+        return True
+    if user.role == "student":
+        membership = getattr(user, "membership", None)
+        if membership and resource.community_id == membership.community_id:
+            return True
+    return False
+
+
+class ResourceFileServeView(APIView):
+    """Stream resource file bytes (helps when CDN URLs need consistent delivery)."""
+    permission_classes = [AllowAny]
+
+    def get(self, request, pk):
+        resource = get_object_or_404(Resource, pk=pk)
+        if not _user_can_view_resource(request.user, resource):
+            return Response({"detail": "Not found."}, status=404)
+        if not resource.file:
+            return Response({"detail": "No file attached."}, status=404)
+
+        from .resource_utils import build_resource_file_url, fetch_resource_file_bytes
+
+        ext = resource.file_extension or "bin"
+        safe_title = "".join(
+            c if c not in '/\\?%*:|"<>' else "-" for c in (resource.title or "resource")
+        )
+        disposition = request.query_params.get("disposition", "inline")
+
+        # Fetch bytes the same way for inline and attachment; only the response header differs.
+        content, content_type_or_err = fetch_resource_file_bytes(resource)
+        if content:
+            response = HttpResponse(content, content_type=content_type_or_err)
+            response["Content-Disposition"] = f'{disposition}; filename="{safe_title}.{ext}"'
+            return response
+
+        if content_type_or_err == "pdf_delivery_blocked":
+            return Response(
+                {
+                    "detail": (
+                        "Cloudinary is blocking PDF/ZIP delivery on this account. "
+                        "Open Cloudinary Console → Settings → Security → enable "
+                        "'Allow delivery of PDF and ZIP files', then try again."
+                    )
+                },
+                status=503,
+            )
+
+        url = build_resource_file_url(resource)
+        if not url:
+            return Response({"detail": "File unavailable."}, status=404)
+
+        try:
+            upstream = requests.get(url, timeout=60)
+        except requests.RequestException:
+            return Response({"detail": "Failed to reach file storage."}, status=502)
+
+        if upstream.status_code in (401, 403):
+            return Response(
+                {
+                    "detail": (
+                        "Cloudinary is blocking PDF/ZIP delivery on this account. "
+                        "Open Cloudinary Console → Settings → Security → enable "
+                        "'Allow delivery of PDF and ZIP files', then try again."
+                    )
+                },
+                status=503,
+            )
+        if upstream.status_code != 200:
+            return Response({"detail": "File not found on storage."}, status=404)
+
+        response = HttpResponse(
+            upstream.content,
+            content_type=upstream.headers.get("Content-Type", "application/octet-stream"),
+        )
+        response["Content-Disposition"] = f'{disposition}; filename="{safe_title}.{ext}"'
+        return response
+
+
 class ResourceUpdateDeleteView(RetrieveUpdateDestroyAPIView):
     queryset = Resource.objects.all()
     serializer_class = ResourceCreateUpdateSerializer
     permission_classes = [CanEditContent]
+
+    def perform_destroy(self, instance):
+        """
+        Remove DB row without letting Cloudinary file cleanup raise 500
+        (legacy image-type uploads + raw storage mismatch).
+        """
+        community_id = instance.community_id
+        pk = instance.pk
+
+        if instance.file:
+            try:
+                instance.file.delete(save=False)
+            except Exception:
+                pass
+
+        Resource.objects.filter(pk=pk).delete()
+
+        if community_id:
+            invalidate_community_page_caches(community_id)

@@ -8,16 +8,21 @@ import VacancyCard from '../../vacancy/components/VacancyCard'
 import Card from '../../../shared/components/card/Card'
 import { useInView } from 'react-intersection-observer'
 import { fetchFeed } from '../service/feedApi'
-
+import { vacancyAuthorItem } from '../../../utils/userUtils'
 
 const EMPTY_ARRAY = [];
+
+function normalizeFeedItem(item) {
+  if (!item) return item
+  if (item.type === 'vacancy') return vacancyAuthorItem(item)
+  return item
+}
 
 export default function FeedList({
   filter = 'all',
   hiddenTypes = EMPTY_ARRAY,
   hiddenCommunities = EMPTY_ARRAY,
   onApplyClick = () => { },
-  initialFeed = null,
   isFeedLoading = false,
 }) {
   const PAGE_SIZE = 20
@@ -40,10 +45,14 @@ export default function FeedList({
     })
   }, [items, hiddenTypes, hiddenCommunities])
 
+  const removeFeedItem = useCallback((id, type) => {
+    setItems((prev) => prev.filter((item) => !(item.id === id && item.type === type)))
+  }, [])
+
   const fetchPage = useCallback(async (targetPage, isNextPage = false) => {
     if (isNextPage) {
       setIsFetchingNext(true)
-    } else if (filter !== 'all') {
+    } else {
       setIsFetchingFiltered(true)
     }
     setFetchError(null)
@@ -54,7 +63,7 @@ export default function FeedList({
         pageSize: PAGE_SIZE,
         filter,
       })
-      const fetchedItems = data.results || []
+      const fetchedItems = (data.results || []).map(normalizeFeedItem)
 
       setItems((prev) => (isNextPage ? [...prev, ...fetchedItems] : fetchedItems))
       setHasMore(data.next !== null)
@@ -65,7 +74,7 @@ export default function FeedList({
     } finally {
       if (isNextPage) {
         setIsFetchingNext(false)
-      } else if (filter !== 'all') {
+      } else {
         setIsFetchingFiltered(false)
       }
     }
@@ -76,19 +85,11 @@ export default function FeedList({
       return
     }
 
-    if (filter === 'all' && initialFeed) {
-      setItems(initialFeed.results || [])
-      setHasMore(initialFeed.next !== null)
-      setPage(initialFeed.current_page || 1)
-      setFetchError(null)
-      return
-    }
-
     setItems([])
     setPage(1)
     setHasMore(true)
     fetchPage(1, false)
-  }, [filter, initialFeed, isFeedLoading, fetchPage])
+  }, [filter, isFeedLoading, fetchPage])
 
   useEffect(() => {
     if (!inView || !hasMore || isFetchingNext || fetchError) return
@@ -129,16 +130,36 @@ export default function FeedList({
         const keyPrefix = item.type || 'item'
         return (
           <Fragment key={`${keyPrefix}-${item.id}`}>
-            {item.type === 'announcement' && <AnnouncementCard item={item} />}
-            {item.type === 'discussion' && <DiscussionCard item={item} />}
-            {item.type === 'post' && <PostCard post={item} />}
+            {item.type === 'announcement' && (
+              <AnnouncementCard
+                item={item}
+                onDelete={(id) => removeFeedItem(id, 'announcement')}
+              />
+            )}
+            {item.type === 'discussion' && (
+              <DiscussionCard
+                item={item}
+                onDelete={(id) => removeFeedItem(id, 'discussion')}
+              />
+            )}
+            {item.type === 'post' && (
+              <PostCard
+                post={item}
+                onDelete={(id) => removeFeedItem(id, 'post')}
+              />
+            )}
             {item.type === 'vacancy' && (
               <VacancyCard
                 vacancy={item}
                 onApply={onApplyClick}
               />
             )}
-            {item.type === 'event' && <EventCard item={item} />}
+            {item.type === 'event' && (
+              <EventCard
+                item={item}
+                onDelete={(id) => removeFeedItem(id, 'event')}
+              />
+            )}
             {index === sentinelIndex && <div ref={sentinelRef} className="h-1 w-full opacity-0" />}
           </Fragment>
         )

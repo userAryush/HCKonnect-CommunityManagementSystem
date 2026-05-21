@@ -142,6 +142,7 @@ def invalidate_vacancy_caches(vacancy=None, *, community_id=None) -> None:
     cid = community_id or (getattr(vacancy, "community_id", None) if vacancy else None)
     if cid:
         invalidate_community_page_caches(cid)
+        invalidate_feed_cache(cid)
     if vacancy is not None and getattr(vacancy, "pk", None):
         cache.delete(vacancy_key(vacancy.pk))
         delete_cache_keys_with_prefix(f"vacancy_{vacancy.pk}")

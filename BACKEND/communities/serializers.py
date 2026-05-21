@@ -4,11 +4,16 @@ from .models import CommunityMembership,CommunityVacancy,VacancyApplication
 from .platform import is_platform_community
 from datetime import timedelta
 from django.utils import timezone
+from utils.description_limits import validate_description_length
 User = get_user_model()
 
 class CommunityVacancySerializer(ModelSerializer):
     community_id = UUIDField(source="community.id", read_only=True)
     community_name = CharField(source="community.community_name", read_only=True)
+    community_logo = ImageField(source="community.community_logo", read_only=True)
+    author = UUIDField(source="community.id", read_only=True)
+    author_role = SerializerMethodField()
+    author_image = SerializerMethodField()
     has_applied = SerializerMethodField()
     applicant_count = IntegerField(source="applications.count", read_only=True)
     created_at = DateTimeField(read_only=True)
@@ -27,6 +32,10 @@ class CommunityVacancySerializer(ModelSerializer):
             "is_open",
             "community_id",
             "community_name",
+            "community_logo",
+            "author",
+            "author_role",
+            "author_image",
             "community_focus",
             "has_applied",
             "applicant_count",
@@ -37,6 +46,10 @@ class CommunityVacancySerializer(ModelSerializer):
             "id",
             "community_id",
             "community_name",
+            "community_logo",
+            "author",
+            "author_role",
+            "author_image",
             "community_focus",
             "has_applied",
             "applicant_count",
@@ -44,12 +57,26 @@ class CommunityVacancySerializer(ModelSerializer):
             "updated_at",
         ]
 
+    def get_author_role(self, obj):
+        return "community"
+
+    def get_author_image(self, obj):
+        community = getattr(obj, "community", None)
+        if not community or not getattr(community, "community_logo", None):
+            return None
+        request = self.context.get("request")
+        logo = community.community_logo
+        return request.build_absolute_uri(logo.url) if request else logo.url
+
     def get_community_focus(self, obj):
         community = getattr(obj, "community", None)
         if not community:
             return ""
         desc = getattr(community, "community_description", None) or ""
         return str(desc).strip()
+
+    def validate_description(self, value):
+        return validate_description_length(value, "Description")
 
     def to_internal_value(self, data):
         mutable_data = data.copy()

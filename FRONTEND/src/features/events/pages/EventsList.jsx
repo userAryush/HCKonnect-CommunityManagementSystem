@@ -145,7 +145,9 @@ export default function EventsList() {
                                             setEditingEventId(item.id)
                                             setEditEventModalOpen(true)
                                         }}
-                                        onDelete={() => setEventsRefreshKey((k) => k + 1)}
+                                        onDelete={(eventId) =>
+                                            setEvents((prev) => prev.filter((e) => e.id !== eventId))
+                                        }
                                     />
                                 ))}
                             </div>

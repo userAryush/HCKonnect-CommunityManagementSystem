@@ -4,6 +4,14 @@ import { formatTimeAgo } from '../../../utils/timeFormatter';
 import { commentAuthorItem, sessionUserAsItem } from '../../../utils/userUtils';
 import { UserAvatar, UserProfileName } from '../card/UserInfo';
 import Button from '../ui/Button';
+import ExpandableDescription from '../ui/ExpandableDescription';
+import CommentLimitedTextarea from './CommentLimitedTextarea';
+import {
+    COMMENT_MAX_LENGTH,
+    COMMENT_COLLAPSED_MAX_CHARS,
+    COMMENT_COLLAPSED_MAX_LINES,
+} from '../../constants/commentLimits';
+import { clampToMaxLength } from '../../../utils/descriptionUtils';
 
 function isCommentEdited(reply) {
     if (!reply.updated_at || !reply.created_at) return false;
@@ -22,6 +30,8 @@ export default function CommentItem({
     submitInFlight,
     currentUser,
     viewerUser,
+    /** Less bottom padding on the final top-level row (discussion thread + sticky composer). */
+    isLastTopLevel = false,
 }) {
     const me = viewerUser ?? currentUser;
     const viewerItem = sessionUserAsItem(me);
@@ -90,7 +100,7 @@ export default function CommentItem({
         setReplyText('');
     };
     const handleSubmitReply = async () => {
-        if (!replyText.trim()) return;
+        if (!replyText.trim() || replyText.length > COMMENT_MAX_LENGTH) return;
         try {
             await onPostComment(reply.id, replyText);
             setReplyText('');
@@ -103,7 +113,7 @@ export default function CommentItem({
     const startEdit = () => {
         setIsReplying(false);
         setReplyText('');
-        setEditText(displayContent);
+        setEditText(clampToMaxLength(displayContent, COMMENT_MAX_LENGTH));
         setIsEditing(true);
     };
     const cancelEdit = () => {
@@ -112,7 +122,7 @@ export default function CommentItem({
     };
     const saveEdit = async () => {
         const next = editText.trim();
-        if (!next) return;
+        if (!next || editText.length > COMMENT_MAX_LENGTH) return;
         try {
             await onEditComment(reply.id, next);
             setIsEditing(false);
@@ -146,24 +156,27 @@ export default function CommentItem({
                 )}
             </div>
 
-            <div className="flex-1 pb-4 pl-3" style={{ minWidth: 0 }}>
+            <div
+                className={`flex-1 pl-3 ${isLastTopLevel && depth === 0 ? 'pb-1' : 'pb-4'}`}
+                style={{ minWidth: 0 }}
+            >
                 <div className="flex items-start justify-between mb-0.5 gap-2">
                     <div className="flex items-center gap-2 flex-wrap min-w-0">
                         <UserProfileName
                             item={authorItem}
                             className={`text-[14px] leading-snug focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm ${depth === 0 ? '' : 'opacity-95'}`}
                         />
-                        {reply.author_role === 'community' && (
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 tracking-wide">
+                        {reply.author_role === 'community' ? (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 tracking-wide border border-emerald-200/80 dark:border-emerald-800/60">
                                 Admin
+                            </span>
+                        ) : (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--surface-muted-bg)] text-[var(--surface-muted-text)] border border-[var(--surface-border)]">
+                                Student
                             </span>
                         )}
                         <span className="text-[12px] text-[var(--surface-muted-text)]">
-                            {reply.author_role !== 'community' &&
-                                (reply.author_community ? `· ${reply.author_community}` : '· Student')}
-                        </span>
-                        <span className="text-[12px] text-[var(--surface-muted-text)]">
-                            · {timeLabel}
+                            {timeLabel}
                             {edited && <span> · edited</span>}
                         </span>
                     </div>
@@ -216,13 +229,13 @@ export default function CommentItem({
 
                 {isEditing ? (
                     <div className="mb-2">
-                        <div className="rounded-xl border border-surface-border bg-[var(--surface-muted-bg)] focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/25 transition-all">
-                            <textarea
+                        <div className="rounded-xl border border-surface-border bg-[var(--surface-muted-bg)] focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/25 transition-all overflow-hidden">
+                            <CommentLimitedTextarea
                                 value={editText}
-                                onChange={(e) => setEditText(e.target.value)}
-                                className="w-full rounded-xl bg-transparent px-3 py-2.5 text-[14px] leading-relaxed text-[var(--app-text)] outline-none resize-none min-h-[72px] border-0 focus:ring-0"
+                                onChange={setEditText}
                                 rows={3}
                                 autoFocus
+                                className="px-3 pt-2.5 text-[14px] leading-relaxed min-h-[72px]"
                             />
                         </div>
                         <div className="mt-2 flex justify-end gap-2">
@@ -237,7 +250,11 @@ export default function CommentItem({
                                 variant="primary"
                                 onClick={saveEdit}
                                 isLoading={editSaving}
-                                disabled={!editText.trim() || editText.trim() === displayContent.trim()}
+                                disabled={
+                                    !editText.trim() ||
+                                    editText.trim() === displayContent.trim() ||
+                                    editText.length > COMMENT_MAX_LENGTH
+                                }
                                 className="!text-[12px] !py-1.5 !px-4 !rounded-lg"
                                 loadingText="Saving..."
                             >
@@ -246,11 +263,15 @@ export default function CommentItem({
                         </div>
                     </div>
                 ) : (
-                    <p
-                        className={`text-[14px] leading-relaxed whitespace-pre-wrap mb-2 text-[var(--app-text)] ${depth === 0 ? '' : 'opacity-90'}`}
-                    >
-                        {displayContent}
-                    </p>
+                    <ExpandableDescription
+                        text={displayContent}
+                        as="p"
+                        className={`mb-2 text-[14px] text-[var(--app-text)] ${depth === 0 ? '' : 'opacity-90'}`}
+                        collapsedMaxChars={COMMENT_COLLAPSED_MAX_CHARS}
+                        collapsedMaxLines={COMMENT_COLLAPSED_MAX_LINES}
+                        collapsedMaxHeightClass="max-h-[4.5rem]"
+                        toggleClassName="mt-0.5 inline-block text-[12px] font-semibold text-[var(--surface-muted-text)] transition-colors hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm"
+                    />
                 )}
 
                 {!isEditing && (
@@ -322,15 +343,15 @@ export default function CommentItem({
                             className="ring-2 ring-white dark:ring-[var(--surface-card)]"
                         />
                         <div className="flex-1 bg-[var(--surface-muted-bg)] rounded-xl border border-surface-border overflow-hidden focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/25 transition-all">
-                            <textarea
+                            <CommentLimitedTextarea
                                 value={replyText}
-                                onChange={(e) => setReplyText(e.target.value)}
+                                onChange={setReplyText}
                                 placeholder="Write a reply..."
-                                className="w-full px-3 pt-2.5 pb-1 text-[13px] bg-transparent border-none outline-none resize-none text-[var(--app-text)] placeholder-[color:var(--surface-muted-text)]"
                                 rows={2}
                                 autoFocus
+                                className="px-3 pt-2.5 text-[13px]"
                             />
-                            <div className="flex justify-end gap-2 px-3 pb-2">
+                            <div className="flex justify-end gap-2 px-3 pb-2 -mt-1">
                                 <button
                                     type="button"
                                     onClick={handleCancelReply}
@@ -343,7 +364,7 @@ export default function CommentItem({
                                     variant="primary"
                                     onClick={handleSubmitReply}
                                     isLoading={replySaving}
-                                    disabled={!replyText.trim()}
+                                    disabled={!replyText.trim() || replyText.length > COMMENT_MAX_LENGTH}
                                     className="!text-[12px] !py-1 !px-3 !rounded-lg"
                                     loadingText="Posting..."
                                 >

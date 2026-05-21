@@ -41,16 +41,8 @@ export default function ResourceList({ communityId, initialUploadOpen = false })
         }
     }, [communityId, initialUploadOpen, isCommunityAdmin]);
 
-    const handleDelete = async (id) => {
-        if (window.confirm("Are you sure you want to delete this resource?")) {
-            try {
-                await apiClient.delete(`/contents/resources/${id}/manage/`);
-                setResources(resources.filter(r => r.id !== id));
-            } catch (err) {
-                console.error("Failed to delete resource", err);
-                alert("Failed to delete resource");
-            }
-        }
+    const handleDelete = (id) => {
+        setResources((prev) => prev.filter((r) => r.id !== id));
     };
 
     const handleEdit = (resource) => {

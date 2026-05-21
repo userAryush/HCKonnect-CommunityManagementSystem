@@ -6,8 +6,12 @@ import CardActionMenu from '../../../shared/components/card/CardActionMenu';
 import Badge from '../../../shared/components/ui/Badge';
 import ConfirmationModal from '../../../shared/components/modals/ConfirmationModal';
 import EditAnnouncementModal from './EditAnnouncementModal';
+import ExpandableDescription from '../../../shared/components/ui/ExpandableDescription';
+import { useToast } from '../../../shared/components/ui/ToastContext';
+import { getApiErrorMessage } from '../../../utils/apiErrorUtils';
 
 export default function AnnouncementCard({ item, onDelete }) {
+  const { showToast } = useToast();
   const user = JSON.parse(localStorage.getItem('user') || 'null');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -32,10 +36,11 @@ export default function AnnouncementCard({ item, onDelete }) {
     try {
       await announcementService.deleteAnnouncement(itemState.id);
       setIsDeleteModalOpen(false);
+      showToast('Announcement deleted successfully.', 'success');
       if (onDelete) onDelete(itemState.id);
-      else window.location.reload();
     } catch (error) {
-      console.error("Failed to delete", error);
+      console.error('Failed to delete announcement', error);
+      showToast(getApiErrorMessage(error, 'Failed to delete announcement.'), 'error');
     } finally {
       setIsDeleting(false);
     }
@@ -72,9 +77,11 @@ export default function AnnouncementCard({ item, onDelete }) {
           <h3 className="text-title !text-surface-dark transition-transform duration-200 ease-out group-hover:-translate-y-0.5">
             {itemState.title}
           </h3>
-          <p className="text-body !text-surface-body leading-relaxed">
-            {itemState.description}
-          </p>
+          <ExpandableDescription
+            text={itemState.description}
+            className="text-body !text-surface-body"
+            as="p"
+          />
 
           {itemState.image && (
             <div className="mt-4 rounded-xl overflow-hidden bg-zinc-50 border border-surface-border/50 flex items-center justify-center max-h-80">

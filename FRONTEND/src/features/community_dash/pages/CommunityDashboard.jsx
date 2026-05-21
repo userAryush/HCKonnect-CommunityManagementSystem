@@ -8,6 +8,9 @@ import MetricCard from '../components/MetricCardDashboard';
 import CreateVacancyModal from '../../vacancy/components/CreateVacancyModal';
 import CreateEventModal from '../../events/components/CreateEventModal';
 import CreateAnnouncementModal from '../../announcement/components/CreateAnnouncementModal';
+import ResourceUploadModal from '../../resource/components/ResourceUploadModal';
+import CreatePostModal from '../../posts/components/CreatePostModal';
+import EditProfileModal from '../../profile/components/shared/EditProfileModal';
 import {
     Calendar,
     Users,
@@ -19,6 +22,9 @@ import {
     GraduationCap,
     Building2,
     Mail,
+    FolderKanban,
+    PenLine,
+    Edit2,
 } from 'lucide-react';
 import CommunityMessagePickerModal from '../../../shared/components/modals/CommunityMessagePickerModal';
 import SendMessageModal from '../../../shared/components/modals/SendMessageModal';
@@ -53,6 +59,9 @@ export default function CommunityDashboard() {
     const [isCreateVacancyModalOpen, setCreateVacancyModalOpen] = useState(false);
     const [isCreateEventModalOpen, setCreateEventModalOpen] = useState(false);
     const [isCreateAnnouncementModalOpen, setCreateAnnouncementModalOpen] = useState(false);
+    const [isResourceUploadModalOpen, setResourceUploadModalOpen] = useState(false);
+    const [isCreatePostModalOpen, setCreatePostModalOpen] = useState(false);
+    const [isEditProfileModalOpen, setEditProfileModalOpen] = useState(false);
     const [isMessagePickerOpen, setMessagePickerOpen] = useState(false);
     const [isSendMessageOpen, setSendMessageOpen] = useState(false);
     const [messageRecipient, setMessageRecipient] = useState(null);
@@ -68,12 +77,28 @@ export default function CommunityDashboard() {
                 hoverClass: 'hover:border-blue-500 hover:bg-blue-50/50 group-hover:bg-blue-500',
             },
             {
+                label: 'Add Post',
+                path: '#',
+                onClick: () => setCreatePostModalOpen(true),
+                icon: <PenLine size={20} />,
+                colorIcon: 'text-indigo-500',
+                hoverClass: 'hover:border-indigo-500 hover:bg-indigo-50/50 group-hover:bg-indigo-500',
+            },
+            {
                 label: 'Schedule Event',
                 path: '#',
                 onClick: () => setCreateEventModalOpen(true),
                 icon: <Calendar size={20} />,
                 colorIcon: 'text-emerald-500',
                 hoverClass: 'hover:border-emerald-500 hover:bg-emerald-50/50 group-hover:bg-emerald-500',
+            },
+            {
+                label: 'Upload Resources',
+                path: '#',
+                onClick: () => setResourceUploadModalOpen(true),
+                icon: <FolderKanban size={20} />,
+                colorIcon: 'text-teal-500',
+                hoverClass: 'hover:border-teal-500 hover:bg-teal-50/50 group-hover:bg-teal-500',
             },
             {
                 label: 'Start Discussion',
@@ -89,6 +114,14 @@ export default function CommunityDashboard() {
                 icon: <Mail size={20} />,
                 colorIcon: 'text-sky-500',
                 hoverClass: 'hover:border-sky-500 hover:bg-sky-50/50 group-hover:bg-sky-500',
+            },
+            {
+                label: 'Edit Profile',
+                path: '#',
+                onClick: () => setEditProfileModalOpen(true),
+                icon: <Edit2 size={20} />,
+                colorIcon: 'text-rose-500',
+                hoverClass: 'hover:border-rose-500 hover:bg-rose-50/50 group-hover:bg-rose-500',
             },
         ];
         if (!platform) {
@@ -143,6 +176,16 @@ export default function CommunityDashboard() {
             setVacancies([]);
         } else {
             setVacancies(Array.isArray(data.vacancies) ? data.vacancies : []);
+        }
+    };
+
+    const reloadDashboard = async () => {
+        try {
+            const data = await dashboardService.getSummary(id);
+            applySummaryData(data);
+        } catch (err) {
+            console.error('Failed to reload dashboard', err);
+            showToast('Failed to refresh dashboard.', 'error');
         }
     };
 
@@ -449,6 +492,28 @@ export default function CommunityDashboard() {
                 onClose={() => setCreateVacancyModalOpen(false)}
                 communityId={id}
                 onVacancyCreated={reloadVacancies}
+            />
+
+            <ResourceUploadModal
+                communityId={id}
+                isOpen={isResourceUploadModalOpen}
+                onClose={() => setResourceUploadModalOpen(false)}
+                onSuccess={() => {
+                    setResourceUploadModalOpen(false);
+                    showToast('Resource uploaded successfully.', 'success');
+                }}
+            />
+
+            <CreatePostModal
+                isOpen={isCreatePostModalOpen}
+                onClose={() => setCreatePostModalOpen(false)}
+            />
+
+            <EditProfileModal
+                isOpen={isEditProfileModalOpen}
+                onClose={() => setEditProfileModalOpen(false)}
+                profileId={id}
+                onSaved={reloadDashboard}
             />
 
             <ConfirmationModal

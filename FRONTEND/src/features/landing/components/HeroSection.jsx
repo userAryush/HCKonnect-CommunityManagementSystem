@@ -62,7 +62,7 @@ function HeroSection() {
               <span className="text-sm font-medium tracking-wide">HERALD COLLEGE · STUDENT COMMUNITIES</span>
             </Motion.div>
 
-            <h1 className="mb-4 font-display text-4xl font-bold leading-tight sm:mb-6 md:text-6xl lg:text-7xl">
+            <h1 className="mb-4 font-display text-4xl font-bold leading-tight text-secondary sm:mb-6 md:text-6xl lg:text-7xl">
               One home for <br />
               <span className="bg-gradient-to-r from-lime-200 to-white bg-clip-text text-transparent">
                 <TypeAnimation

@@ -7,7 +7,7 @@ import DiscussionRoomHeader from '../components/DiscussionRoomHeader';
 import CommentSection from '../../../shared/components/comments/CommentSection';
 import DetailPageLayout from '../../../shared/components/layout/DetailPageLayout';
 import { useComments, COMMENT_PAGE_SIZE } from '../../../shared/hooks/useComments';
-import { formatTimeAgo } from '../../../utils/timeFormatter';
+import { formatTimeAgo, groupRepliesByDate } from '../../../utils/timeFormatter';
 
 export default function DiscussionDetail() {
     const { id } = useParams();
@@ -169,6 +169,11 @@ export default function DiscussionDetail() {
         [optimisticReplies]
     );
 
+    const replyDateGroups = useMemo(
+        () => groupRepliesByDate(orderedReplies),
+        [orderedReplies]
+    );
+
     const handleLoadNewReplies = useCallback(async () => {
         const latest = await discussionService.getReplies(id, { cursor: null, limit: COMMENT_PAGE_SIZE });
         const latestCount = Array.isArray(latest?.comments) ? latest.comments.length : 0;
@@ -224,7 +229,7 @@ export default function DiscussionDetail() {
             showNavbar={false}
             mainClassName="max-w-none px-0 py-0"
         >
-            <div className="mx-auto w-full max-w-6xl pb-32 pt-[56px]">
+            <div className="mx-auto w-full max-w-6xl pb-20 pt-[46px]">
                 <DiscussionRoomHeader
                     discussion={discussion}
                     replyCount={replyCount}
@@ -233,25 +238,26 @@ export default function DiscussionDetail() {
                     onTitleClick={handleTitleClick}
                 />
 
-                <div className="mb-4 mt-3 flex flex-wrap items-center gap-2 px-1">
-                    <span className="inline-flex items-center gap-1 rounded-full border border-surface-border bg-[var(--surface-card)] px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide text-[var(--surface-muted-text)]">
+                <div className="px-4 sm:px-6">
+                <div className="mb-4 mt-3 flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide text-primary">
                         {roomSubtitle}
                     </span>
-                    <span className="inline-flex items-center gap-1 rounded-full border border-surface-border bg-[var(--surface-card)] px-2.5 py-1 text-[11px] text-[var(--surface-muted-text)]">
-                        <Clock3 size={12} />
+                    <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] text-primary">
+                        <Clock3 size={12} className="text-primary" />
                         {lastReplyLabel}
                     </span>
                 </div>
 
                 {discussion?.content && (
-                    <section className="mb-4 rounded-xl border border-surface-border bg-[var(--surface-card)] px-4 py-3 shadow-sm">
-                        <p className="mb-1 text-[11px] font-semibold tracking-wide text-[var(--surface-muted-text)]">
+                    <div className="mb-4 border-l-2 border-primary rounded-none py-2.5 px-3.5">
+                        <p className="text-[10px] font-bold uppercase tracking-widest mb-1 text-surface-muted-text">
                             Discussion Panel Description
                         </p>
-                        <p className="whitespace-pre-wrap text-sm leading-relaxed text-[var(--app-text)]">
+                        <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-surface-body">
                             {discussion.content}
                         </p>
-                    </section>
+                    </div>
                 )}
 
                 {showNewRepliesBanner && (
@@ -279,33 +285,34 @@ export default function DiscussionDetail() {
                     </div>
                 )}
 
-                <section className="rounded-2xl border border-surface-border bg-[var(--surface-card)] px-4 py-4 shadow-sm sm:px-5">
-                    <p className="mb-1 text-[11px] font-semibold tracking-wide text-[var(--surface-muted-text)]">
-                        Replies
-                    </p>
-                    <CommentSection
-                        comments={orderedReplies}
-                        onPostComment={handlePostComment}
-                        onDeleteComment={deleteComment}
-                        onEditComment={editComment}
-                        onToggleReaction={toggleReaction}
-                        currentUser={currentUser}
-                        submitInFlight={submitInFlight}
-                        hasMore={hasMore}
-                        onLoadMore={loadMore}
-                        loadingMore={false}
-                        loadMoreError={loadMoreError}
-                        hideComposer={true}
-                    />
-                </section>
-                <div ref={streamBottomRef} />
+                <p className="mb-2 text-[10px] font-medium uppercase tracking-widest text-[var(--surface-muted-text)]">
+                    Replies
+                </p>
+                <CommentSection
+                    comments={orderedReplies}
+                    commentGroups={replyDateGroups}
+                    onPostComment={handlePostComment}
+                    onDeleteComment={deleteComment}
+                    onEditComment={editComment}
+                    onToggleReaction={toggleReaction}
+                    currentUser={currentUser}
+                    submitInFlight={submitInFlight}
+                    hasMore={hasMore}
+                    onLoadMore={loadMore}
+                    loadingMore={false}
+                    loadMoreError={loadMoreError}
+                    hideComposer={true}
+                    className="mt-0"
+                />
+                </div>
+                <div ref={streamBottomRef} className="h-0" aria-hidden />
             </div>
 
             {showJumpToLatest && (
                 <button
                     type="button"
                     onClick={() => scrollToBottom()}
-                    className="fixed bottom-24 right-4 z-20 inline-flex items-center gap-1 rounded-full border border-surface-border bg-[var(--surface-card)] px-3 py-1.5 text-xs font-medium text-[var(--surface-heading)] shadow-md transition hover:shadow-lg"
+                    className="fixed bottom-20 right-4 z-20 inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary shadow-md transition hover:shadow-lg"
                 >
                     <ArrowDown size={13} />
                     Latest

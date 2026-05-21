@@ -10,7 +10,6 @@ import PaginationControls from '../../../shared/components/pagination/Pagination
 import CreateButton from '../../../shared/components/ui/CreateButton';
 import apiClient from '../../../shared/services/apiClient';
 import { Link, useSearchParams, useParams } from 'react-router-dom';
-import BackLink from '../../../shared/components/layout/BackLink';
 
 export default function AnnouncementsList() {
     const [itemsPerPage, setItemsPerPage] = useState(20);
@@ -104,9 +103,6 @@ export default function AnnouncementsList() {
                         <div className="lg:col-span-8 flex flex-col gap-6">
                             <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
                                 <div>
-                                    <div className="mb-1">
-                                        <BackLink to="/feed" />
-                                    </div>
                                     <h1 className="text-2xl font-bold tracking-tight text-surface-dark sm:text-3xl">All Announcements</h1>
                                     <p className="text-sm text-surface-muted">Be updated with every announcement.</p>
                                 </div>
@@ -134,7 +130,16 @@ export default function AnnouncementsList() {
                                     />
                                     <div className="flex flex-col gap-4">
                                         {announcements.map((item) => (
-                                            <AnnouncementCard key={item.id} item={item} className="w-full" />
+                                            <AnnouncementCard
+                                                key={item.id}
+                                                item={item}
+                                                className="w-full"
+                                                onDelete={(announcementId) =>
+                                                    setAnnouncements((prev) =>
+                                                        prev.filter((a) => a.id !== announcementId)
+                                                    )
+                                                }
+                                            />
                                         ))}
                                     </div>
 

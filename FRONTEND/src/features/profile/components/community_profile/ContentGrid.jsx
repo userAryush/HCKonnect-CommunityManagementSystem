@@ -6,32 +6,27 @@ import { Skeleton, CardSkeleton } from '../../../../shared/components/layout/Ske
 import ResourceCard from '../../../resource/components/ResourceCard';
 import VacancyCard from '../../../vacancy/components/VacancyCard';
 
-// Reusable Soft Container Component
-const SoftContainer = ({ children, className = '' }) => (
-    <div className={`community-soft-card bg-[var(--surface-card)] border border-surface-border/10 rounded-xl p-5 ${className}`}>
-        {children}
-    </div>
-);
+const GRID_LAYOUT = {
+    Announcements: 'grid grid-cols-1 md:grid-cols-2 gap-6',
+    Events: 'grid grid-cols-1 md:grid-cols-2 gap-6',
+    Discussions: 'flex flex-col gap-4',
+    Posts: 'grid grid-cols-1 gap-6',
+    Resources: 'grid grid-cols-1 md:grid-cols-2 gap-6',
+    Vacancies: 'grid grid-cols-1 md:grid-cols-2 gap-6',
+};
 
-export default function ContentGrid({ tab, data, loading, onApply }) {
+export default function ContentGrid({ tab, data, loading, onApply, onDelete, onEdit }) {
+    const layoutClass = GRID_LAYOUT[tab] || 'flex flex-col gap-4';
+
     if (loading) {
-        const gridClasses = {
-            Announcements: "grid-cols-1 md:grid-cols-2",
-            Events: "grid-cols-1 md:grid-cols-2",
-            Discussions: "space-y-4",
-            Posts: "grid-cols-1",
-            Resources: "grid-cols-1 md:grid-cols-2",
-            Vacancies: "grid-cols-1 md:grid-cols-2",
-        }[tab];
-
-        const isGrid = gridClasses.startsWith('grid');
+        const isGrid = layoutClass.startsWith('grid');
 
         return (
-            <SoftContainer className="!p-6">
-                <div className={isGrid ? `grid ${gridClasses} gap-6` : gridClasses}>
+            <div className="rounded-xl bg-secondary p-6">
+                <div className={isGrid ? layoutClass : layoutClass}>
                     {tab === 'Discussions' ? (
                         [1, 2, 3].map(i => (
-                            <div key={i} className="border border-surface-border/60 rounded-2xl p-5 space-y-3">
+                            <div key={i} className="space-y-3 py-2">
                                 <Skeleton variant="text" className="w-1/4 h-4" />
                                 <Skeleton variant="text" className="w-3/4 h-6" />
                                 <Skeleton variant="text" className="w-1/2 h-4" />
@@ -41,25 +36,16 @@ export default function ContentGrid({ tab, data, loading, onApply }) {
                         [1, 2, 3, 4].map(i => <CardSkeleton key={i} />)
                     )}
                 </div>
-            </SoftContainer>
+            </div>
         );
     }
-
-    const gridClasses = {
-        Announcements: "grid-cols-1 md:grid-cols-2",
-        Events: "grid-cols-1 md:grid-cols-2", // Changed to 2 per row
-        Discussions: "space-y-4",
-        Posts: "grid-cols-1", // Posts are typically full-width
-        Resources: "grid-cols-1 md:grid-cols-2", // Set to 2 per row
-        Vacancies: "grid-cols-1 md:grid-cols-2",
-    };
 
     const CardComponent = {
         Announcements: AnnouncementCard,
         Events: EventCard,
         Discussions: DiscussionCard,
-        Posts: PostCard, // Add PostCard
-        Resources: ResourceCard, // Add ResourceCard
+        Posts: PostCard,
+        Resources: ResourceCard,
         Vacancies: VacancyCard,
     }[tab];
 
@@ -67,26 +53,28 @@ export default function ContentGrid({ tab, data, loading, onApply }) {
         Announcements: 'item',
         Events: 'item',
         Discussions: 'item',
-        Posts: 'post', // Match PostCard prop name
-        Resources: 'resource', // ResourceCard expects a 'resource' prop
+        Posts: 'post',
+        Resources: 'resource',
         Vacancies: 'vacancy',
     }[tab];
 
     return (
-        <SoftContainer className="!p-6">
+        <div className="rounded-xl bg-secondary p-6">
             {data.length === 0 ? (
-                <div className={`col-span-full py-10 text-center text-surface-muted`}>No {tab.toLowerCase()} found.</div>
+                <p className="py-10 text-center text-surface-muted">No {tab.toLowerCase()} found.</p>
             ) : (
-                <div className={gridClasses[tab].startsWith('grid') ? `grid ${gridClasses[tab]} gap-6` : gridClasses[tab]}>
+                <div className={layoutClass}>
                     {data.map((item) => (
                         <CardComponent
                             key={item.id}
                             {...{ [itemProp]: item }}
                             onApply={onApply}
+                            {...(onDelete ? { onDelete } : {})}
+                            {...(onEdit ? { onEdit } : {})}
                         />
                     ))}
                 </div>
             )}
-        </SoftContainer>
+        </div>
     );
 }

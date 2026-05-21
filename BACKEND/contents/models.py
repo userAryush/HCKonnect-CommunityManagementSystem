@@ -2,6 +2,8 @@ from django.db import models
 from django.conf import settings
 from Base.models import BaseModel
 from django.core.exceptions import ValidationError
+from .resource_storage import ResourceCloudinaryStorage
+from .resource_utils import extension_from_name, resource_upload_path
 
 # Create your models here.
 class Announcement(BaseModel):
@@ -91,7 +93,14 @@ class PostReaction(BaseModel):
 class Resource(BaseModel):
     title = models.CharField(max_length=255)
     description = models.TextField()
-    file = models.FileField(upload_to="resources/", null=True, blank=True)
+    file = models.FileField(
+        upload_to=resource_upload_path,
+        storage=ResourceCloudinaryStorage(),
+        null=True,
+        blank=True,
+    )
+    file_size_bytes = models.PositiveIntegerField(default=0)
+    original_filename = models.CharField(max_length=255, blank=True, default="")
     video_url = models.URLField(null=True, blank=True)
     CATEGORY_CHOICES = [
         ("slide", "Slide"),
@@ -132,22 +141,26 @@ class Resource(BaseModel):
 
     @property
     def file_size(self):
+        if self.file_size_bytes:
+            return self.file_size_bytes
         try:
-            if self.file and hasattr(self.file, 'size'):
-                return self.file.size
+            uploaded = getattr(self.file, "file", None)
+            if uploaded is not None and hasattr(uploaded, "size"):
+                return uploaded.size or 0
         except Exception:
             pass
         return 0
 
     @property
     def file_extension(self):
+        ext = extension_from_name(self.original_filename)
+        if ext:
+            return ext
         try:
             if self.file and self.file.name:
-                ext = self.file.name.split('.')[-1].lower()
-                # If there's no dot or it's a very long string (like a path), handle it
-                if len(ext) > 10:
-                    return "file"
-                return ext
+                ext = extension_from_name(self.file.name)
+                if ext:
+                    return ext
         except Exception:
             pass
         return ""

@@ -23,10 +23,11 @@ export default function ConfirmationModal({
                 <h3 className="mb-2 text-title">{title}</h3>
                 <p className="text-body">{message}</p>
                 <div className="mt-6 flex justify-center gap-4">
-                    <Button variant="secondary" onClick={onClose} className="w-full">
+                    <Button type="button" variant="secondary" onClick={onClose} className="w-full">
                         {cancelText}
                     </Button>
                     <Button
+                        type="button"
                         variant="danger-outline"
                         onClick={onConfirm}
                         isLoading={isLoading}

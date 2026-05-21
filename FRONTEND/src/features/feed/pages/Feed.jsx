@@ -18,7 +18,6 @@ export default function Feed() {
 
   const [isFeedLoading, setIsFeedLoading] = useState(true)
   const [feedError, setFeedError] = useState(null)
-  const [initialFeed, setInitialFeed] = useState(null)
   const [sidebarAnnouncements, setSidebarAnnouncements] = useState([])
   const [profile, setProfile] = useState(null)
 
@@ -34,7 +33,6 @@ export default function Feed() {
     fetchFeedSummary({ page: 1, pageSize: 20 })
       .then((data) => {
         if (!mounted) return
-        setInitialFeed(data.feed || null)
         setSidebarAnnouncements(Array.isArray(data.announcements) ? data.announcements : [])
         setProfile(data.profile && Object.keys(data.profile).length > 0 ? data.profile : null)
       })
@@ -117,7 +115,6 @@ export default function Feed() {
                     key={filter}
                     filter={filter}
                     onApplyClick={handleApplyClick}
-                    initialFeed={filter === 'all' ? initialFeed : null}
                     isFeedLoading={filter === 'all' && isFeedLoading}
                   />
                 )}

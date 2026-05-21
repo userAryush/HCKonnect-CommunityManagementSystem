@@ -9,9 +9,13 @@ import Badge from '../../../shared/components/ui/Badge';
 import ActionButtons from '../../../shared/components/ui/ActionButtons';
 import ConfirmationModal from '../../../shared/components/modals/ConfirmationModal';
 import EditPostModal from './EditPostModal';
+import ExpandableDescription from '../../../shared/components/ui/ExpandableDescription';
+import { useToast } from '../../../shared/components/ui/ToastContext';
+import { getApiErrorMessage } from '../../../utils/apiErrorUtils';
 
 export default function PostCard({ post, onDelete, isDetailView = false }) {
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const user = JSON.parse(localStorage.getItem('user') || 'null');
     const [itemState, setItemState] = useState(post);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -37,10 +41,15 @@ export default function PostCard({ post, onDelete, isDetailView = false }) {
         try {
             await postService.deletePost(itemState.id);
             setIsDeleteModalOpen(false);
-            if (onDelete) onDelete(itemState.id);
-            else navigate('/feed');
+            showToast('Post deleted successfully.', 'success');
+            if (onDelete) {
+                onDelete(itemState.id);
+            } else if (isDetailView) {
+                navigate('/feed');
+            }
         } catch (error) {
-            console.error("Failed to delete", error);
+            console.error('Failed to delete post', error);
+            showToast(getApiErrorMessage(error, 'Failed to delete post.'), 'error');
         } finally {
             setIsDeleting(false);
         }
@@ -95,9 +104,12 @@ export default function PostCard({ post, onDelete, isDetailView = false }) {
                     <Badge variant="deepBlue" className="!bg-primary/10 !text-primary !border-primary/20">Post</Badge>
                 </CardHeader>
 
-                <div className={`text-body !text-[var(--app-text)] leading-relaxed whitespace-pre-wrap ${isDetailView ? 'text-lg' : ''}`}>
-                    {itemState.content}
-                </div>
+                <ExpandableDescription
+                    text={itemState.content}
+                    forceExpanded={isDetailView}
+                    className={`text-body !text-[var(--app-text)] ${isDetailView ? 'text-lg' : ''}`}
+                    as="div"
+                />
 
                 {itemState.image && (
                     <div className={`mt-4 rounded-xl overflow-hidden bg-zinc-50 border border-surface-border/50 flex items-center justify-center ${isDetailView ? '-mx-6 rounded-none max-h-[32rem]' : 'max-h-80'}`}>

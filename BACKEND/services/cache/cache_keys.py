@@ -8,7 +8,8 @@ def feed_key(community_id) -> str:
 
 
 def user_feed_timeline_key(user_id, page: int, page_size: int) -> str:
-    return f"user_feed:timeline:u{user_id}:p{page}:ps{page_size}"
+    # v2 — includes community logo fields on vacancy feed items
+    return f"user_feed:timeline:v2:u{user_id}:p{page}:ps{page_size}"
 
 
 def user_feed_announcements_key(user_id, page: int, page_size: int) -> str:

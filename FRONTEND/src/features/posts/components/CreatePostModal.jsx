@@ -5,6 +5,8 @@ import Button from '../../../shared/components/ui/Button';
 import ModalWrapper from '../../../shared/components/modals/ModalWrapper';
 import ModalHeader from '../../../shared/components/modals/ModalHeader';
 import { useToast } from '../../../shared/components/ui/ToastContext';
+import LimitedTextarea from '../../../shared/components/ui/LimitedTextarea';
+import { DESCRIPTION_MAX_LENGTH } from '../../../shared/constants/descriptionLimits';
 
 export default function CreatePostModal({ isOpen, onClose, onCreated }) {
     const { showToast } = useToast();
@@ -34,6 +36,10 @@ export default function CreatePostModal({ isOpen, onClose, onCreated }) {
     const handleCreatePost = async (e) => {
         e.preventDefault();
         if (!content.trim() && !image) return;
+        if (content.length > DESCRIPTION_MAX_LENGTH) {
+            showToast(`Post must be at most ${DESCRIPTION_MAX_LENGTH} characters.`, 'error');
+            return;
+        }
 
         setSubmitting(true);
         const formData = new FormData();
@@ -62,11 +68,12 @@ export default function CreatePostModal({ isOpen, onClose, onCreated }) {
             />
 
             <form onSubmit={handleCreatePost} className="space-y-6 p-8">
-                <textarea
+                <LimitedTextarea
                     value={content}
-                    onChange={(e) => setContent(e.target.value)}
+                    onChange={setContent}
                     placeholder="What's on your mind?"
-                    className="w-full min-h-[160px] resize-none input-standard"
+                    rows={6}
+                    className="min-h-[160px] resize-none"
                 />
 
                 {imagePreview && (

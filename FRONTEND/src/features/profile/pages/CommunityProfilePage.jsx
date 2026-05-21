@@ -26,7 +26,6 @@ export default function CommunityProfilePage() {
   const { id } = useParams()
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'Overview')
   const [menuOpen, setMenuOpen] = useState(false)
-  const [membershipStatus, setMembershipStatus] = useState('none') // none, pending, joined
   const [communityData, setCommunityData] = useState(null)
   const [isMessageModalOpen, setIsMessageModalOpen] = useState(false)
   const { user: currentUser } = useAuth()
@@ -47,10 +46,6 @@ export default function CommunityProfilePage() {
   const [error, setError] = useState('')
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const tabs = filterCommunityTabs(ALL_TABS, communityData);
-
-  const handleJoinRequest = () => {
-    setMembershipStatus('pending')
-  }
 
   const fetchCommunity = async () => {
     try {
@@ -102,8 +97,12 @@ export default function CommunityProfilePage() {
           const res = await announcementService.getAnnouncements(1, id);
           setTabData(prev => ({ ...prev, announcements: mapAnnouncements(res.results || []) }));
         } else if (activeTab === 'Discussions') {
-          const res = await discussionService.getDiscussions(1, id);
-          setTabData(prev => ({ ...prev, discussions: res.results || [] }));
+          const res = await discussionService.getDiscussions({
+            page: 1,
+            pageSize: 20,
+            communityId: id,
+          });
+          setTabData(prev => ({ ...prev, discussions: res?.results ?? [] }));
         } else if (activeTab === 'Posts') { // Add fetch logic for Posts
           const res = await postService.getPostsForCommunity(id);
           setTabData(prev => ({ ...prev, posts: res.results || [] }));
@@ -205,8 +204,6 @@ export default function CommunityProfilePage() {
             communityData={communityData}
             isProfileOwner={isProfileOwner}
             currentUser={currentUser}
-            membershipStatus={membershipStatus}
-            handleJoinRequest={handleJoinRequest}
             isMessageModalOpen={isMessageModalOpen}
             setIsMessageModalOpen={setIsMessageModalOpen}
             onEditProfile={() => setIsEditModalOpen(true)}
@@ -229,19 +226,59 @@ export default function CommunityProfilePage() {
             )}
 
             {activeTab === 'Announcements' && (
-              <ContentGrid tab="Announcements" data={tabData.announcements} loading={loadingTab} />
+              <ContentGrid
+                tab="Announcements"
+                data={tabData.announcements}
+                loading={loadingTab}
+                onDelete={(id) =>
+                  setTabData((prev) => ({
+                    ...prev,
+                    announcements: prev.announcements.filter((a) => a.id !== id),
+                  }))
+                }
+              />
             )}
 
             {activeTab === 'Events' && (
-              <ContentGrid tab="Events" data={tabData.events} loading={loadingTab} />
+              <ContentGrid
+                tab="Events"
+                data={tabData.events}
+                loading={loadingTab}
+                onDelete={(id) =>
+                  setTabData((prev) => ({
+                    ...prev,
+                    events: prev.events.filter((e) => e.id !== id),
+                  }))
+                }
+              />
             )}
 
             {activeTab === 'Discussions' && (
-              <ContentGrid tab="Discussions" data={tabData.discussions} loading={loadingTab} />
+              <ContentGrid
+                tab="Discussions"
+                data={tabData.discussions}
+                loading={loadingTab}
+                onDelete={(id) =>
+                  setTabData((prev) => ({
+                    ...prev,
+                    discussions: prev.discussions.filter((d) => d.id !== id),
+                  }))
+                }
+              />
             )}
 
             {activeTab === 'Posts' && (
-              <ContentGrid tab="Posts" data={tabData.posts} loading={loadingTab} />
+              <ContentGrid
+                tab="Posts"
+                data={tabData.posts}
+                loading={loadingTab}
+                onDelete={(postId) =>
+                  setTabData((prev) => ({
+                    ...prev,
+                    posts: prev.posts.filter((p) => p.id !== postId),
+                  }))
+                }
+              />
             )}
 
             {activeTab === 'Members' && (
@@ -249,7 +286,17 @@ export default function CommunityProfilePage() {
             )}
 
             {activeTab === 'Resources' && (
-              <ContentGrid tab="Resources" data={tabData.resources} loading={loadingTab} />
+              <ContentGrid
+                tab="Resources"
+                data={tabData.resources}
+                loading={loadingTab}
+                onDelete={(resourceId) =>
+                  setTabData((prev) => ({
+                    ...prev,
+                    resources: prev.resources.filter((r) => r.id !== resourceId),
+                  }))
+                }
+              />
             )}
 
             {activeTab === 'Vacancies' && (

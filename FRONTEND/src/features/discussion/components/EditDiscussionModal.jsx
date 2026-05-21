@@ -4,6 +4,9 @@ import { useToast } from '../../../shared/components/ui/ToastContext';
 import Button from '../../../shared/components/ui/Button';
 import ModalWrapper from '../../../shared/components/modals/ModalWrapper';
 import ModalHeader from '../../../shared/components/modals/ModalHeader';
+import LimitedTextarea from '../../../shared/components/ui/LimitedTextarea';
+import { DESCRIPTION_MAX_LENGTH } from '../../../shared/constants/descriptionLimits';
+import { clampToMaxLength } from '../../../utils/descriptionUtils';
 
 export default function EditDiscussionModal({ isOpen, onClose, discussion, onUpdated }) {
     const { showToast } = useToast();
@@ -25,7 +28,9 @@ export default function EditDiscussionModal({ isOpen, onClose, discussion, onUpd
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+        const next =
+            name === 'content' ? clampToMaxLength(value, DESCRIPTION_MAX_LENGTH) : value;
+        setFormData((prev) => ({ ...prev, [name]: next }));
     };
 
     const handleSubmit = async (e) => {
@@ -66,17 +71,16 @@ export default function EditDiscussionModal({ isOpen, onClose, discussion, onUpd
                     />
                 </div>
 
-                <div>
-                    <label className="mb-2 block text-body text-surface-dark">Content</label>
-                    <textarea
-                        name="content"
-                        value={formData.content}
-                        onChange={handleChange}
-                        required
-                        rows={5}
-                        className="w-full resize-none input-standard"
-                    />
-                </div>
+                <LimitedTextarea
+                    label="Content"
+                    value={formData.content}
+                    onChange={(value) =>
+                        setFormData((prev) => ({ ...prev, content: value }))
+                    }
+                    required
+                    rows={5}
+                    className="resize-none"
+                />
 
                 <p className="text-xs text-surface-muted">Visibility cannot be changed after creation.</p>
 

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import discussionService from '../service/discussionService';
 import DiscussionCard from '../components/DiscussionCard';
 import CreateDiscussionModal from '../components/CreateDiscussionModal';
@@ -19,7 +18,6 @@ export default function DiscussionList() {
     const [totalCount, setTotalCount] = useState(0);
     const [refreshKey, setRefreshKey] = useState(0);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const navigate = useNavigate();
 
     useEffect(() => {
         fetchDiscussions();
@@ -39,7 +37,7 @@ export default function DiscussionList() {
     };
 
     const handleDelete = (id) => {
-        setDiscussions(discussions.filter(d => d.id !== id));
+        setDiscussions((prev) => prev.filter((d) => d.id !== id));
     };
 
     const handleItemsPerPageChange = (newItemsPerPage) => {
@@ -55,7 +53,6 @@ export default function DiscussionList() {
                     <PageHeader
                         title="Community Discussions"
                         subtitle="Deep dives, debates, and detailed conversations."
-                        backLinkTo={`/feed`}
                     >
                         <CreateButton onClick={() => setIsCreateModalOpen(true)}>
                             New Discussion

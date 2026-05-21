@@ -13,6 +13,11 @@ import Badge from '../../../shared/components/ui/Badge';
 import Button from '../../../shared/components/ui/Button';
 import ShareButton from '../../../shared/components/card/ShareButton';
 import ConfirmationModal from '../../../shared/components/modals/ConfirmationModal';
+import ExpandableDescription from '../../../shared/components/ui/ExpandableDescription';
+import apiClient from '../../../shared/services/apiClient';
+import { useToast } from '../../../shared/components/ui/ToastContext';
+import { resourceAuthorItem } from '../../../utils/userUtils';
+import { getApiErrorMessage } from '../../../utils/apiErrorUtils';
 
 const getResourceIcon = (category) => {
     switch (category) {
@@ -29,7 +34,7 @@ const getResourceIcon = (category) => {
 
 const formatFileSize = (bytes) => {
     const numBytes = Number(bytes);
-    if (isNaN(numBytes) || numBytes <= 0) return '0 Bytes';
+    if (isNaN(numBytes) || numBytes <= 0) return '—';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(numBytes) / Math.log(k));
@@ -38,6 +43,7 @@ const formatFileSize = (bytes) => {
 };
 
 export default function ResourceCard({ resource, onEdit, onDelete }) {
+    const { showToast } = useToast();
     const user = JSON.parse(localStorage.getItem('user') || 'null');
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -47,15 +53,89 @@ export default function ResourceCard({ resource, onEdit, onDelete }) {
         (user.membership && user.membership.role === 'representative' && String(user.membership.community) === String(resource.community?.id || resource.community))
     );
 
+    const authorItem = resourceAuthorItem(resource);
+
+    const apiBase = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/').replace(/\/$/, '');
+
+    const resolveServePath = (disposition = 'inline') => {
+        let path = resource.file_serve_url
+            || `/contents/resources/${resource.id}/file/`;
+        try {
+            if (/^https?:\/\//i.test(path)) {
+                const url = new URL(path);
+                path = `${url.pathname}${url.search}`;
+            }
+        } catch {
+            /* use path as-is */
+        }
+        if (!path.startsWith('/')) path = `/${path}`;
+        const sep = path.includes('?') ? '&' : '?';
+        return `${path}${sep}disposition=${disposition}`;
+    };
+
+    const buildFilename = () => {
+        const ext = resource.file_extension
+            ? `.${String(resource.file_extension).replace(/^\./, '')}`
+            : '';
+        return `${(resource.title || 'resource').replace(/[/\\?%*:|"<>]/g, '-')}${ext}`;
+    };
+
     const handleOpen = (e) => {
         e.stopPropagation();
-        const url = resource.category === 'video' ? resource.video_url : resource.file;
-        window.open(url, '_blank');
+        if (resource.category === 'video') {
+            if (resource.video_url) window.open(resource.video_url, '_blank', 'noopener,noreferrer');
+            return;
+        }
+        window.open(`${apiBase}${resolveServePath('inline')}`, '_blank', 'noopener,noreferrer');
+    };
+
+    const handleDownload = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const filename = buildFilename();
+
+        try {
+            const res = await apiClient.get(resolveServePath('attachment'), {
+                responseType: 'blob',
+            });
+            const blob =
+                res.data instanceof Blob
+                    ? res.data
+                    : new Blob([res.data], {
+                          type: res.headers['content-type'] || 'application/octet-stream',
+                      });
+            const blobUrl = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = filename;
+            link.rel = 'noopener';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(blobUrl);
+            showToast('Download started.', 'success');
+        } catch (err) {
+            console.error('Download failed', err);
+            let message = getApiErrorMessage(
+                err,
+                'Download failed. Please try again.'
+            );
+            const blobData = err?.response?.data;
+            if (blobData instanceof Blob) {
+                try {
+                    const parsed = JSON.parse(await blobData.text());
+                    if (typeof parsed?.detail === 'string') message = parsed.detail;
+                } catch {
+                    /* keep fallback */
+                }
+            }
+            showToast(message, 'error');
+        }
     };
 
     const handleEdit = (e) => {
         if (e) e.stopPropagation();
-        onEdit(resource);
+        if (onEdit) onEdit(resource);
     };
 
     const handleDelete = (e) => {
@@ -64,25 +144,30 @@ export default function ResourceCard({ resource, onEdit, onDelete }) {
     };
 
     const confirmDelete = async () => {
-        if (!onDelete) return;
         setIsDeleting(true);
         try {
-            await onDelete(resource.id);
+            await apiClient.delete(`/contents/resources/${resource.id}/manage/`);
             setIsDeleteModalOpen(false);
+            showToast('Resource deleted successfully.', 'success');
+            if (onDelete) onDelete(resource.id);
         } catch (error) {
             console.error('Failed to delete resource', error);
+            showToast(getApiErrorMessage(error, 'Failed to delete resource.'), 'error');
         } finally {
             setIsDeleting(false);
         }
     };
 
-    const resourceUrl = resource.category === 'video' ? resource.video_url : window.location.origin + resource.file;
+    const resourceUrl =
+        resource.category === 'video'
+            ? resource.video_url
+            : `${apiBase}${resolveServePath('inline')}`;
 
     return (
         <>
             <Card className="group relative break-words">
                 <CardHeader
-                    item={resource}
+                    item={authorItem}
                     actions={
                         <CardActionMenu
                             canEdit={canManage}
@@ -109,9 +194,11 @@ export default function ResourceCard({ resource, onEdit, onDelete }) {
                         <h3 className="text-title transition-transform duration-200 ease-out group-hover:-translate-y-0.5 truncate" title={resource.title}>
                             {resource.title}
                         </h3>
-                        <p className="mt-1 text-xs text-surface-muted line-clamp-2 break-words leading-relaxed">
-                            {resource.description}
-                        </p>
+                        <ExpandableDescription
+                            text={resource.description}
+                            className="mt-1 text-xs text-surface-muted break-words"
+                            as="p"
+                        />
                         <div className="mt-4 flex items-center justify-between text-[11px] text-surface-muted">
                             <div className="flex items-center gap-2 overflow-hidden">
                                 {resource.category === 'video' ? (
@@ -138,16 +225,15 @@ export default function ResourceCard({ resource, onEdit, onDelete }) {
                     </Button>
 
                     {resource.category !== 'video' && (
-                        <a
-                            href={resource.file}
-                            download
-                            onClick={(e) => e.stopPropagation()}
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            className="!p-2.5"
                             title="Download"
+                            onClick={handleDownload}
                         >
-                            <Button variant="ghost" className="!p-2.5">
-                                <Download size={16} />
-                            </Button>
-                        </a>
+                            <Download size={16} />
+                        </Button>
                     )}
 
                     <ShareButton

@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../authentication/components/AuthContext';
-import { getDisplayName, getInitials, getProfileImage, getRoleLabel } from '../../../utils/userUtils';
+import { UserAvatar } from '../../../shared/components/card/UserInfo';
+import { getDisplayName, getRoleLabel, isCommunityAuthor, sessionUserAsItem } from '../../../utils/userUtils';
 
 export default function MiniProfileCard({ profile: profileProp = null, isFeedLoading = false }) {
     const { user } = useAuth();
@@ -9,9 +10,9 @@ export default function MiniProfileCard({ profile: profileProp = null, isFeedLoa
     if (!user) return null;
 
     const displayName = getDisplayName(user);
-    const profileImage = getProfileImage(user);
-    const initials = getInitials(displayName);
     const roleLabel = getRoleLabel(user);
+    const userItem = sessionUserAsItem(user);
+    const isCommunity = isCommunityAuthor(userItem);
 
     const statItems = useMemo(() => {
         const sidebar = profileProp?.feed_sidebar_stats;
@@ -39,19 +40,16 @@ export default function MiniProfileCard({ profile: profileProp = null, isFeedLoa
     return (
         <div className="rounded-standard relative overflow-hidden border border-primary/30 bg-primary/[0.07]">
             <div className="relative p-6 flex flex-col items-center">
-                <div className="mb-3">
-                    {profileImage ? (
-                        <img
-                            src={profileImage}
-                            alt={displayName}
-                            className="h-16 w-16 rounded-full object-cover border-[2.5px] border-primary shadow-sm" />
-                    ) : (
-                        <div className="flex h-16 w-16 items-center justify-center rounded-full border-[2.5px] border-primary bg-white">
-                            <span className="text-lg font-bold uppercase tracking-wider text-primary-hover">
-                                {initials}
-                            </span>
-                        </div>
-                    )}
+                <div className="mb-3 flex justify-center">
+                    <UserAvatar
+                        item={userItem}
+                        size="lg"
+                        className={
+                            isCommunity
+                                ? ''
+                                : 'border-[2.5px] !border-primary shadow-sm !bg-white text-primary-hover'
+                        }
+                    />
                 </div>
 
                 <div className="text-center">

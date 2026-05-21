@@ -49,6 +49,19 @@ export const getInitials = (name) => {
   return initials || 'U';
 };
 
+/** Whether the item represents a community author (not a student profile). */
+export function isCommunityAuthor(user) {
+  if (!user) return false;
+  const role = user.role || user.author_role;
+  if (role === 'community') return true;
+  const communityName =
+    user.community_name || user.author_community_name || user.author_community;
+  if (!role && communityName && !user.full_name && !user.author_full_name) {
+    return true;
+  }
+  return false;
+}
+
 /**
  * Returns the correct profile image or logo for a user/community.
  */
@@ -107,6 +120,46 @@ export function commentAuthorItem(reply) {
     author_role: reply.author_role,
     author_community: reply.author_community,
     community: reply.community,
+  };
+}
+
+/** Maps vacancy API payloads to the shape expected by UserInfo / CardHeader. */
+export function vacancyAuthorItem(vacancy) {
+  if (!vacancy) return vacancy;
+  const communityId =
+    vacancy.community_id ?? vacancy.author ?? vacancy.community?.id ?? vacancy.community;
+  const logo = vacancy.community_logo ?? vacancy.author_image ?? null;
+  return {
+    ...vacancy,
+    author_role: vacancy.author_role ?? 'community',
+    author: vacancy.author ?? communityId,
+    community_id: communityId,
+    community_name: vacancy.community_name ?? vacancy.author_community_name,
+    community_logo: logo,
+    author_image: vacancy.author_image ?? logo,
+  };
+}
+
+/** Maps resource API payloads to the shape expected by UserInfo / CardHeader. */
+export function resourceAuthorItem(resource) {
+  if (!resource) return resource;
+  const communityId =
+    resource.community_id ?? resource.community?.id ?? resource.community;
+  const logo = resource.community_logo ?? resource.author_image ?? null;
+  return {
+    ...resource,
+    author_role: resource.author_role ?? 'community',
+    author: resource.author ?? communityId,
+    created_by: resource.created_by_user ?? resource.created_by,
+    community_id: communityId,
+    community:
+      resource.community ??
+      (communityId ? { id: communityId, name: resource.community_name } : undefined),
+    community_name: resource.community_name ?? resource.author_community_name,
+    community_logo: logo,
+    author_image: resource.author_image ?? logo,
+    author_name: resource.author_name,
+    created_at: resource.created_at ?? resource.createdAt,
   };
 }
 

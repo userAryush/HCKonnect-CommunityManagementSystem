@@ -4,6 +4,8 @@ import { useToast } from '../../../shared/components/ui/ToastContext';
 import Button from '../../../shared/components/ui/Button';
 import ModalWrapper from '../../../shared/components/modals/ModalWrapper';
 import ModalHeader from '../../../shared/components/modals/ModalHeader';
+import LimitedTextarea from '../../../shared/components/ui/LimitedTextarea';
+import { DESCRIPTION_MAX_LENGTH } from '../../../shared/constants/descriptionLimits';
 
 export default function CreateAnnouncementModal({ isOpen, onClose, onCreated }) {
     const { showToast } = useToast();
@@ -29,6 +31,10 @@ export default function CreateAnnouncementModal({ isOpen, onClose, onCreated }) 
         e.preventDefault();
         if (!title.trim() || !description.trim()) {
             showToast('Please fill in all required fields.', 'error');
+            return;
+        }
+        if (description.length > DESCRIPTION_MAX_LENGTH) {
+            showToast(`Description must be at most ${DESCRIPTION_MAX_LENGTH} characters.`, 'error');
             return;
         }
 
@@ -72,16 +78,14 @@ export default function CreateAnnouncementModal({ isOpen, onClose, onCreated }) 
                     />
                 </div>
 
-                <div>
-                    <label className="mb-2 block text-body text-surface-dark">Description *</label>
-                    <textarea
-                        rows="5"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        className="w-full resize-none input-standard"
-                        placeholder="Write your announcement here..."
-                    />
-                </div>
+                <LimitedTextarea
+                    label="Description *"
+                    rows={5}
+                    value={description}
+                    onChange={setDescription}
+                    placeholder="Write your announcement here..."
+                    className="resize-none"
+                />
 
                 <div>
                     <label className="mb-2 block text-body text-surface-dark">Image (Optional)</label>

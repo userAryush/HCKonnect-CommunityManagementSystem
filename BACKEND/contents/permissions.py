@@ -37,15 +37,23 @@ class CanEditContent(BasePermission):
         if not user.is_authenticated:
             return False
 
-        # Check community ownership (if exists)
-        if getattr(obj, "community", None) == user:
+        community_id = getattr(obj, "community_id", None)
+        if community_id is not None and str(community_id) == str(user.id):
             return True
 
-        # Check creator ownership (if exists)
-        if getattr(obj, "created_by_user", None) == user:
+        created_by = getattr(obj, "created_by_user", None)
+        if created_by is not None and created_by == user:
             return True
-        
-        # Check if admin
+
+        membership = getattr(user, "membership", None)
+        if (
+            membership
+            and membership.role == "representative"
+            and community_id is not None
+            and str(membership.community_id) == str(community_id)
+        ):
+            return True
+
         if user.role == "admin":
             return True
 

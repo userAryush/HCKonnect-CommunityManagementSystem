@@ -83,6 +83,33 @@ class DiscussionListView(ListAPIView):
         )
         return Response(serializer.data)
 
+    @staticmethod
+    def _community_scope_filter(community_id):
+        return (
+            Q(community_id=community_id)
+            | Q(
+                community__isnull=True,
+                created_by__membership__community_id=community_id,
+            )
+            | Q(
+                community__isnull=True,
+                created_by_id=community_id,
+                created_by__role="community",
+            )
+        )
+
+    @staticmethod
+    def _user_can_view_all_community_discussions(user, community_id):
+        if not community_id:
+            return False
+        if getattr(user, "role", None) == "community" and str(user.id) == str(community_id):
+            return True
+        if getattr(user, "role", None) == "student":
+            membership = getattr(user, "membership", None)
+            if membership and str(membership.community_id) == str(community_id):
+                return True
+        return False
+
     def get_queryset(self):
         user = self.request.user
 
@@ -98,11 +125,15 @@ class DiscussionListView(ListAPIView):
             if membership:
                 visibility_filter |= Q(community=membership.community)
 
-        qs = qs.filter(visibility_filter)
-
         community_id = self.request.query_params.get("community_id")
         if community_id:
-            qs = qs.filter(community_id=community_id)
+            community_scope = self._community_scope_filter(community_id)
+            if self._user_can_view_all_community_discussions(user, community_id):
+                qs = qs.filter(community_scope)
+            else:
+                qs = qs.filter(visibility_filter).filter(community_scope)
+        else:
+            qs = qs.filter(visibility_filter)
 
         return (
             qs.select_related("created_by", "community", "created_by__membership__community")
@@ -110,6 +141,7 @@ class DiscussionListView(ListAPIView):
                 _reply_count_total=Count("replies", distinct=True),
                 _topic_reaction_count_total=Count("reactions", distinct=True),
             )
+            .distinct()
             .order_by("-is_pinned", "-created_at")
         )
 

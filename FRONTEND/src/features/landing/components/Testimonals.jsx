@@ -24,7 +24,11 @@ function TestimonialsSection() {
     <section id="voices" className="bg-secondary px-5 py-20 sm:px-8">
       <div className="mx-auto w-full max-w-6xl">
         <Reveal>
-          <SectionHeading accent="testimonials" label="Voices from College" />
+          <SectionHeading
+            accent="testimonials"
+            label="Voices from College"
+            description="Community leads and coordinators share how HCKonnect keeps their groups organized and students in the loop."
+          />
         </Reveal>
 
         <div className="mt-14 columns-1 gap-5 md:columns-2 lg:columns-3">

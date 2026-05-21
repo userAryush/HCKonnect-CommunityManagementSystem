@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import AnnouncementCreateView, AnnouncementListView, AnnouncementUpdateView, AnnouncementDeleteView, AnnouncementStatsView, PostCreateView, PostListView, PostDetailView, PostUpdateDeleteView, PostReactionToggleView, PostCommentCreateView, PostCommentUpdateView, PostCommentDeleteView, PostCommentListView, ResourceCreateView, ResourceListView, ResourceUpdateDeleteView, FeedListView
+from .views import AnnouncementCreateView, AnnouncementListView, AnnouncementUpdateView, AnnouncementDeleteView, AnnouncementStatsView, PostCreateView, PostListView, PostDetailView, PostUpdateDeleteView, PostReactionToggleView, PostCommentCreateView, PostCommentUpdateView, PostCommentDeleteView, PostCommentListView, ResourceCreateView, ResourceListView, ResourceFileServeView, ResourceUpdateDeleteView, FeedListView
 from .feed_summary import UserFeedSummaryView
 
 
@@ -32,5 +32,6 @@ urlpatterns = [
     path("resources/", ResourceListView.as_view(), name="resource-list"),
     path("resources/create/", ResourceCreateView.as_view(), name="resource-create"),
     path("resources/<uuid:pk>/manage/", ResourceUpdateDeleteView.as_view(), name="resource-manage"),
+    path("resources/<uuid:pk>/file/", ResourceFileServeView.as_view(), name="resource-file"),
 
 ]

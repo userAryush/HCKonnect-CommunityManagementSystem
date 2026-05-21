@@ -1,35 +1,35 @@
 ﻿import { Edit2, Mail } from 'lucide-react';
 import SendMessageModal from '../../../../shared/components/modals/SendMessageModal';
 import { isPlatformCommunity } from '../../../../utils/communityUtils';
+import { getInitials } from '../../../../utils/userUtils';
 
 export default function CommunityHeader({
     communityData,
     isProfileOwner,
     currentUser,
-    membershipStatus,
-    handleJoinRequest,
     isMessageModalOpen,
     setIsMessageModalOpen,
     onEditProfile,
 }) {
     const platform = isPlatformCommunity(communityData);
-    const vacanciesOpen = communityData.vacancies_open ?? communityData.vacanciesOpen;
+    const logo = communityData.community_logo;
+    const name = communityData.community_name;
 
     return (
-        <header className="rounded-2xl border border-surface-border/10 bg-[var(--surface-card)] p-8 overflow-hidden">
+        <header className="border-b border-surface-border/40 pb-8">
             <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-                    {communityData.community_logo ? (
-                        <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-xl border border-surface-border/70 bg-[var(--surface-card)] overflow-hidden">
-                            <img
-                                src={communityData.community_logo}
-                                alt={communityData.community_name}
-                                className="h-full w-full object-cover"
-                            />
-                        </div>
+                    {logo ? (
+                        <img
+                            src={logo}
+                            alt={name}
+                            className="h-24 w-auto max-w-[160px] flex-shrink-0 object-contain sm:h-24 sm:max-w-[160px]"
+                        />
                     ) : (
-                        <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-xl bg-surface-dark text-white text-2xl font-bold">
-                            {communityData.community_name.slice(0, 2).toUpperCase()}
+                        <div className="flex h-24 w-36 flex-shrink-0 items-center justify-center rounded-2xl bg-primary/10">
+                            <span className="font-display text-3xl font-bold text-primary">
+                                {getInitials(name || 'Community')}
+                            </span>
                         </div>
                     )}
 
@@ -70,21 +70,7 @@ export default function CommunityHeader({
                             className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-2 text-sm font-bold text-primary transition hover:bg-primary/10"
                         >
                             <Mail size={16} />
-                            <span>Send Email to {communityData.community_name}</span>
-                        </button>
-                    )}
-
-                    {!platform && vacanciesOpen && (
-                        <button
-                            onClick={handleJoinRequest}
-                            disabled={membershipStatus === 'pending'}
-                            className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-                                membershipStatus === 'pending'
-                                    ? 'bg-secondary/60 border border-surface-border/70 text-surface-muted cursor-not-allowed'
-                                    : 'bg-primary text-white hover:bg-primary/90'
-                            }`}
-                        >
-                            {membershipStatus === 'pending' ? 'Request Sent' : 'Request to Join'}
+                            <span>Send Email to {name}</span>
                         </button>
                     )}
                 </div>

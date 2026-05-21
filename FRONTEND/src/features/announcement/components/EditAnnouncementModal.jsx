@@ -4,6 +4,8 @@ import { useToast } from '../../../shared/components/ui/ToastContext';
 import Button from '../../../shared/components/ui/Button';
 import ModalWrapper from '../../../shared/components/modals/ModalWrapper';
 import ModalHeader from '../../../shared/components/modals/ModalHeader';
+import LimitedTextarea from '../../../shared/components/ui/LimitedTextarea';
+import { DESCRIPTION_MAX_LENGTH } from '../../../shared/constants/descriptionLimits';
 
 export default function EditAnnouncementModal({ isOpen, onClose, announcement, onUpdated }) {
     const { showToast } = useToast();
@@ -24,6 +26,10 @@ export default function EditAnnouncementModal({ isOpen, onClose, announcement, o
         if (!announcement?.id) return;
         if (!title.trim() || !description.trim()) {
             showToast('Please fill in all required fields.', 'error');
+            return;
+        }
+        if (description.length > DESCRIPTION_MAX_LENGTH) {
+            showToast(`Description must be at most ${DESCRIPTION_MAX_LENGTH} characters.`, 'error');
             return;
         }
 
@@ -64,15 +70,13 @@ export default function EditAnnouncementModal({ isOpen, onClose, announcement, o
                     />
                 </div>
 
-                <div>
-                    <label className="mb-2 block text-body text-surface-dark">Description *</label>
-                    <textarea
-                        rows="5"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        className="w-full resize-none input-standard"
-                    />
-                </div>
+                <LimitedTextarea
+                    label="Description *"
+                    rows={5}
+                    value={description}
+                    onChange={setDescription}
+                    className="resize-none"
+                />
 
                 {announcement?.image && (
                     <div className="rounded-xl overflow-hidden border border-surface-border">

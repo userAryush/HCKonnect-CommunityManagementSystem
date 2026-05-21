@@ -2,28 +2,23 @@ import { Link } from 'react-router-dom';
 import { Users } from 'lucide-react';
 import { Skeleton } from '../../../../shared/components/layout/Skeleton';
 
-// Reusable Soft Container Component
-const SoftContainer = ({ children, className = '' }) => (
-    <div className={`community-soft-card bg-[var(--surface-card)] border border-surface-border/70 rounded-xl p-5 ${className}`}>
-        {children}
-    </div>
-);
-
 export default function MembersTab({ members, loading }) {
     return (
-        <SoftContainer className="!p-0 overflow-hidden">
-            <div className="p-5 border-b border-surface-border/70 bg-secondary/40 flex justify-between items-center">
+        <section className="rounded-xl bg-secondary overflow-hidden">
+            <div className="flex items-center justify-between gap-4 border-b border-surface-border/40 px-5 py-4">
                 <h2 className="text-lg font-semibold text-surface-dark flex items-center gap-2">
                     <Users size={20} className="text-primary" />
                     Community Members
                 </h2>
-                <span className="bg-primary/10 text-primary text-xs font-bold px-3 py-1 rounded-full">{loading ? '...' : members.length} Total</span>
+                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+                    {loading ? '...' : members.length} Total
+                </span>
             </div>
 
             {loading ? (
-                <ul className="divide-y divide-surface-border/60 flex flex-col">
+                <ul className="divide-y divide-surface-border/30">
                     {[1, 2, 3, 4, 5].map(i => (
-                        <li key={i} className="flex items-center gap-4 px-6 py-4">
+                        <li key={i} className="flex items-center gap-4 px-5 py-4">
                             <Skeleton variant="avatar" />
                             <div className="flex-1 space-y-2">
                                 <Skeleton variant="text" className="w-1/3 h-4" />
@@ -34,37 +29,45 @@ export default function MembersTab({ members, loading }) {
                     ))}
                 </ul>
             ) : (
-                <ul className="divide-y divide-surface-border/60 flex flex-col">
+                <ul className="divide-y divide-surface-border/30">
                     {members.map((member) => (
-                        <li key={member.membership_id} className="hover:bg-secondary/40 transition-colors">
-                            <Link to={`/profile/${member.user_id}`} className="flex items-center gap-4 px-6 py-4">
+                        <li key={member.membership_id} className="transition-colors hover:bg-surface-muted-bg/40">
+                            <Link to={`/profile/${member.user_id}`} className="flex items-center gap-4 px-5 py-4">
                                 {member.profile_image ? (
-                                    <img src={member.profile_image} alt={member.first_name} className="w-12 h-12 rounded-full border border-surface-border/70 object-cover" />
+                                    <img
+                                        src={member.profile_image}
+                                        alt={member.first_name}
+                                        className="h-12 w-12 rounded-full border border-surface-border/70 object-cover"
+                                    />
                                 ) : (
-                                    <div className="w-12 h-12 rounded-full bg-surface-dark text-white flex items-center justify-center font-bold text-sm">
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-dark text-sm font-bold text-white">
                                         {member.first_name ? member.first_name[0].toUpperCase() : member.username[0].toUpperCase()}
                                         {member.last_name ? member.last_name[0].toUpperCase() : ''}
                                     </div>
                                 )}
-                                <div className="flex-1">
+                                <div className="min-w-0 flex-1">
                                     <h4 className="text-sm font-semibold text-surface-dark">
                                         {member.first_name ? `${member.first_name} ${member.last_name}` : member.username}
                                     </h4>
                                     <p className="text-xs text-surface-muted">@{member.username}</p>
                                 </div>
-                                <div className="text-right flex items-center gap-3">
-                                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${member.role === 'representative' ? 'bg-primary/10 text-primary border-primary/20' : 'bg-secondary/60 text-surface-muted border-surface-border/70'}`}>
-                                        {member.role}
-                                    </span>
-                                </div>
+                                <span
+                                    className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                                        member.role === 'representative'
+                                            ? 'border-primary/20 bg-primary/10 text-primary'
+                                            : 'border-surface-border/70 bg-surface-muted-bg/60 text-surface-muted'
+                                    }`}
+                                >
+                                    {member.role}
+                                </span>
                             </Link>
                         </li>
                     ))}
                     {members.length === 0 && (
-                        <div className="py-12 text-center text-surface-muted">No members found.</div>
+                        <li className="py-12 text-center text-surface-muted">No members found.</li>
                     )}
                 </ul>
             )}
-        </SoftContainer>
+        </section>
     );
 }

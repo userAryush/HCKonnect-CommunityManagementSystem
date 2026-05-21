@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { sessionUserAsItem } from '../../../utils/userUtils';
 import { UserAvatar } from '../card/UserInfo';
 import Button from '../ui/Button';
+import CommentLimitedTextarea from './CommentLimitedTextarea';
+import { COMMENT_MAX_LENGTH } from '../../constants/commentLimits';
 
 export default function CommentComposer({ viewerUser, onPostComment, submitInFlight }) {
     const [mainComment, setMainComment] = useState('');
@@ -9,6 +11,7 @@ export default function CommentComposer({ viewerUser, onPostComment, submitInFli
 
     const handlePost = async () => {
         if (!mainComment.trim()) return;
+        if (mainComment.length > COMMENT_MAX_LENGTH) return;
         const text = mainComment.trim();
         try {
             await onPostComment(null, text);
@@ -26,13 +29,14 @@ export default function CommentComposer({ viewerUser, onPostComment, submitInFli
                 className="ring-2 ring-white dark:ring-[var(--surface-card)] shadow-sm"
             />
             <div className="flex-1 bg-[var(--surface-card)] rounded-xl border border-surface-border shadow-sm overflow-hidden focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/25 transition-all dark:shadow-none">
-                <textarea
+                <CommentLimitedTextarea
                     value={mainComment}
-                    onChange={(e) => setMainComment(e.target.value)}
+                    onChange={setMainComment}
                     placeholder="Share your perspective..."
-                    className="w-full px-4 pt-3 pb-2 text-[14px] bg-transparent border-none outline-none resize-none text-[var(--app-text)] placeholder-[color:var(--surface-muted-text)] min-h-[80px]"
+                    rows={3}
+                    className="px-4 pt-3 text-[14px] min-h-[80px]"
                 />
-                <div className="flex justify-end px-4 pb-3">
+                <div className="flex justify-end px-4 pb-3 -mt-1">
                     <Button
                         variant="primary"
                         onClick={handlePost}

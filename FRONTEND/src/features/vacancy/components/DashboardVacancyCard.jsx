@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Briefcase, Users, Calendar } from 'lucide-react';
 import Button from '../../../shared/components/ui/Button';
+import ExpandableDescription from '../../../shared/components/ui/ExpandableDescription';
 
 // Utility function to format date in YYYY/MM/DD format
 const formatDate = (dateString) => {
@@ -49,9 +50,11 @@ const DashboardVacancyCard = ({ vacancy, communityId, onAction, isActionLoading 
                         </span>
                     </div>
                     {showDescription && description && (
-                        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-surface-body">
-                            {description}
-                        </p>
+                        <ExpandableDescription
+                            text={description}
+                            className="mt-2 max-w-2xl text-sm text-surface-body"
+                            as="p"
+                        />
                     )}
                     <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-surface-muted">
                         <div className="flex items-center gap-2 font-semibold">

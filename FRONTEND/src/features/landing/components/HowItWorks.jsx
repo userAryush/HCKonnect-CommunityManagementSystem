@@ -25,7 +25,11 @@ function HowItWorksSection() {
     <section id="how-it-works" className="bg-white px-5 py-20 sm:px-8">
       <div className="mx-auto w-full max-w-6xl">
         <Reveal>
-          <SectionHeading accent="how-it-works" label="How It Works" />
+          <SectionHeading
+            accent="how-it-works"
+            label="How It Works"
+            description="Discover communities that match your interests, join with one account, and stay engaged through events, discussions, and announcements."
+          />
         </Reveal>
 
         <Reveal className="relative mx-auto mt-16 max-w-4xl" delay={0.08}>

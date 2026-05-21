@@ -4,6 +4,9 @@ from django.contrib.auth import get_user_model
 from .models import Announcement, Post, PostComment, PostReaction, Resource
 from django.utils.timesince import timesince
 from communities.platform import is_platform_community, enforce_public_visibility, get_content_community
+from utils.description_limits import validate_description_length, validate_resource_description_length
+from utils.comment_limits import validate_comment_length
+from .resource_utils import build_resource_file_url, extension_from_name, resource_download_url
 
 User = get_user_model()
 
@@ -13,6 +16,9 @@ class AnnouncementCreateSerializer(ModelSerializer):
     class Meta:
         model = Announcement
         fields = ["title", "description", "image", "visibility"]
+
+    def validate_description(self, value):
+        return validate_description_length(value, "Description")
 
     def validate(self, data):
         user = self.context["request"].user
@@ -72,6 +78,9 @@ class AnnouncementUpdateSerializer(ModelSerializer):
         model = Announcement
         fields = ["title", "description", "image", "visibility"]
 
+    def validate_description(self, value):
+        return validate_description_length(value, "Description")
+
     def validate(self, data):
         community = self.instance.community
         visibility = data.get("visibility", self.instance.visibility)
@@ -85,6 +94,9 @@ class AnnouncementUpdateSerializer(ModelSerializer):
 
 
 class PostCommentReadSerializer(ModelSerializer):
+    def validate_content(self, value):
+        return validate_comment_length(value, "Comment")
+
     time_ago = SerializerMethodField()
     author_name = SerializerMethodField()
     author_role = SerializerMethodField()
@@ -231,6 +243,9 @@ class PostCreateUpdateSerializer(ModelSerializer):
         model = Post
         fields = ["id", "content", "image", "is_pinned"]
 
+    def validate_content(self, value):
+        return validate_description_length(value, "Content")
+
     def create(self, validated_data):
         validated_data["author"] = self.context["request"].user
         return super().create(validated_data)
@@ -244,6 +259,9 @@ class PostCommentCreateSerializer(ModelSerializer):
     class Meta:
         model = PostComment
         fields = ["id", "post", "parent_comment", "content"]
+
+    def validate_content(self, value):
+        return validate_comment_length(value, "Comment")
 
     def create(self, validated_data):
         
@@ -276,6 +294,9 @@ class ResourceCreateUpdateSerializer(ModelSerializer):
     class Meta:
         model = Resource
         fields = ["title", "description", "file", "video_url", "visibility", "category"]
+
+    def validate_description(self, value):
+        return validate_resource_description_length(value)
 
     def validate_file(self, value):
         if value:
@@ -325,22 +346,37 @@ class ResourceCreateUpdateSerializer(ModelSerializer):
         else:
             raise ValidationError("Unauthorized role.")
 
+        uploaded = validated_data.get("file")
+        if uploaded is not None:
+            validated_data["file_size_bytes"] = getattr(uploaded, "size", 0) or 0
+            validated_data["original_filename"] = getattr(uploaded, "name", "") or ""
+
         return Resource.objects.create(community=community, created_by_user=created_by_user, **validated_data)
+
+    def update(self, instance, validated_data):
+        uploaded = validated_data.get("file")
+        if uploaded is not None:
+            validated_data["file_size_bytes"] = getattr(uploaded, "size", 0) or 0
+            validated_data["original_filename"] = getattr(uploaded, "name", "") or ""
+        return super().update(instance, validated_data)
 
 class ResourceReadSerializer(ModelSerializer):
     community_name = CharField(source="community.community_name", read_only=True)
     community_logo = ImageField(source="community.community_logo", read_only=True)
     author_name = SerializerMethodField()
     time_ago = SerializerMethodField()
+    file = SerializerMethodField()
+    file_download = SerializerMethodField()
+    file_serve_url = SerializerMethodField()
     file_size = SerializerMethodField()
     file_extension = SerializerMethodField()
 
     class Meta:
         model = Resource
         fields = [
-            "id", "community", "title", "description", "file", "video_url",
-            "community_name", "community_logo", "author_name", 
-            "time_ago", "file_size", "file_extension", "visibility", "category"
+            "id", "community", "title", "description", "file", "file_download", "file_serve_url", "video_url",
+            "community_name", "community_logo", "author_name",
+            "created_at", "time_ago", "file_size", "file_extension", "visibility", "category"
         ]
 
     def get_author_name(self, obj):
@@ -363,8 +399,45 @@ class ResourceReadSerializer(ModelSerializer):
         except Exception:
             return "Recently"
 
+    def _file_url(self, obj):
+        if not obj.file:
+            return None
+        try:
+            request = self.context.get("request")
+            url = obj.file.url
+            if request and url and url.startswith("/"):
+                url = request.build_absolute_uri(url)
+            return url
+        except Exception:
+            return None
+
+    def get_file(self, obj):
+        return build_resource_file_url(obj)
+
+    def get_file_download(self, obj):
+        return resource_download_url(obj)
+
+    def get_file_serve_url(self, obj):
+        request = self.context.get("request")
+        if not request or not obj.file:
+            return None
+        path = f"/contents/resources/{obj.id}/file/"
+        return request.build_absolute_uri(path)
+
     def get_file_size(self, obj):
         return obj.file_size
 
     def get_file_extension(self, obj):
-        return obj.file_extension
+        ext = obj.file_extension
+        if ext:
+            return ext
+        ext = extension_from_name(obj.original_filename)
+        if ext:
+            return ext
+        try:
+            url = obj.file.url if obj.file else ""
+            if url and "/resources/" in url and "/image/upload/" in url:
+                return "pdf"
+        except Exception:
+            pass
+        return ""

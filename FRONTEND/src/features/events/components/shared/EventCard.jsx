@@ -7,9 +7,12 @@ import CardActionMenu from '../../../../shared/components/card/CardActionMenu';
 import Badge from '../../../../shared/components/ui/Badge';
 import Button from '../../../../shared/components/ui/Button';
 import ConfirmationModal from '../../../../shared/components/modals/ConfirmationModal';
+import { useToast } from '../../../../shared/components/ui/ToastContext';
+import { getApiErrorMessage } from '../../../../utils/apiErrorUtils';
 
 export default function EventCard({ item, onDelete, onEdit }) {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const { eventMeta, id } = item;
   const user = JSON.parse(localStorage.getItem('user') || 'null');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -29,10 +32,11 @@ export default function EventCard({ item, onDelete, onEdit }) {
     try {
       await eventService.deleteEvent(item.id);
       setIsDeleteModalOpen(false);
+      showToast('Event deleted successfully.', 'success');
       if (onDelete) onDelete(item.id);
-      else window.location.reload();
     } catch (error) {
-      console.error("Failed to delete", error);
+      console.error('Failed to delete event', error);
+      showToast(getApiErrorMessage(error, 'Failed to delete event.'), 'error');
     } finally {
       setIsDeleting(false);
     }

@@ -3,6 +3,8 @@ from .models import DiscussionPanel, DiscussionReply, Reaction
 from django.utils.timesince import timesince
 from communities.platform import is_platform_community, enforce_public_visibility
 from django.contrib.auth import get_user_model
+from utils.description_limits import validate_description_length
+from utils.comment_limits import validate_comment_length
 
 User = get_user_model()
 
@@ -25,6 +27,9 @@ class DiscussionCreateSerializer(serializers.ModelSerializer):
             "is_pinned",
         ]
 
+    def validate_content(self, value):
+        return validate_description_length(value, "Content")
+
     def validate(self, data):
         community = data.get("community")
         visibility = data.get("visibility", "public")
@@ -35,7 +40,15 @@ class DiscussionCreateSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        validated_data["created_by"] = self.context["request"].user
+        user = self.context["request"].user
+        validated_data["created_by"] = user
+        if not validated_data.get("community"):
+            if getattr(user, "role", None) == "community":
+                validated_data["community"] = user
+            else:
+                membership = getattr(user, "membership", None)
+                if membership:
+                    validated_data["community"] = membership.community
         return super().create(validated_data)
 
 
@@ -209,6 +222,9 @@ class DiscussionUpdateSerializer(serializers.ModelSerializer):
         model = DiscussionPanel
         fields = ["topic", "content", "visibility", "is_pinned"]
 
+    def validate_content(self, value):
+        return validate_description_length(value, "Content")
+
 
 # -----------------------
 # REPLY
@@ -217,6 +233,9 @@ class ReplyCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = DiscussionReply
         fields = ["id", "topic", "parent_reply", "reply_content"]
+
+    def validate_reply_content(self, value):
+        return validate_comment_length(value, "Comment")
 
     def create(self, validated_data):
         validated_data["created_by"] = self.context["request"].user

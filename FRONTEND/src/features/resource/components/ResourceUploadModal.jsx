@@ -4,6 +4,8 @@ import apiClient from '../../../shared/services/apiClient';
 import ModalWrapper from '../../../shared/components/modals/ModalWrapper';
 import ModalHeader from '../../../shared/components/modals/ModalHeader';
 import Button from '../../../shared/components/ui/Button';
+import LimitedTextarea from '../../../shared/components/ui/LimitedTextarea';
+import { RESOURCE_DESCRIPTION_MAX_LENGTH } from '../../../shared/constants/descriptionLimits';
 
 export default function ResourceUploadModal({ communityId, resource, isOpen, onClose, onSuccess }) {
     const user = JSON.parse(localStorage.getItem('user') || 'null');
@@ -82,7 +84,7 @@ export default function ResourceUploadModal({ communityId, resource, isOpen, onC
     };
 
     return (
-        <ModalWrapper isOpen={isOpen} onClose={onClose} className="max-w-lg">
+        <ModalWrapper isOpen={isOpen} onClose={onClose} className="max-w-6xl">
             <ModalHeader
                 title={resource ? 'Edit Resource' : 'Upload New Resource'}
                 onClose={onClose}
@@ -100,16 +102,16 @@ export default function ResourceUploadModal({ communityId, resource, isOpen, onC
                     />
                 </div>
 
-                <div className="space-y-2">
-                    <label className="text-body">Description</label>
-                    <textarea
-                        required
-                        value={formData.description}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        className="h-32 w-full resize-none rounded-xl border border-surface-border bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                        placeholder="Provide a brief description of this resource..."
-                    />
-                </div>
+                <LimitedTextarea
+                    label="Description"
+                    required
+                    rows={5}
+                    value={formData.description}
+                    onChange={(description) => setFormData({ ...formData, description })}
+                    maxLength={RESOURCE_DESCRIPTION_MAX_LENGTH}
+                    placeholder="Provide a brief description of this resource..."
+                    className="!resize-none"
+                />
 
                 <div className={`grid gap-4 ${isPlatform ? 'grid-cols-1' : 'grid-cols-2'}`}>
                     {!isPlatform && (

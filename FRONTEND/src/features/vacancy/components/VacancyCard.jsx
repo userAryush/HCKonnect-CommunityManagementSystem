@@ -7,6 +7,8 @@ import Badge from '../../../shared/components/ui/Badge';
 import Button from '../../../shared/components/ui/Button';
 import { useAuth } from '../../authentication/components/AuthContext';
 import { canApplyToVacancy, vacancyApplyBlockedReason } from '../../../utils/vacancyUtils';
+import { vacancyAuthorItem } from '../../../utils/userUtils';
+import ExpandableDescription from '../../../shared/components/ui/ExpandableDescription';
 
 export default function VacancyCard({ vacancy, onApply, isAdmin = false, onManage }) {
   const navigate = useNavigate();
@@ -14,6 +16,7 @@ export default function VacancyCard({ vacancy, onApply, isAdmin = false, onManag
   const mayApply = canApplyToVacancy(user);
   const blockedReason = vacancyApplyBlockedReason(user);
   const { title, description, is_open, community_id, id } = vacancy;
+  const authorItem = vacancyAuthorItem(vacancy);
   const detailHref =
     community_id && id ? `/community/${community_id}/vacancies/${id}` : null;
 
@@ -38,7 +41,7 @@ export default function VacancyCard({ vacancy, onApply, isAdmin = false, onManag
           : undefined
       }
     >
-      <CardHeader item={vacancy}>
+      <CardHeader item={authorItem}>
         <Badge variant="orange">Vacancy</Badge>
         <Badge variant={is_open ? 'success' : 'red'} className="flex items-center gap-1">
           {is_open ? (
@@ -58,13 +61,15 @@ export default function VacancyCard({ vacancy, onApply, isAdmin = false, onManag
           <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-1">
             Open position
           </p>
-          <h3 className="text-base font-semibold text-surface-dark leading-snug transition-colors duration-200 capitalize group-hover:text-primary">
+          <h3 className="text-base font-semibold text-surface-dark leading-snug transition-colors duration-200 capitalize">
             {title}
           </h3>
         </div>
-        <p className="mt-3 text-sm text-gray-500 leading-relaxed line-clamp-3">
-          {description}
-        </p>
+        <ExpandableDescription
+          text={description}
+          className="mt-3 text-sm text-gray-500"
+          as="p"
+        />
       </div>
 
       <div

@@ -59,6 +59,21 @@ export default function Profile() {
         }
     };
 
+    const removeFromActivity = (itemId, type) => {
+        if (type === 'post') {
+            setPosts((prev) => prev.filter((p) => p.id !== itemId));
+        }
+        setProfile((prev) => {
+            if (!prev) return prev;
+            return {
+                ...prev,
+                posted_content: (prev.posted_content || []).filter(
+                    (item) => !(item.id === itemId && item.type === type)
+                ),
+            };
+        });
+    };
+
     if (loading) return (
         <div className="flex min-h-screen items-center justify-center bg-secondary">
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -186,12 +201,37 @@ export default function Profile() {
 
                         <div className="grid grid-cols-1 gap-6">
                             {(activity.length > 0) ? (
-                                activity.map((item, idx) => {
-                                    if (item.type === 'announcement') return <div className="mb-6"><AnnouncementCard key={`ann-${item.id}`} item={item} /></div>
-                                    if (item.type === 'discussion') return <div className="mb-6"><DiscussionCard key={`disc-${item.id}`} item={item} /></div>
-                                    if (item.type === 'event') return <div className="mb-6"><EventCard key={`ev-${item.id}`} item={item} /></div>
-                                    if (item.type === 'post') return <div className="mb-6"><PostCard key={`post-${item.id}`} post={item} onDelete={(id) => setPosts(prev => prev.filter(p => p.id !== id))} /></div>
-                                    return null
+                                activity.map((item) => {
+                                    const onDelete = (id) => removeFromActivity(id, item.type);
+                                    if (item.type === 'announcement') {
+                                        return (
+                                            <div key={`ann-${item.id}`} className="mb-6">
+                                                <AnnouncementCard item={item} onDelete={onDelete} />
+                                            </div>
+                                        );
+                                    }
+                                    if (item.type === 'discussion') {
+                                        return (
+                                            <div key={`disc-${item.id}`} className="mb-6">
+                                                <DiscussionCard item={item} onDelete={onDelete} />
+                                            </div>
+                                        );
+                                    }
+                                    if (item.type === 'event') {
+                                        return (
+                                            <div key={`ev-${item.id}`} className="mb-6">
+                                                <EventCard item={item} onDelete={onDelete} />
+                                            </div>
+                                        );
+                                    }
+                                    if (item.type === 'post') {
+                                        return (
+                                            <div key={`post-${item.id}`} className="mb-6">
+                                                <PostCard post={item} onDelete={onDelete} />
+                                            </div>
+                                        );
+                                    }
+                                    return null;
                                 })
                             ) : (
                                 <div className="card-border border-dashed p-16 text-center bg-transparent">

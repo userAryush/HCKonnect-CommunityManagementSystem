@@ -58,7 +58,6 @@ export default function PostList() {
                     <PageHeader
                         title="Community Posts"
                         subtitle="Shared stories and updates from your college."
-                        backLinkTo={`/feed`}
                     >
                     </PageHeader>
 

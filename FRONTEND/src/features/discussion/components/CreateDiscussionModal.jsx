@@ -7,6 +7,9 @@ import Dropdown from '../../../shared/components/ui/Dropdown';
 import ModalWrapper from '../../../shared/components/modals/ModalWrapper';
 import ModalHeader from '../../../shared/components/modals/ModalHeader';
 import getApiErrorMessage from '../../../utils/getApiErrorMessage';
+import LimitedTextarea from '../../../shared/components/ui/LimitedTextarea';
+import { DESCRIPTION_MAX_LENGTH } from '../../../shared/constants/descriptionLimits';
+import { clampToMaxLength } from '../../../utils/descriptionUtils';
 
 const DISCUSSION_AI_ACTIONS = [
     { action_type: 'improve', label: 'Improve writing' },
@@ -43,7 +46,9 @@ export default function CreateDiscussionModal({ isOpen, onClose, onCreated }) {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+        const next =
+            name === 'content' ? clampToMaxLength(value, DESCRIPTION_MAX_LENGTH) : value;
+        setFormData((prev) => ({ ...prev, [name]: next }));
     };
 
     const handleAiAssist = async (actionType) => {
@@ -67,7 +72,10 @@ export default function CreateDiscussionModal({ isOpen, onClose, onCreated }) {
                 showToast('AI did not return text. Try again.', 'error');
                 return;
             }
-            setFormData((prev) => ({ ...prev, content: next }));
+            setFormData((prev) => ({
+                ...prev,
+                content: clampToMaxLength(next, DESCRIPTION_MAX_LENGTH),
+            }));
             showToast('Content updated — review before posting.', 'success');
         } catch (err) {
             console.error(err);
@@ -88,7 +96,9 @@ export default function CreateDiscussionModal({ isOpen, onClose, onCreated }) {
         setLoading(true);
         try {
             const payload = { ...formData };
-            if (user?.membership?.community) payload.community = user.membership.community;
+            const membershipCommunityId =
+                user?.membership?.community_id ?? user?.membership?.community;
+            if (membershipCommunityId) payload.community = membershipCommunityId;
             else if (user?.role === 'community') payload.community = user.id;
 
             await discussionService.createDiscussion(payload);
@@ -126,19 +136,18 @@ export default function CreateDiscussionModal({ isOpen, onClose, onCreated }) {
                 </div>
 
                 <div>
-                    <label className="mb-2 block text-body text-surface-dark">Content</label>
-                    <textarea
-                        name="content"
+                    <LimitedTextarea
+                        label="Content"
                         value={formData.content}
-                        onChange={handleChange}
+                        onChange={(value) =>
+                            setFormData((prev) => ({ ...prev, content: value }))
+                        }
                         required
                         rows={5}
-                        className="w-full resize-none input-standard"
+                        className="resize-none"
                         placeholder="Elaborate on your topic..."
+                        helperText="AI assist refines your content using the topic as context (it does not write from scratch)."
                     />
-                    <p className="mt-1 text-xs text-surface-muted">
-                        AI assist refines your content using the topic as context (it does not write from scratch).
-                    </p>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                         <Dropdown
                             align="right"

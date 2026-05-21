@@ -5,6 +5,8 @@ import vacancyService from '../service/vacancyService'
 import Button from '../../../shared/components/ui/Button'
 import { useToast } from '../../../shared/components/ui/ToastContext'
 import PageHeader from '../../../shared/components/layout/PageHeader'
+import LimitedTextarea from '../../../shared/components/ui/LimitedTextarea'
+import { DESCRIPTION_MAX_LENGTH } from '../../../shared/constants/descriptionLimits'
 
 export default function CreateVacancy() {
   const { id } = useParams()
@@ -30,6 +32,13 @@ export default function CreateVacancy() {
 
     if (!description.trim()) {
       const message = 'Description is required.'
+      setError(message)
+      showToast(message, 'error')
+      return
+    }
+
+    if (description.length > DESCRIPTION_MAX_LENGTH) {
+      const message = `Description must be at most ${DESCRIPTION_MAX_LENGTH} characters.`
       setError(message)
       showToast(message, 'error')
       return
@@ -91,15 +100,13 @@ export default function CreateVacancy() {
               />
             </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-semibold">Description</label>
-              <textarea
-                rows="4"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="w-full resize-none rounded-xl border border-[#e5e7eb] bg-white px-4 py-2 text-sm outline-none focus:border-[#75C043]"
-              />
-            </div>
+            <LimitedTextarea
+              label="Description"
+              rows={4}
+              value={description}
+              onChange={setDescription}
+              className="resize-none !rounded-xl !border-[#e5e7eb] focus:!border-[#75C043]"
+            />
 
             <div>
               <label htmlFor="status" className="mb-2 block text-sm font-semibold">Status</label>

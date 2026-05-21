@@ -10,9 +10,13 @@ import ConfirmationModal from '../../../shared/components/modals/ConfirmationMod
 import EditDiscussionModal from './EditDiscussionModal';
 import { formatTimeAgo } from '../../../utils/timeFormatter';
 import { getRoleLabel } from '../../../utils/userUtils';
+import ExpandableDescription from '../../../shared/components/ui/ExpandableDescription';
+import { useToast } from '../../../shared/components/ui/ToastContext';
+import { getApiErrorMessage } from '../../../utils/apiErrorUtils';
 
 export default function DiscussionCard({ item, onDelete, isDetailView = false }) {
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const user = JSON.parse(localStorage.getItem('user') || 'null');
 
     const [itemState, setItemState] = useState(item);
@@ -47,10 +51,15 @@ export default function DiscussionCard({ item, onDelete, isDetailView = false })
         try {
             await discussionService.deleteDiscussion(item.id);
             setIsDeleteModalOpen(false);
-            if (onDelete) onDelete(item.id);
-            else navigate('/discussions');
+            showToast('Discussion deleted successfully.', 'success');
+            if (onDelete) {
+                onDelete(item.id);
+            } else if (isDetailView) {
+                navigate('/discussions');
+            }
         } catch (error) {
-            console.error("Failed to delete", error);
+            console.error('Failed to delete discussion', error);
+            showToast(getApiErrorMessage(error, 'Failed to delete discussion.'), 'error');
         } finally {
             setIsDeleting(false);
         }
@@ -92,9 +101,12 @@ export default function DiscussionCard({ item, onDelete, isDetailView = false })
                     <h3 className={`text-title !text-[var(--surface-heading)] transition-transform duration-200 ease-out ${isDetailView ? 'text-2xl' : 'group-hover:-translate-y-0.5'}`}>
                         {itemState.topic}
                     </h3>
-                    <p className={`text-body !text-[var(--app-text)] leading-relaxed ${isDetailView ? '' : 'line-clamp-2'}`}>
-                        {itemState.content}
-                    </p>
+                    <ExpandableDescription
+                        text={itemState.content}
+                        forceExpanded={isDetailView}
+                        className="text-body !text-[var(--app-text)]"
+                        as="p"
+                    />
                 </div>
 
                 <ActionButtons

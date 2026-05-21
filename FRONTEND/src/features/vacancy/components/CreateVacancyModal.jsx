@@ -6,6 +6,9 @@ import { useToast } from '../../../shared/components/ui/ToastContext'
 import ModalWrapper from '../../../shared/components/modals/ModalWrapper'
 import ModalHeader from '../../../shared/components/modals/ModalHeader'
 import getApiErrorMessage from '../../../utils/getApiErrorMessage'
+import LimitedTextarea from '../../../shared/components/ui/LimitedTextarea'
+import { DESCRIPTION_MAX_LENGTH } from '../../../shared/constants/descriptionLimits'
+import { clampToMaxLength } from '../../../utils/descriptionUtils'
 import { Sparkles, ChevronDown } from 'lucide-react'
 
 const TONE_OPTIONS = [
@@ -119,7 +122,7 @@ export default function CreateVacancyModal({
       snapshotForUndo()
       const generatedText = await runGeneration(payload)
       if (!generatedText) return
-      setDescription(generatedText)
+      setDescription(clampToMaxLength(generatedText))
       showToast(isRegenerate ? 'Regenerated.' : 'Description generated — edit as you like.', 'success')
     } catch (err) {
       console.error(err)
@@ -172,7 +175,7 @@ export default function CreateVacancyModal({
         descriptionBeforeAiRef.current = null
         return
       }
-      setDescription(next)
+      setDescription(clampToMaxLength(next))
       showToast('Updated.', 'success')
     } catch (err) {
       console.error(err)
@@ -199,6 +202,10 @@ export default function CreateVacancyModal({
     }
     if (!description.trim()) {
       setError('Description is required.')
+      return
+    }
+    if (description.length > DESCRIPTION_MAX_LENGTH) {
+      setError(`Description must be at most ${DESCRIPTION_MAX_LENGTH} characters.`)
       return
     }
 
@@ -326,16 +333,14 @@ export default function CreateVacancyModal({
                 />
               </div>
             </div>
-            <textarea
+            <LimitedTextarea
               rows={10}
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="input-standard w-full resize-y min-h-[180px]"
+              onChange={setDescription}
+              className="resize-y min-h-[180px]"
               placeholder="Write your own description, or use Generate with AI. Use AI Assist on the text anytime."
+              helperText="AI uses your community name and profile description from the server — nothing extra to paste here."
             />
-            <p className="mt-1.5 text-xs text-surface-muted">
-              AI uses your community name and profile description from the server — nothing extra to paste here.
-            </p>
           </div>
 
           <div className="flex items-center justify-end gap-4 border-t border-surface-border pt-4">
