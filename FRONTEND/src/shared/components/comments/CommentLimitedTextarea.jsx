@@ -1,20 +1,22 @@
-import { useId } from 'react';
+import { useId, forwardRef } from 'react';
 import { COMMENT_MAX_LENGTH } from '../../constants/commentLimits';
 import { clampToMaxLength } from '../../../utils/descriptionUtils';
 
 /**
  * Compact textarea for comment composers with live counter and 1,500 char cap.
+ * Forwards a ref to the underlying <textarea> so callers can read selectionStart/End.
  */
-export default function CommentLimitedTextarea({
+const CommentLimitedTextarea = forwardRef(function CommentLimitedTextarea({
   value,
   onChange,
+  onKeyDown,
   maxLength = COMMENT_MAX_LENGTH,
   rows = 2,
   placeholder,
   className = '',
   autoFocus = false,
   disabled = false,
-}) {
+}, ref) {
   const counterId = useId();
   const length = (value ?? '').length;
   const atLimit = length >= maxLength;
@@ -37,9 +39,11 @@ export default function CommentLimitedTextarea({
   return (
     <div className={className}>
       <textarea
+        ref={ref}
         value={value ?? ''}
         onChange={handleChange}
         onPaste={handlePaste}
+        onKeyDown={onKeyDown}
         maxLength={maxLength}
         rows={rows}
         placeholder={placeholder}
@@ -70,4 +74,6 @@ export default function CommentLimitedTextarea({
       </div>
     </div>
   );
-}
+});
+
+export default CommentLimitedTextarea;

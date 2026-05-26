@@ -33,10 +33,11 @@ export default function PostDetail() {
         deleteCommentFn:  (commentId) => postService.deleteComment(commentId),
         updateCommentFn:  (commentId, content) => postService.updateComment(commentId, { content }),
         toggleReactionFn: (payload) => postService.toggleReaction(payload),
-        buildCreatePayload: (parentId, content) => ({
+        buildCreatePayload: (parentId, content, mentionedUserIds = []) => ({
             post: id,
             parent_comment: parentId,
             content,
+            mentioned_user_ids: mentionedUserIds,
         }),
         buildReactionPayload: (commentId, postId) =>
             commentId ? { comment: commentId } : { post: postId },

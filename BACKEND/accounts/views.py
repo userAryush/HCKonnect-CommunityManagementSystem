@@ -305,3 +305,40 @@ class UserThemePreferenceView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class MentionSearchView(APIView):
+    """Search users to mention in comments. Returns up to 10 matching active users."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        query = request.query_params.get('q', '').strip()
+        if not query:
+            return Response([])
+
+        users = User.objects.filter(
+            status='active'
+        ).filter(
+            Q(username__icontains=query) |
+            Q(first_name__icontains=query) |
+            Q(last_name__icontains=query)
+        ).exclude(id=request.user.id).select_related()[:10]
+
+        results = []
+        for user in users:
+            if user.role == 'community' and user.community_logo:
+                avatar = request.build_absolute_uri(user.community_logo.url)
+            elif user.profile_image:
+                avatar = request.build_absolute_uri(user.profile_image.url)
+            else:
+                avatar = None
+
+            full_name = f"{user.first_name} {user.last_name}".strip()
+            results.append({
+                "id": str(user.id),
+                "username": user.username,
+                "full_name": full_name or user.username,
+                "avatar": avatar,
+            })
+
+        return Response(results)

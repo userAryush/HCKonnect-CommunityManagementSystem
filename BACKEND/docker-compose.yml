@@ -1,0 +1,16 @@
+# Backend API only (no frontend). Requires BACKEND/.env on the host.
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      # Comma-separated hosts, e.g. localhost,api.example.com
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      DEBUG: ${DEBUG:-False}
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
+    restart: unless-stopped

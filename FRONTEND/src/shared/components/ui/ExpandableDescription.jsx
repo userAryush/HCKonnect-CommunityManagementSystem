@@ -18,6 +18,8 @@ export default function ExpandableDescription({
   collapsedMaxLines = DESCRIPTION_COLLAPSED_MAX_LINES,
   collapsedMaxHeightClass = 'max-h-[7.5rem]',
   toggleClassName = 'mt-1 inline-block text-sm font-semibold text-surface-muted transition-colors hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm',
+  /** Optional renderer: (text, className) => ReactNode. Defaults to plain text. */
+  renderText = null,
 }) {
   const [expanded, setExpanded] = useState(false);
   const [showToggle, setShowToggle] = useState(false);
@@ -48,7 +50,7 @@ export default function ExpandableDescription({
   if (forceExpanded) {
     return (
       <Component className={`whitespace-pre-wrap leading-relaxed ${className}`}>
-        {content}
+        {renderText ? renderText(content, '') : content}
       </Component>
     );
   }
@@ -88,7 +90,7 @@ export default function ExpandableDescription({
           isExpanded ? 'max-h-[8000px]' : collapsedMaxHeightClass
         }`}
       >
-        {displayText}
+        {renderText ? renderText(displayText, '') : displayText}
       </Component>
 
       {showToggle && (

@@ -194,7 +194,7 @@ class ReplyCreateView(CreateAPIView):
             
             raise PermissionDenied("You cannot reply to this discussion.")
 
-        reply = serializer.save(created_by=self.request.user)
+        reply = serializer.save()
         invalidate_discussion_reply_caches(reply)
 
 

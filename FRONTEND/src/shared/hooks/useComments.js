@@ -118,7 +118,7 @@ export function useComments({
         }
     }, [id, fetchCommentsFn, hasMore, nextCursor, normalizePage, pageLimit]);
 
-    const postComment = useCallback(async (parentId = null, content = '') => {
+    const postComment = useCallback(async (parentId = null, content = '', mentionedUserIds = []) => {
         if (!content.trim()) return;
         const target =
             parentId == null
@@ -126,7 +126,7 @@ export function useComments({
                 : { type: 'reply', parentId: String(parentId) };
         setSubmitInFlight(target);
         try {
-            const payload = buildCreatePayload(parentId, content);
+            const payload = buildCreatePayload(parentId, content, mentionedUserIds);
             await createCommentFn(payload);
             await fetchComments();
         } catch (error) {

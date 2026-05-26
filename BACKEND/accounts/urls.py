@@ -1,9 +1,10 @@
 from django.urls import path
 from .views import (
-    RegisterView, LoginView, ForgotPasswordView, VerifyOTPView, 
-    ResetPasswordView, UserProfileView, UserProfileDetailView, 
+    RegisterView, LoginView, ForgotPasswordView, VerifyOTPView,
+    ResetPasswordView, UserProfileView, UserProfileDetailView,
     GlobalSearchView, GoogleAuthView, ChangePasswordView, ContactUsView,
     UserThemePreferenceView, CookieTokenRefreshView, LogoutView,
+    MentionSearchView,
 )
 
 
@@ -24,4 +25,5 @@ urlpatterns = [
     path('google/', GoogleAuthView.as_view(), name='google-auth'),
     path('contact-us/', ContactUsView.as_view(), name='contact-us'),
     path('theme/', UserThemePreferenceView.as_view(), name='user-theme'),
+    path('mention-search/', MentionSearchView.as_view(), name='mention-search'),
 ]

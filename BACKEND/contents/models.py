@@ -51,14 +51,19 @@ class PostComment(BaseModel):
 
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="comments")
     parent_comment = models.ForeignKey(
-        "self", 
-        null=True, 
-        blank=True, 
-        on_delete=models.CASCADE, 
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
         related_name="replies"
     )
     content = models.TextField()
     author = models.ForeignKey(User, on_delete=models.CASCADE)
+    mentioned_users = models.ManyToManyField(
+        User,
+        related_name="mentioned_in_comments",
+        blank=True
+    )
 
     def __str__(self):
         return f"Comment by {self.author} on Post {self.post.id}"

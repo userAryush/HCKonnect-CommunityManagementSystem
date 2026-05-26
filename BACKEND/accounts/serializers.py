@@ -352,6 +352,20 @@ class UserProfileDetailSerializer(ModelSerializer):
                 "author_role": user.role
             }
 
+        # Posts
+        from contents.models import Post
+        posts = Post.objects.filter(author=obj).order_by('-created_at')
+        for p in posts:
+            author_data = get_author_data(obj)
+            content.append({
+                "id": str(p.id),
+                "type": "post",
+                "content": p.content,
+                "image": get_abs_url(p.image.url) if p.image else None,
+                "created_at": p.created_at,
+                **author_data,
+            })
+
         # Discussions
         discussions = DiscussionPanel.objects.filter(created_by=obj).select_related('community', 'created_by').order_by('-created_at')
         for d in discussions:

@@ -135,7 +135,17 @@ const postService = {
         } catch (error) {
             throw error;
         }
-    }
+    },
+
+    // Search users to @mention in comments
+    searchMentions: async (query) => {
+        try {
+            const response = await apiClient.get(`/accounts/mention-search/?q=${encodeURIComponent(query)}`);
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    },
 };
 
 export default postService;

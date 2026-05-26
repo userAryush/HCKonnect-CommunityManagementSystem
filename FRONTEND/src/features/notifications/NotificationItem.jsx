@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Calendar, Megaphone, MessageSquare, FileText, Mail } from 'lucide-react';
+import { User, Calendar, Megaphone, MessageSquare, FileText, Mail, AtSign } from 'lucide-react';
 import { formatTimeAgo } from '../../utils/timeFormatter';
 
 const NotificationItem = ({ notification, onMarkRead, onNavigate }) => {
@@ -13,6 +13,7 @@ const NotificationItem = ({ notification, onMarkRead, onNavigate }) => {
             case 'post': return <MessageSquare className="text-green-400" size={18} />;
             case 'resource': return <FileText className="text-purple-400" size={18} />;
             case 'message': return <Mail className="text-pink-400" size={18} />;
+            case 'mention': return <AtSign className="text-primary" size={18} />;
             case 'membership':
             case 'role_change': return <User className="text-orange-400" size={18} />;
             default: return <Megaphone className="text-gray-400" size={18} />;

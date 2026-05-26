@@ -38,11 +38,16 @@ class DiscussionPanel(BaseModel):
 class DiscussionReply(BaseModel):
     topic = models.ForeignKey(DiscussionPanel, on_delete=models.CASCADE, related_name="replies")
 
-    parent_reply = models.ForeignKey("self",null=True,blank=True,on_delete=models.CASCADE,related_name="children")
+    parent_reply = models.ForeignKey("self", null=True, blank=True, on_delete=models.CASCADE, related_name="children")
 
     reply_content = models.TextField()
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
-    
+    mentioned_users = models.ManyToManyField(
+        User,
+        related_name="mentioned_in_replies",
+        blank=True
+    )
+
     def __str__(self):
         return f"Reply by {self.created_by} on {self.topic.topic}"
 

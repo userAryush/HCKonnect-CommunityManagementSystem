@@ -45,10 +45,11 @@ export default function DiscussionDetail() {
         deleteCommentFn:  (replyId) => discussionService.deleteReply(replyId),
         updateCommentFn:  (replyId, content) => discussionService.updateReply(replyId, { reply_content: content }),
         toggleReactionFn: (payload) => discussionService.toggleReaction(payload),
-        buildCreatePayload: (parentId, content) => ({
+        buildCreatePayload: (parentId, content, mentionedUserIds = []) => ({
             topic: id,
             parent_reply: parentId,
             reply_content: content,
+            mentioned_user_ids: mentionedUserIds,
         }),
         buildReactionPayload: (replyId, topicId) =>
             replyId ? { reply: replyId } : { topic: topicId },
@@ -95,12 +96,12 @@ export default function DiscussionDetail() {
         return () => window.removeEventListener('scroll', onScroll);
     }, []);
 
-    const handlePostComment = useCallback(async (parentId = null, content = '') => {
+    const handlePostComment = useCallback(async (parentId = null, content = '', mentionedUserIds = []) => {
         const text = content?.trim();
         if (!text) return;
 
         if (parentId != null) {
-            await postComment(parentId, text);
+            await postComment(parentId, text, mentionedUserIds);
             return;
         }
 
@@ -134,7 +135,7 @@ export default function DiscussionDetail() {
         scrollToBottom();
 
         try {
-            await postComment(null, text);
+            await postComment(null, text, mentionedUserIds);
             scrollToBottom();
         } catch (error) {
             setOptimisticReplies((prev) => (prev || []).filter((r) => r.id !== tempId));

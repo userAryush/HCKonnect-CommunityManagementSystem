@@ -3,6 +3,7 @@ from .models import DiscussionPanel, DiscussionReply, Reaction
 from django.utils.timesince import timesince
 from communities.platform import is_platform_community, enforce_public_visibility
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from utils.description_limits import validate_description_length
 from utils.comment_limits import validate_comment_length
 
@@ -62,7 +63,7 @@ class ReplyReadSerializer(serializers.ModelSerializer):
     author_image = serializers.SerializerMethodField()
     author_community = serializers.SerializerMethodField()
     user_has_liked = serializers.SerializerMethodField()
-    reaction_count = serializers.IntegerField(source="reactions.count", read_only=True)
+    reaction_count = serializers.SerializerMethodField()
     replies = serializers.SerializerMethodField()
 
     class Meta:
@@ -124,11 +125,16 @@ class ReplyReadSerializer(serializers.ModelSerializer):
             return user.membership.community.community_name
         return ''
 
+    def get_reaction_count(self, obj):
+        return len(obj.reactions.all())
+
     def get_time_ago(self, obj):
         return timesince(obj.created_at) + " ago"
 
     def get_replies(self, obj):
-        children = obj.children.all().order_by("-created_at")
+        # No .order_by() — the Prefetch queryset already orders by -created_at, -id.
+        # Chaining .order_by() clones the queryset, drops the prefetch cache, and causes N+1 DB hits.
+        children = obj.children.all()
         return ReplyReadSerializer(children, many=True, context=self.context).data
 
 
@@ -230,16 +236,48 @@ class DiscussionUpdateSerializer(serializers.ModelSerializer):
 # REPLY
 # -----------------------
 class ReplyCreateSerializer(serializers.ModelSerializer):
+    mentioned_user_ids = serializers.ListField(
+        child=serializers.UUIDField(),
+        required=False,
+        write_only=True,
+        default=list
+    )
+
     class Meta:
         model = DiscussionReply
-        fields = ["id", "topic", "parent_reply", "reply_content"]
+        fields = ["id", "topic", "parent_reply", "reply_content", "mentioned_user_ids"]
 
     def validate_reply_content(self, value):
         return validate_comment_length(value, "Comment")
 
     def create(self, validated_data):
+        mentioned_ids = validated_data.pop('mentioned_user_ids', [])
         validated_data["created_by"] = self.context["request"].user
-        return super().create(validated_data)
+
+        with transaction.atomic():
+            reply = super().create(validated_data)
+
+            if mentioned_ids:
+                valid_users = list(User.objects.filter(id__in=mentioned_ids))
+                reply.mentioned_users.set(valid_users)
+                actor = reply.created_by
+                from notifications.services import NotificationService
+                for user in valid_users:
+                    if user.pk == actor.pk:
+                        continue
+                    NotificationService.create_notification(
+                        recipient=user,
+                        actor=actor,
+                        type='mention',
+                        title='You were mentioned',
+                        message=f'{actor.username} mentioned you in a discussion reply.',
+                        metadata={
+                            'discussion_id': str(reply.topic.id),
+                            'reply_id': str(reply.id)
+                        }
+                    )
+
+        return reply
 
 
 # -----------------------

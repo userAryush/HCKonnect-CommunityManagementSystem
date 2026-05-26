@@ -1,5 +1,6 @@
 
-from rest_framework.serializers import ModelSerializer, ValidationError, CharField, ImageField, SerializerMethodField
+from rest_framework.serializers import ModelSerializer, ValidationError, CharField, ImageField, SerializerMethodField, ListField, UUIDField
+from django.db import transaction
 from django.contrib.auth import get_user_model
 from .models import Announcement, Post, PostComment, PostReaction, Resource
 from django.utils.timesince import timesince
@@ -252,21 +253,48 @@ class PostCreateUpdateSerializer(ModelSerializer):
     
 
 class PostCommentCreateSerializer(ModelSerializer):
-    """
-    FIXED: Changed 'topic' to 'post' and 'parent_reply' to 'parent_comment'
-    to match the PostComment model fields.
-    """
+    mentioned_user_ids = ListField(
+        child=UUIDField(),
+        required=False,
+        write_only=True,
+        default=list
+    )
+
     class Meta:
         model = PostComment
-        fields = ["id", "post", "parent_comment", "content"]
+        fields = ["id", "post", "parent_comment", "content", "mentioned_user_ids"]
 
     def validate_content(self, value):
         return validate_comment_length(value, "Comment")
 
     def create(self, validated_data):
-        
+        mentioned_ids = validated_data.pop('mentioned_user_ids', [])
         validated_data["author"] = self.context["request"].user
-        return super().create(validated_data)
+
+        with transaction.atomic():
+            comment = super().create(validated_data)
+
+            if mentioned_ids:
+                valid_users = list(User.objects.filter(id__in=mentioned_ids))
+                comment.mentioned_users.set(valid_users)
+                actor = comment.author
+                from notifications.services import NotificationService
+                for user in valid_users:
+                    if user.pk == actor.pk:
+                        continue
+                    NotificationService.create_notification(
+                        recipient=user,
+                        actor=actor,
+                        type='mention',
+                        title='You were mentioned',
+                        message=f'{actor.username} mentioned you in a comment.',
+                        metadata={
+                            'post_id': str(comment.post.id),
+                            'comment_id': str(comment.id)
+                        }
+                    )
+
+        return comment
 
 
 class PostReactionSerializer(ModelSerializer):

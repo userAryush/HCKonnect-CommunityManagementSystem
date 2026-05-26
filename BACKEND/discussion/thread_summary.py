@@ -70,20 +70,13 @@ def _fetch_detail_from_db(request, topic_id) -> dict:
     permission = CanAccessDiscussion()
     if not permission.has_object_permission(request, None, topic):
         raise PermissionDenied("You cannot access this discussion.")
+    # user_has_liked is stripped before caching via _strip_user_likes_from_detail,
+    # then re-applied per-request in apply_user_likes_to_detail — no point querying here.
     context = {
         "request": request,
         "omit_nested_replies": True,
+        "liked_topic_ids": set(),
     }
-    if request.user.is_authenticated:
-        context["liked_topic_ids"] = set(
-            Reaction.objects.filter(
-                user=request.user,
-                topic_id=topic_id,
-                reply__isnull=True,
-            ).values_list("topic_id", flat=True)
-        )
-    else:
-        context["liked_topic_ids"] = set()
     return DiscussionReadSerializer(topic, context=context).data
 
 

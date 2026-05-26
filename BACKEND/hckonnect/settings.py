@@ -15,6 +15,7 @@ import os
 import cloudinary_storage
 from dotenv import load_dotenv
 from datetime import timedelta
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,9 +29,15 @@ load_dotenv(BASE_DIR / ".env")
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1", "yes")
 
-ALLOWED_HOSTS = []
+_allowed = os.getenv("ALLOWED_HOSTS", "").strip()
+ALLOWED_HOSTS = [h.strip() for h in _allowed.split(",") if h.strip()] if _allowed else []
+
+# Render terminates SSL at its edge proxy — trust the forwarded proto header.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
 
 AUTH_USER_MODEL = 'accounts.User'
 
@@ -81,7 +88,8 @@ SOCIALACCOUNT_PROVIDERS = {
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'corsheaders.middleware.CorsMiddleware',  # Add this right after SecurityMiddleware
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -97,16 +105,16 @@ SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
 ROOT_URLCONF = 'hckonnect.urls'
 
 # --- CORS settings ---
-# This list now includes all necessary origins for development and production previews.
+_frontend_url = os.getenv("FRONTEND_URL", "").rstrip("/")
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # Vite dev server
-    "http://127.0.0.1:5173",  # Vite dev server (alternative)
-    "http://localhost:4173",  # Vite production build preview
-    "http://127.0.0.1:4173",  # Vite production build preview (alternative)
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:4173",
+    "http://127.0.0.1:4173",
+    *([_frontend_url] if _frontend_url else []),
 ]
-
-# To allow credentials (like cookies or tokens) to be sent
 CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = [h for h in [_frontend_url] if h]
 # --- End of CORS settings ---
 
 
@@ -128,20 +136,27 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'hckonnect.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv("DB_NAME"),
-        'USER': os.getenv("DB_USER"),
-        'PASSWORD': os.getenv("DB_PASSWORD"),
-        'HOST': os.getenv("DB_HOST"),
-        'PORT': os.getenv("DB_PORT", '5432'),  # default to 5432 if not set
-        'OPTIONS': {
-            'sslmode': 'require',
-            'channel_binding': 'require'
+_database_url = os.getenv("DATABASE_URL")
+if _database_url:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=_database_url,
+            conn_max_age=600,
+            ssl_require=True,
+        )
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv("DB_NAME"),
+            'USER': os.getenv("DB_USER"),
+            'PASSWORD': os.getenv("DB_PASSWORD"),
+            'HOST': os.getenv("DB_HOST"),
+            'PORT': os.getenv("DB_PORT", '5432'),
+            'OPTIONS': {'sslmode': 'require'},
         }
     }
-}
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
@@ -152,7 +167,7 @@ REST_FRAMEWORK = {
     ),
 }
 
-FRONTEND_URL = os.getenv('FRONTEND_URL')
+FRONTEND_URL = _frontend_url or None
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.getenv("JWT_ACCESS_TOKEN_LIFETIME_MINUTES", 50))),
@@ -185,7 +200,7 @@ STORAGES = {
         "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
     },
     "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
 
@@ -230,28 +245,36 @@ CLOUDINARY_STORAGE = {
 }
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": os.getenv("REDIS_URL"),
+_redis_url = os.getenv("REDIS_URL")
+if _redis_url:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": _redis_url,
+        }
     }
-}
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        }
+    }
 
-# Community dashboard API cache TTL (seconds)
-DASHBOARD_CACHE_TIMEOUT = int(os.getenv("DASHBOARD_CACHE_TIMEOUT", "3000"))
+
+DASHBOARD_CACHE_TIMEOUT = int(os.getenv("DASHBOARD_CACHE_TIMEOUT", "300"))
 COMMUNITY_PAGE_CACHE_TIMEOUT = int(
     os.getenv("COMMUNITY_PAGE_CACHE_TIMEOUT", str(DASHBOARD_CACHE_TIMEOUT))
 )
 
-# Community-scoped feed cache TTL (seconds); default 45 (within 30–60s range)
-FEED_CACHE_TIMEOUT = int(os.getenv("FEED_CACHE_TIMEOUT", "1800"))
 
-# Global user feed summary cache TTL (seconds)
+FEED_CACHE_TIMEOUT = int(os.getenv("FEED_CACHE_TIMEOUT", "180"))
+
+
 USER_FEED_CACHE_TIMEOUT = int(
     os.getenv("USER_FEED_CACHE_TIMEOUT", str(DASHBOARD_CACHE_TIMEOUT))
 )
 
-# Discussion thread / replies cache TTL (seconds)
+
 DISCUSSION_THREAD_CACHE_TIMEOUT = int(
     os.getenv("DISCUSSION_THREAD_CACHE_TIMEOUT", str(DASHBOARD_CACHE_TIMEOUT))
 )
@@ -266,7 +289,7 @@ DISCUSSION_REPLIES_CACHE_TIMEOUT = int(
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND")
 
 EMAIL_HOST = os.getenv("EMAIL_HOST")
-EMAIL_PORT = int(os.getenv("EMAIL_PORT"))
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS") == "True"
 
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")

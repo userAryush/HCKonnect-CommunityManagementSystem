@@ -1,0 +1,49 @@
+# Virtual environments
+env/
+venv/
+.venv/
+ENV/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Git and editor
+.git/
+.gitignore
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Secrets (inject at runtime via --env-file or compose)
+.env
+.env.*
+
+# Generated / local runtime data
+media/
+staticfiles/
+*.log
+*.sqlite3
+
+# Docs and local tooling (not needed in image)
+*.md
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Tests (optional trim for smaller production images)
+**/tests.py
+**/test_*.py

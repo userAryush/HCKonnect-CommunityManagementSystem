@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { ThumbsUp, ChevronDown, ChevronUp, CornerDownRight, MoreVertical, Pencil } from 'lucide-react';
 import { formatTimeAgo } from '../../../utils/timeFormatter';
 import { commentAuthorItem, sessionUserAsItem } from '../../../utils/userUtils';
@@ -6,16 +6,151 @@ import { UserAvatar, UserProfileName } from '../card/UserInfo';
 import Button from '../ui/Button';
 import ExpandableDescription from '../ui/ExpandableDescription';
 import CommentLimitedTextarea from './CommentLimitedTextarea';
+import MentionDropdown from './MentionDropdown';
+import { useMention } from '../../hooks/useMention';
 import {
     COMMENT_MAX_LENGTH,
     COMMENT_COLLAPSED_MAX_CHARS,
     COMMENT_COLLAPSED_MAX_LINES,
 } from '../../constants/commentLimits';
 import { clampToMaxLength } from '../../../utils/descriptionUtils';
+import postService from '../../../features/posts/service/postService';
 
 function isCommentEdited(reply) {
     if (!reply.updated_at || !reply.created_at) return false;
     return new Date(reply.updated_at).getTime() > new Date(reply.created_at).getTime();
+}
+
+/** Render comment text, turning @username tokens into clickable profile links. */
+function CommentText({ text, className }) {
+    if (!text) return null;
+
+    const parts = text.split(/(@\w+)/g);
+    return (
+        <span className={className}>
+            {parts.map((part, i) => {
+                if (/^@\w+$/.test(part)) {
+                    const username = part.slice(1);
+                    return (
+                        <a
+                            key={i}
+                            href={`/profile/${username}/`}
+                            className="font-semibold text-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {part}
+                        </a>
+                    );
+                }
+                return part;
+            })}
+        </span>
+    );
+}
+
+/** Inline reply composer with @mention support. */
+function ReplyComposer({ viewerItem, onSubmit, onCancel, submitInFlight }) {
+    const [replyText, setReplyText] = useState('');
+    const textareaRef = useRef(null);
+    const mention = useMention({ searchFn: postService.searchMentions });
+
+    const handleChange = useCallback((value) => {
+        setReplyText(value);
+        const cursor = textareaRef.current?.selectionStart ?? value.length;
+        mention.onTextChange(value, cursor);
+    }, [mention]);
+
+    const handleKeyDown = useCallback((e) => {
+        mention.onKeyDown(e, replyText, textareaRef.current?.selectionStart ?? 0, (idx) => {
+            const user = mention.suggestions[idx];
+            if (!user) return;
+            const cursor = textareaRef.current?.selectionStart ?? replyText.length;
+            const { newValue, newCursor } = mention.selectUser(user, replyText, cursor);
+            setReplyText(newValue);
+            requestAnimationFrame(() => {
+                if (textareaRef.current) {
+                    textareaRef.current.selectionStart = newCursor;
+                    textareaRef.current.selectionEnd = newCursor;
+                }
+            });
+        });
+    }, [mention, replyText]);
+
+    const handleSelectUser = useCallback((user) => {
+        const cursor = textareaRef.current?.selectionStart ?? replyText.length;
+        const { newValue, newCursor } = mention.selectUser(user, replyText, cursor);
+        setReplyText(newValue);
+        requestAnimationFrame(() => {
+            if (textareaRef.current) {
+                textareaRef.current.focus();
+                textareaRef.current.selectionStart = newCursor;
+                textareaRef.current.selectionEnd = newCursor;
+            }
+        });
+    }, [mention, replyText]);
+
+    const handleSubmit = async () => {
+        if (!replyText.trim() || replyText.length > COMMENT_MAX_LENGTH) return;
+        try {
+            await onSubmit(replyText.trim(), mention.mentionedUserIds);
+            setReplyText('');
+            mention.clearMentionedUsers();
+        } catch {
+            /* keep composer open */
+        }
+    };
+
+    return (
+        <div className="mt-3 flex gap-2 items-start">
+            <UserAvatar
+                item={viewerItem}
+                size="xs"
+                className="ring-2 ring-white dark:ring-[var(--surface-card)]"
+            />
+            <div className="flex-1 relative">
+                <div className="bg-[var(--surface-muted-bg)] rounded-xl border border-surface-border overflow-hidden focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/25 transition-all">
+                    <CommentLimitedTextarea
+                        ref={textareaRef}
+                        value={replyText}
+                        onChange={handleChange}
+                        onKeyDown={handleKeyDown}
+                        placeholder="Write a reply… use @ to mention"
+                        rows={2}
+                        autoFocus
+                        className="px-3 pt-2.5 text-[13px]"
+                    />
+                    <div className="flex justify-end gap-2 px-3 pb-2 -mt-1">
+                        <button
+                            type="button"
+                            onClick={onCancel}
+                            disabled={submitInFlight}
+                            className="text-[12px] text-[var(--surface-muted-text)] font-medium hover:text-[var(--surface-heading)] px-2 py-1 disabled:opacity-50"
+                        >
+                            Cancel
+                        </button>
+                        <Button
+                            variant="primary"
+                            onClick={handleSubmit}
+                            isLoading={submitInFlight}
+                            disabled={!replyText.trim() || replyText.length > COMMENT_MAX_LENGTH}
+                            className="!text-[12px] !py-1 !px-3 !rounded-lg"
+                            loadingText="Posting..."
+                        >
+                            Reply
+                        </Button>
+                    </div>
+                </div>
+
+                {mention.isOpen && (
+                    <MentionDropdown
+                        suggestions={mention.suggestions}
+                        activeIndex={mention.activeIndex}
+                        onSelect={handleSelectUser}
+                    />
+                )}
+            </div>
+        </div>
+    );
 }
 
 export default function CommentItem({
@@ -39,10 +174,9 @@ export default function CommentItem({
     const ownerId = authorItem?.author;
 
     const [localRepliesOpen, setLocalRepliesOpen] = useState(false);
-    /** User hid nested replies while an ancestor still has the thread expanded (middle “Hide”). */
+    /** User hid nested replies while an ancestor still has the thread expanded (middle "Hide"). */
     const [subtreeDismissed, setSubtreeDismissed] = useState(false);
     const [isReplying, setIsReplying] = useState(false);
-    const [replyText, setReplyText] = useState('');
     const [menuOpen, setMenuOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editText, setEditText] = useState('');
@@ -93,26 +227,16 @@ export default function CommentItem({
     const handleOpenReply = () => {
         setIsEditing(false);
         setIsReplying(true);
-        setReplyText('');
     };
-    const handleCancelReply = () => {
+    const handleCancelReply = () => setIsReplying(false);
+
+    const handleSubmitReply = async (text, mentionedUserIds) => {
+        await onPostComment(reply.id, text, mentionedUserIds);
         setIsReplying(false);
-        setReplyText('');
-    };
-    const handleSubmitReply = async () => {
-        if (!replyText.trim() || replyText.length > COMMENT_MAX_LENGTH) return;
-        try {
-            await onPostComment(reply.id, replyText);
-            setReplyText('');
-            setIsReplying(false);
-        } catch {
-            /* keep composer open */
-        }
     };
 
     const startEdit = () => {
         setIsReplying(false);
-        setReplyText('');
         setEditText(clampToMaxLength(displayContent, COMMENT_MAX_LENGTH));
         setIsEditing(true);
     };
@@ -271,6 +395,7 @@ export default function CommentItem({
                         collapsedMaxLines={COMMENT_COLLAPSED_MAX_LINES}
                         collapsedMaxHeightClass="max-h-[4.5rem]"
                         toggleClassName="mt-0.5 inline-block text-[12px] font-semibold text-[var(--surface-muted-text)] transition-colors hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm"
+                        renderText={(text, cls) => <CommentText text={text} className={cls} />}
                     />
                 )}
 
@@ -336,43 +461,12 @@ export default function CommentItem({
                 )}
 
                 {isReplying && (
-                    <div className="mt-3 flex gap-2 items-start">
-                        <UserAvatar
-                            item={viewerItem}
-                            size="xs"
-                            className="ring-2 ring-white dark:ring-[var(--surface-card)]"
-                        />
-                        <div className="flex-1 bg-[var(--surface-muted-bg)] rounded-xl border border-surface-border overflow-hidden focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/25 transition-all">
-                            <CommentLimitedTextarea
-                                value={replyText}
-                                onChange={setReplyText}
-                                placeholder="Write a reply..."
-                                rows={2}
-                                autoFocus
-                                className="px-3 pt-2.5 text-[13px]"
-                            />
-                            <div className="flex justify-end gap-2 px-3 pb-2 -mt-1">
-                                <button
-                                    type="button"
-                                    onClick={handleCancelReply}
-                                    disabled={replySaving}
-                                    className="text-[12px] text-[var(--surface-muted-text)] font-medium hover:text-[var(--surface-heading)] px-2 py-1 disabled:opacity-50"
-                                >
-                                    Cancel
-                                </button>
-                                <Button
-                                    variant="primary"
-                                    onClick={handleSubmitReply}
-                                    isLoading={replySaving}
-                                    disabled={!replyText.trim() || replyText.length > COMMENT_MAX_LENGTH}
-                                    className="!text-[12px] !py-1 !px-3 !rounded-lg"
-                                    loadingText="Posting..."
-                                >
-                                    Reply
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
+                    <ReplyComposer
+                        viewerItem={viewerItem}
+                        onSubmit={handleSubmitReply}
+                        onCancel={handleCancelReply}
+                        submitInFlight={replySaving}
+                    />
                 )}
 
                 {showNested && hasReplies && (

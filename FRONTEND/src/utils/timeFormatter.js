@@ -85,27 +85,25 @@ export function formatReplyDateGroupLabel(dateValue) {
     return `${day} ${month}`;
 }
 
-/** Group replies in display order by calendar day (one separator per day). */
+/** Group replies by calendar day (one separator per day, order-independent). */
 export function groupRepliesByDate(replies) {
     if (!replies?.length) return [];
 
-    const groups = [];
-    let current = null;
+    const map = new Map();
 
     for (const reply of replies) {
         const raw = reply?.created_at ?? reply?.createdAt;
         const dateKey = getCalendarDayKey(raw);
 
-        if (!current || current.dateKey !== dateKey) {
-            current = {
+        if (!map.has(dateKey)) {
+            map.set(dateKey, {
                 dateKey,
                 label: formatReplyDateGroupLabel(raw),
                 comments: [],
-            };
-            groups.push(current);
+            });
         }
-        current.comments.push(reply);
+        map.get(dateKey).comments.push(reply);
     }
 
-    return groups;
+    return Array.from(map.values());
 }
