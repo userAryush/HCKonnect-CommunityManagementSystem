@@ -10,11 +10,11 @@ JAZZMIN_SETTINGS = {
     "site_title": "HCKonnect Admin",
     "site_header": "HCKonnect",
     "site_brand": "HCKonnect",
-    "site_logo": "admin/hckonnect/logo.png",
-    "login_logo": "admin/hckonnect/logo-login.png",
-    "login_logo_dark": "admin/hckonnect/logo-login.png",
+    "site_logo": None,  # add logo at hckonnect/static/admin/hckonnect/logo.png to enable
+    "login_logo": None,  # add logo at hckonnect/static/admin/hckonnect/logo-login.png to enable
+    "login_logo_dark": None,
     "site_logo_classes": "img-circle",
-    "site_icon": "admin/hckonnect/favicon.png",
+    "site_icon": None,  # add favicon at hckonnect/static/admin/hckonnect/favicon.png to enable
     "welcome_sign": "Welcome to the HCKonnect control panel",
     "copyright": "Herald College — HCKonnect",
     "search_model": ["accounts.User", "accounts.CommunityUser"],

@@ -1,0 +1,32 @@
+/* HCKonnect admin brand overrides
+   Primary: #75BF44  |  Dark surfaces: #09090b / #3c3c3c */
+
+:root {
+  --hck-primary: #75BF44;
+}
+
+/* Sidebar & navbar accent */
+.sidebar-dark-primary .nav-sidebar > .nav-item > .nav-link.active {
+  background-color: #75BF44;
+  color: #fff;
+}
+
+.brand-link {
+  border-bottom-color: #75BF44 !important;
+}
+
+/* Login card */
+.login-card-body {
+  border-top: 3px solid #75BF44;
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: #75BF44;
+  border-color: #75BF44;
+}
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: #5fa334;
+  border-color: #5fa334;
+}

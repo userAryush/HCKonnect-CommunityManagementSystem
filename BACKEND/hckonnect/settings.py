@@ -224,7 +224,7 @@ USE_TZ = True
 # Static files (frontend assets)
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # for collectstatic in production
-STATICFILES_DIRS = [BASE_DIR / 'static']
+STATICFILES_DIRS = [d for d in [BASE_DIR / 'static'] if d.is_dir()]
 
 # --- HCKonnect admin (Jazzmin + TinyMCE) ---
 from hckonnect.jazzmin_settings import JAZZMIN_SETTINGS, JAZZMIN_UI_TWEAKS  # noqa: E402
