@@ -199,11 +199,10 @@ STORAGES = {
     "default": {
         "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
     },
-"staticfiles": {
-    "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-},
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
 }
-STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
