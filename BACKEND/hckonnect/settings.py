@@ -53,8 +53,8 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'cloudinary_storage',
     'django.contrib.staticfiles',
+    'cloudinary_storage',
     'cloudinary',
     'rest_framework',
     'rest_framework.authtoken',
@@ -200,16 +200,15 @@ STORAGES = {
         "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
     },
     "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
 # django-cloudinary-storage 0.3.0 reads this legacy attribute during collectstatic;
 # Django 5 removed it from defaults, so we define it explicitly.
-# Using plain StaticFilesStorage avoids whitenoise post-processing failures caused
-# by jazzmin 3.x vendor files (bootswatch maps/themes) that are referenced but not
-# bundled in the package. WhiteNoise middleware still serves files with on-the-fly
-# gzip compression via Accept-Encoding.
-STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+# django.contrib.staticfiles must appear BEFORE cloudinary_storage in INSTALLED_APPS
+# so Django's native collectstatic command takes precedence over cloudinary_storage's
+# override (which skips the local copy when not using a Cloudinary static backend).
+STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
