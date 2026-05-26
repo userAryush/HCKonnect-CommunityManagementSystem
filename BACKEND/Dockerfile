@@ -11,9 +11,9 @@ WORKDIR /app
 # Runtime libraries for Pillow / PostgreSQL client wheels
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        libpq5 \
-        libjpeg62-turbo \
-        zlib1g \
+    libpq5 \
+    libjpeg62-turbo \
+    zlib1g \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies (layer-cached separately from app code)
@@ -29,8 +29,8 @@ RUN sed -i 's/\r$//' docker-entrypoint.sh && chmod +x docker-entrypoint.sh
 # Collect static files into STATIC_ROOT so WhiteNoise can serve them.
 # SECRET_KEY must be non-empty for Django to load settings; the value here is
 # never used at runtime — the real secret is injected via Render environment vars.
-ARG SECRET_KEY=django-insecure-build-placeholder-not-used-at-runtime
-RUN SECRET_KEY=${SECRET_KEY} python manage.py collectstatic --noinput
+# ARG SECRET_KEY=django-insecure-build-placeholder-not-used-at-runtime
+# RUN SECRET_KEY=${SECRET_KEY} python manage.py collectstatic --noinput
 
 EXPOSE 8000
 

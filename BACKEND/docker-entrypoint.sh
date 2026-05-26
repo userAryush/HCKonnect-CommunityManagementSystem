@@ -1,6 +1,9 @@
 #!/bin/sh
 set -e
 
+echo "Collecting static files..."
+python manage.py collectstatic --noinput
+
 if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
   echo "Running database migrations..."
   python manage.py migrate --noinput
