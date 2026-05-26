@@ -203,6 +203,9 @@ STORAGES = {
         "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
+# django-cloudinary-storage 0.3.0 checks this legacy attribute at collectstatic time;
+# Django 5 removed it from defaults but still exposes custom settings on the object.
+STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
