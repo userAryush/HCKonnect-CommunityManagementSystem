@@ -6,16 +6,17 @@ import {
 } from './tokenRefresh';
 
 const apiClient = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/',
-    withCredentials: true,
+    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/', // baseurl so that every service just the main url instead of full url
+    withCredentials: true, // for sending httponly cookie auto on requests to /acc/token/refresh/
     headers: {
         'Content-Type': 'application/json',
     },
 });
 
-let isRefreshing = false;
-let failedQueue = [];
+let isRefreshing = false; //tracks refresh already in progress
+let failedQueue = []; // holds req that failed with 401 while refresh is happening
 
+// once refresh is done, either retries with new token else rejects all if refresh failed
 const processQueue = (error, token = null) => {
     failedQueue.forEach(({ resolve, reject }) => {
         if (error) reject(error);
@@ -31,7 +32,7 @@ const redirectToLogin = () => {
     }
 };
 
-// Request interceptor: attach access token
+// Request interceptor: reads access token from localstorage, attaches it as bearer header automatically
 apiClient.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('access_token');
@@ -45,7 +46,7 @@ apiClient.interceptors.request.use(
 
 // Response interceptor: silent refresh on 401, then retry
 apiClient.interceptors.response.use(
-    (response) => response,
+    (response) => response, //success, just return it
     async (error) => {
         const originalRequest = error.config;
 
@@ -53,10 +54,11 @@ apiClient.interceptors.response.use(
             return Promise.reject(error);
         }
 
+        //avoids infinite loops: _retry -> prevents same req retried twice
         if (!originalRequest || originalRequest._retry || isAuthEndpoint(originalRequest.url)) {
             return Promise.reject(error);
         }
-
+        // if refresh is in progress, queue the request and wait
         if (isRefreshing) {
             return new Promise((resolve, reject) => {
                 failedQueue.push({ resolve, reject });
@@ -66,9 +68,12 @@ apiClient.interceptors.response.use(
             });
         }
 
+        // does the refresh
         originalRequest._retry = true;
         isRefreshing = true;
-
+        // Calls refreshAccessToken() from tokenRefresh.js
+        // On success -> retries everything
+        // On failure -> clears tokens, redirects to /login
         try {
             const newAccessToken = await refreshAccessToken();
             processQueue(null, newAccessToken);

@@ -53,7 +53,7 @@ const AddMemberModal = ({ isOpen, onClose, communityId, onMemberAdded }) => {
                 onClose={handleClose}
             />
 
-            <div className="p-7 space-y-5">
+            <form onSubmit={handleAddMember} className="p-7 space-y-5">
                 {error && (
                     <div className="rounded-lg bg-red-50/50 p-4 text-sm text-red-600 border border-red-200/50">
                         {error}
@@ -110,7 +110,7 @@ const AddMemberModal = ({ isOpen, onClose, communityId, onMemberAdded }) => {
                         Confirm & Add Member
                     </Button>
                 </div>
-            </div>
+            </form>
         </ModalWrapper>
     );
 };

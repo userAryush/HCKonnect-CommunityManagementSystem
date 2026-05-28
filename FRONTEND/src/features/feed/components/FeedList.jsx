@@ -24,6 +24,7 @@ export default function FeedList({
   hiddenCommunities = EMPTY_ARRAY,
   onApplyClick = () => { },
   isFeedLoading = false,
+  refreshKey = 0,
 }) {
   const PAGE_SIZE = 20
   const [items, setItems] = useState([])
@@ -89,7 +90,7 @@ export default function FeedList({
     setPage(1)
     setHasMore(true)
     fetchPage(1, false)
-  }, [filter, isFeedLoading, fetchPage])
+  }, [filter, isFeedLoading, fetchPage, refreshKey])
 
   useEffect(() => {
     if (!inView || !hasMore || isFetchingNext || fetchError) return

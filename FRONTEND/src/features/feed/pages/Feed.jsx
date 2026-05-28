@@ -21,9 +21,12 @@ export default function Feed() {
   const [sidebarAnnouncements, setSidebarAnnouncements] = useState([])
   const [profile, setProfile] = useState(null)
 
+  const [feedRefreshKey, setFeedRefreshKey] = useState(0)
   const [selectedVacancy, setSelectedVacancy] = useState(null)
   const [isDiscussionModalOpen, setIsDiscussionModalOpen] = useState(false)
   const [isPostModalOpen, setIsPostModalOpen] = useState(false)
+
+  const handleContentCreated = () => setFeedRefreshKey((k) => k + 1)
 
   useEffect(() => {
     let mounted = true
@@ -116,6 +119,7 @@ export default function Feed() {
                     filter={filter}
                     onApplyClick={handleApplyClick}
                     isFeedLoading={filter === 'all' && isFeedLoading}
+                    refreshKey={feedRefreshKey}
                   />
                 )}
               </div>
@@ -152,11 +156,13 @@ export default function Feed() {
       <CreateDiscussionModal
         isOpen={isDiscussionModalOpen}
         onClose={() => setIsDiscussionModalOpen(false)}
+        onCreated={handleContentCreated}
       />
 
       <CreatePostModal
         isOpen={isPostModalOpen}
         onClose={() => setIsPostModalOpen(false)}
+        onCreated={handleContentCreated}
       />
     </div>
   )

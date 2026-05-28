@@ -165,10 +165,10 @@ export default function DiscussionDetail() {
         return () => clearInterval(intervalId);
     }, [id]);
 
-    const orderedReplies = useMemo(
-        () => [...(optimisticReplies || [])].reverse(),
-        [optimisticReplies]
-    );
+        const orderedReplies = useMemo(
+            () => [...(optimisticReplies || [])].reverse(),
+            [optimisticReplies]
+        );
 
     const replyDateGroups = useMemo(
         () => groupRepliesByDate(orderedReplies),
