@@ -81,7 +81,7 @@ def community_id_for_user(user):
 
 def invalidate_user_feed_cache() -> None:
     """Invalidate global user feed summary caches (timeline, sidebar, profile)."""
-    delete_cache_pattern("user_feed_*")
+    delete_cache_keys_with_prefix("user_feed:")
 
 
 def invalidate_feed_cache(community_id=None) -> None:

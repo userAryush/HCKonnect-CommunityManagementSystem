@@ -75,28 +75,24 @@ export const getProfileImage = (user) => {
  */
 export const getRoleLabel = (user) => {
   if (!user) return '';
-  
+
   const role = user.role || user.author_role;
   const communityName = user.community_name || user.author_community_name || user.author_community;
-  
-  if (role === 'community') {
+
+  if (role === 'community' || isCommunityAuthor(user)) {
     if (user.is_platform_community || user.author_is_platform_community) {
       return 'Platform Organization';
     }
     return 'Community Admin';
   }
-  
-  // If it's a student (or role missing) but they belong to a community
-  const memberOf = user.membership?.community_name || (role !== 'community' ? communityName : null);
+
+  const memberOf = user.membership?.community_name || communityName;
   if (memberOf) {
     return `Member of ${memberOf}`;
   }
-  
+
   if (role === 'student') return 'Student';
-  
-  // Implicitly treat as Community Admin if no role but communityName exists (fallback for some cards)
-  if (!role && communityName) return 'Community Admin';
-  
+
   return role || 'Student';
 };
 

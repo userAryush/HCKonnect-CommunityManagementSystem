@@ -9,7 +9,7 @@ from django.db.models import Q, Count
 from .models import DiscussionPanel, DiscussionReply, Reaction
 from .serializers import DiscussionCreateSerializer,DiscussionReadSerializer,DiscussionUpdateSerializer,ReplyCreateSerializer,ReplyReadSerializer,ReactionSerializer
 from .permissions import CanCreateDiscussion, CanAccessDiscussion, IsOwner
-from services.cache import invalidate_community_page_caches, invalidate_discussion_reply_caches
+from services.cache import invalidate_community_page_caches, invalidate_discussion_reply_caches, invalidate_user_feed_cache
 from .reply_cache import (
     apply_user_likes_to_replies,
     get_cached_discussion_replies,
@@ -33,6 +33,7 @@ class DiscussionCreateView(CreateAPIView):
         discussion = serializer.save()
         if discussion.community_id:
             invalidate_community_page_caches(discussion.community_id)
+        invalidate_user_feed_cache()
 
 
 class DiscussionListView(ListAPIView):

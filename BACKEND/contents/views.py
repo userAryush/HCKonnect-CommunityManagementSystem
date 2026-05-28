@@ -2,7 +2,7 @@ from rest_framework.generics import CreateAPIView, ListAPIView, UpdateAPIView, D
 from rest_framework.views import APIView
 from rest_framework.exceptions import ValidationError as DRFValidationError
 from .models import Announcement, Post, PostComment, PostReaction, Resource
-from services.cache import invalidate_community_page_caches, invalidate_post_caches
+from services.cache import invalidate_community_page_caches, invalidate_post_caches, invalidate_user_feed_cache
 from services.cache.community_page_cache import (
     build_paginated_list_payload,
     dashboard_page_params_match,
@@ -322,6 +322,7 @@ class PostCreateView(CreateAPIView):
     def perform_create(self, serializer):
         post = serializer.save()
         invalidate_post_caches(post)
+        invalidate_user_feed_cache()
 
 
 class PostListView(ListAPIView):
