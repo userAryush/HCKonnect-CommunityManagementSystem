@@ -98,8 +98,6 @@ HCKonnect follows a **client–server** architecture with a decoupled frontend a
 4. Frequently accessed data (feeds, dashboards, discussion threads) is cached in **Redis**.
 5. Uploaded media (images, resources) is stored in **Cloudinary**.
 
-> **Realtime:** WebSocket-based realtime is **not currently implemented** in this repository. Notifications are delivered via REST polling. *(Add WebSocket / Django Channels here if introduced later.)*
-
 ---
 
 ## Tech Stack
@@ -114,7 +112,7 @@ HCKonnect follows a **client–server** architecture with a decoupled frontend a
 | **Media storage** | Cloudinary (`django-cloudinary-storage`) |
 | **AI** | Google Gemini (`google-generativeai`, LangChain) |
 | **Admin UI** | Django Jazzmin, TinyMCE |
-| **Deployment** | Docker *(placeholder — not in repo yet)*, Vercel (frontend), Render (backend) |
+| **Deployment** | Docker, Vercel (frontend), Render (backend) |
 
 ---
 
@@ -127,7 +125,7 @@ HCKonnect follows a **client–server** architecture with a decoupled frontend a
 - **PostgreSQL** database instance
 - **Redis** instance
 - **Cloudinary** account
-- **Google Cloud** credentials (OAuth + Gemini API key, as needed)
+- **Google Cloud** credentials (OAuth + Gemini API key)
 
 ---
 
@@ -261,7 +259,7 @@ VITE_GOOGLE_CLIENT_ID=your_google_client_id
 |-----------|--------|-------|
 | Frontend | **Vercel** | Set `VITE_API_BASE_URL` to production API URL |
 | Backend | **Render** | Set all `BACKEND/.env` variables; run `collectstatic` and migrations |
-| Docker | *(optional)* | Add `Dockerfile` / `docker-compose.yml` — not included in repo yet |
+| Docker | | Add `Dockerfile` / `docker-compose.yml` |
 
 <!-- TODO: Add deployment URLs -->
 - **Live frontend:** `https://your-frontend-url.vercel.app`
@@ -390,24 +388,11 @@ HCKonnect/
 
 ## Future Improvements
 
-- [ ] Docker Compose for local one-command setup (API + DB + Redis)
 - [ ] WebSocket / realtime notifications (Django Channels or similar)
 - [ ] Expanded automated test coverage (API + frontend E2E)
 - [ ] CI/CD pipeline (GitHub Actions)
-- [ ] API documentation (OpenAPI / Swagger via `drf-spectacular`)
 - [ ] Mobile-responsive audit and accessibility (WCAG) pass
-- [ ] Rate limiting and security hardening for production
-- [ ] *(Add your FYP roadmap items here)*
 
----
-
-## Contributors
-
-| Name | Role | Contact |
-|------|------|---------|
-| *[Your Name]* | Developer / FYP Student | *[email@example.com]* |
-| *[Supervisor Name]* | Academic Supervisor | *[supervisor@example.com]* |
-| *[Team Member]* | *[Role]* | *[email@example.com]* |
 
 ---
 
